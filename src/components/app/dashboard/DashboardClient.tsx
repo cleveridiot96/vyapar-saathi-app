@@ -21,11 +21,14 @@ import { ProfitAnalysisClient } from '../profit-analysis/ProfitAnalysisClient';
 
 const NAV_ITEMS_ORDER_KEY = 'dashboardNavItemsOrder_v3';
 
+// A "plain" version of the feature without the icon component
+type PlainFeature = Omit<Feature, 'icon'>;
+
 export function DashboardClient() {
     const { financialYear } = useSettings();
     const isHydrated = useHydrated();
     
-    const [orderedNavItems, setOrderedNavItems] = useLocalStorageState<Feature[]>(
+    const [orderedNavItems, setOrderedNavItems] = useLocalStorageState<PlainFeature[]>(
         NAV_ITEMS_ORDER_KEY,
         [] 
     );
@@ -35,10 +38,11 @@ export function DashboardClient() {
     useEffect(() => {
         if (!isHydrated) return;
 
-        const masterNavItems = [...features];
+        // Map master features to plain objects without the icon component
+        const masterNavItems = features.map(({ icon, ...rest }) => rest);
         const itemMap = new Map(masterNavItems.map(item => [item.title, item]));
 
-        const syncedItems: Feature[] = [];
+        const syncedItems: PlainFeature[] = [];
         const existingTitles = new Set<string>();
 
         (orderedNavItems || []).forEach(item => {
@@ -87,7 +91,7 @@ export function DashboardClient() {
             </div>
 
             {!isHydrated || orderedNavItems.length === 0 ? ( 
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                     {Array.from({ length: features.length }).map((_, index) => (
                         <Skeleton key={index} className="h-40 rounded-xl" />
                     ))}
@@ -103,9 +107,9 @@ export function DashboardClient() {
                         strategy={verticalListSortingStrategy}
                     >
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                            {orderedNavItems.map((feature) => (
-                                <SortableDashboardTile key={feature.title} id={feature.title} isEditMode={isEditMode}>
-                                    <FeatureCard feature={feature} />
+                            {orderedNavItems.map((plainFeature) => (
+                                <SortableDashboardTile key={plainFeature.title} id={plainFeature.title} isEditMode={isEditMode}>
+                                    <FeatureCard featureTitle={plainFeature.title} />
                                 </SortableDashboardTile>
                             ))}
                         </div>

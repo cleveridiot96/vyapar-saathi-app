@@ -1,11 +1,19 @@
 import Link from 'next/link';
-import type { Feature } from '@/lib/features';
+import { features, type Feature } from '@/lib/features';
 
 type FeatureCardProps = {
-  feature: Feature;
+  featureTitle: string;
 };
 
-export function FeatureCard({ feature }: FeatureCardProps) {
+export function FeatureCard({ featureTitle }: FeatureCardProps) {
+  const feature = features.find(f => f.title === featureTitle);
+
+  if (!feature) {
+    return null; // or a placeholder/error component
+  }
+  
+  const Icon = feature.icon;
+
   return (
     <Link href={feature.href} className="group block">
       <div
@@ -18,7 +26,7 @@ export function FeatureCard({ feature }: FeatureCardProps) {
       >
         <div className="absolute inset-0 rounded-xl bg-white/[.08] backdrop-blur-sm" />
         <div className="relative z-10 flex flex-col items-center justify-center gap-3">
-          <feature.icon className="h-8 w-8" />
+          <Icon className="h-8 w-8" />
           <h3 className="font-semibold">{feature.title}</h3>
         </div>
       </div>
