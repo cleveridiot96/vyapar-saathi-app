@@ -17,6 +17,13 @@ import { features } from '@/lib/features';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut } from 'lucide-react';
 import { Button } from './ui/button';
+import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export function SidebarNav() {
   const pathname = usePathname();
@@ -38,15 +45,16 @@ export function SidebarNav() {
         <SidebarMenu>
           {features.map((feature) => (
             <SidebarMenuItem key={feature.href}>
-              <Link href={feature.href} passHref>
-                  <SidebarMenuButton
-                    isActive={pathname.startsWith(feature.href)}
-                    tooltip={feature.title}
-                  >
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith(feature.href)}
+                  tooltip={feature.title}
+                >
+                  <Link href={feature.href}>
                     <feature.icon />
                     <span>{feature.title}</span>
-                  </SidebarMenuButton>
-              </Link>
+                  </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
