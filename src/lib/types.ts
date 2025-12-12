@@ -147,7 +147,6 @@ export interface SaleReturn {
     notes?: string;
 }
 
-
 export interface LocationTransferItem {
     id: string;
     originalLotNumber: string;
@@ -169,22 +168,64 @@ export interface LocationTransfer {
     otherExpenses?: number;
     totalTransferCost: number;
     notes?: string;
+    expenses?: ExpenseItem[];
+}
+
+export interface Payment {
+  id: string;
+  date: string;
+  partyId: string;
+  partyName: string;
+  partyType: MasterItemType;
+  amount: number;
+  paymentMethod: 'Cash' | 'Bank' | 'UPI';
+  paymentType: 'Regular' | 'Stock';
+  notes?: string;
+  stockItems?: {
+    lotNumber: string;
+    quantity: number;
+    netWeight: number;
+    rate: number;
+    value: number;
+  }[];
+  againstPurchases?: {
+    purchaseId: string;
+    amount: number;
+  }[];
+}
+
+export interface Receipt {
+  id: string;
+  date: string;
+  partyId: string;
+  partyName: string;
+  partyType: MasterItemType;
+  amount: number;
+  paymentMethod: 'Cash' | 'Bank' | 'UPI';
+  transactionType: 'On Account' | 'Against Bill';
+  againstBills?: {
+      billId: string;
+      amount: number;
+  }[];
+  source?: string;
+  notes?: string;
+  cashDiscount?: number;
 }
 
 
 export type LedgerEntry = {
   id: string;
   date: string;
-  type: 'Expense' | 'Purchase' | 'Sale' | 'Payment' | 'Receipt';
+  type: 'Expense' | 'Purchase' | 'Sale' | 'Payment' | 'Receipt' | 'Transfer';
   account: string;
   debit: number;
   credit: number;
-  paymentMode: 'Cash' | 'Bank' | 'Pending';
+  paymentMode: 'Cash' | 'Bank' | 'Pending' | 'Auto-adjusted';
   party: string;
   partyId?: string;
   relatedVoucher: string;
-  linkedTo: {
-    voucherType: 'Purchase' | 'Sale';
+  linkedTo?: {
+    voucherType: 'Purchase' | 'Sale' | 'Transfer';
     voucherId: string;
   };
   remarks: string;
