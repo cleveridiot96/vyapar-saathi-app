@@ -37,16 +37,16 @@ export function SidebarNav() {
         <SidebarMenu>
           {features.map((feature) => (
             <SidebarMenuItem key={feature.href}>
-              <Link href={feature.href} passHref>
+              <Link href={feature.href}>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname.startsWith(feature.href)}
                   tooltip={feature.title}
                 >
-                  <a>
+                  <div>
                     <feature.icon />
                     <span>{feature.title}</span>
-                  </a>
+                  </div>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
