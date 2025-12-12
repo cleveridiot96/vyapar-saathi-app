@@ -270,4 +270,3 @@ export interface SearchableItem {
   date?: string;
   href: string;
 }
-

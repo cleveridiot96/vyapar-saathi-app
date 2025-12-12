@@ -1,5 +1,4 @@
-// src/components/shared/SearchBar.tsx
-'use client';
+"use client";
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { initSearchEngine, searchData, type SearchableItem } from '@/lib/searchEngine';

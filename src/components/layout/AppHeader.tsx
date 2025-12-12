@@ -14,6 +14,8 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { Label } from "../ui/label";
 import { CommandMenu } from '../command-menu';
 import { Sparkles } from 'lucide-react';
+import { LowStockThresholdSetting } from './LowStockThresholdSetting';
+import { FormatButton } from './FormatButton';
 
 
 export function AppHeaderContentInternal() {
@@ -81,6 +83,8 @@ export function AppHeaderContentInternal() {
                       <span className="text-xl">A</span>
                   </div>
               </div>
+              <LowStockThresholdSetting />
+              <FormatButton />
             </PopoverContent>
           </Popover>
           <Button variant="ghost" size="icon" aria-label="Logout" onClick={handleLogout}>

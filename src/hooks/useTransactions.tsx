@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useContext, createContext, ReactNode, useEffect } from 'react';
-import type { Purchase, PurchaseReturn, Sale, SaleReturn, LocationTransfer, LedgerEntry, Payment, Receipt, MasterItem, MasterItemType } from '@/lib/types';
+import type { Purchase, PurchaseReturn, Sale, SaleReturn, LocationTransfer, LedgerEntry, Payment, Receipt, MasterItem, MasterItemType, StockAdjustment } from '@/lib/types';
 import { useLocalStorageState } from './useLocalStorageState';
+import { purchaseMigrator, salesMigrator } from '@/lib/dataMigrators';
 
 interface TransactionsContextType {
   purchases: Purchase[];
@@ -21,6 +22,8 @@ interface TransactionsContextType {
   setReceipts: React.Dispatch<React.SetStateAction<Receipt[]>>;
   ledger: LedgerEntry[];
   setLedger: React.Dispatch<React.SetStateAction<LedgerEntry[]>>;
+  adjustments: StockAdjustment[];
+  setAdjustments: React.Dispatch<React.SetStateAction<StockAdjustment[]>>;
   addLedgerEntry: (entries: LedgerEntry | LedgerEntry[]) => void;
   removeLedgerEntries: (relatedVoucherId: string) => void;
   isTransactionsLoaded: boolean;
@@ -37,7 +40,7 @@ const initialMasterData: Record<MasterItemType, MasterItem[]> = {
     Customer: [{ id: 'cus1', type: 'Customer', name: 'Gopal Dairy' },],
     Agent: [{ id: 'agent1', type: 'Agent', name: 'Shyam Sundar', details: { commission: 2 } },],
     Broker: [],
-    Warehouse: [{ id: 'wh1', type: 'Warehouse', name: 'Main Godown' },],
+    Warehouse: [{ id: 'wh1', type: 'Warehouse', name: 'Main Godown' }, { id: 'wh2', type: 'Warehouse', name: 'Mumbai' },],
     Transporter: [{ id: 'trans1', type: 'Transporter', name: 'Ganesh Roadways' },],
     Expense: [{ id: 'exp1', type: 'Expense', name: 'Freight' },{ id: 'exp2', type: 'Expense', name: 'Labour' },{ id: 'exp3', type: 'Expense', name: 'Commission' },],
     Product: [{ id: 'prod1', type: 'Product', name: 'Arecanut' },]
@@ -45,21 +48,22 @@ const initialMasterData: Record<MasterItemType, MasterItem[]> = {
 
 
 export function TransactionsProvider({ children }: { children: ReactNode }) {
-  const [purchases, setPurchases] = useLocalStorageState<Purchase[]>('purchasesData', []);
+  const [purchases, setPurchases] = useLocalStorageState<Purchase[]>('purchasesData', [], purchaseMigrator);
   const [purchaseReturns, setPurchaseReturns] = useLocalStorageState<PurchaseReturn[]>('purchaseReturnsData', []);
-  const [sales, setSales] = useLocalStorageState<Sale[]>('salesData', []);
+  const [sales, setSales] = useLocalStorageState<Sale[]>('salesData', [], salesMigrator);
   const [saleReturns, setSaleReturns] = useLocalStorageState<SaleReturn[]>('saleReturnsData', []);
   const [locationTransfers, setLocationTransfers] = useLocalStorageState<LocationTransfer[]>('locationTransfersData', []);
   const [payments, setPayments] = useLocalStorageState<Payment[]>('paymentsData', []);
   const [receipts, setReceipts] = useLocalStorageState<Receipt[]>('receiptsData', []);
   const [ledger, setLedger] = useLocalStorageState<LedgerEntry[]>('ledgerData', []);
   const [masterData, setMasterData] = useLocalStorageState<Record<MasterItemType, MasterItem[]>>('masterData', initialMasterData);
+  const [adjustments, setAdjustments] = useLocalStorageState<StockAdjustment[]>('adjustmentsData', []);
+
 
   const [isTransactionsLoaded, setIsTransactionsLoaded] = useState(false);
   const [isMasterDataLoaded, setIsMasterDataLoaded] = useState(false);
 
   useEffect(() => {
-    // This effect can be expanded if data is fetched asynchronously
     setIsTransactionsLoaded(true);
     setIsMasterDataLoaded(true);
   }, []);
@@ -100,6 +104,7 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
     payments, setPayments,
     receipts, setReceipts,
     ledger, setLedger,
+    adjustments, setAdjustments,
     addLedgerEntry, removeLedgerEntries,
     isTransactionsLoaded,
     masterData,
