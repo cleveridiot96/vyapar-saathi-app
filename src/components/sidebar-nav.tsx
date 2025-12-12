@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -37,18 +38,16 @@ export function SidebarNav() {
         <SidebarMenu>
           {features.map((feature) => (
             <SidebarMenuItem key={feature.href}>
-              <Link href={feature.href}>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname.startsWith(feature.href)}
                   tooltip={feature.title}
                 >
-                  <div>
+                  <Link href={feature.href}>
                     <feature.icon />
                     <span>{feature.title}</span>
-                  </div>
+                  </Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
