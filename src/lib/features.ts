@@ -31,15 +31,6 @@ export type Feature = {
 
 export const features: Feature[] = [
   {
-    title: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    gradientFrom: '#fdc830',
-    gradientTo: '#f37335',
-    textColor: 'white',
-    shadow: '0 10px 25px -5px rgba(253, 200, 48, 0.4), 0 8px 10px -6px rgba(253, 200, 48, 0.4)',
-  },
-  {
     title: 'Purchases',
     href: '/purchases',
     icon: ShoppingCart,
