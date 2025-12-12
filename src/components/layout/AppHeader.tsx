@@ -23,7 +23,6 @@ export function AppHeaderContentInternal() {
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const router = useRouter();
   const { fontSize, setFontSize } = useSettings();
-  const [commandMenuOpen, setCommandMenuOpen] = React.useState(false);
   const isHydrated = useHydrated();
 
   const handleLogout = () => {
@@ -35,8 +34,8 @@ export function AppHeaderContentInternal() {
     <>
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
        <SidebarTrigger className="sm:hidden" />
+       <SidebarTrigger className="hidden sm:flex" />
         <div className="flex items-center gap-2">
-            <SidebarTrigger className="hidden sm:flex" />
             <Link href="/dashboard" aria-label="Dashboard">
               <Button variant="ghost" size="icon" aria-label="Home">
                 <Home className="h-5 w-5 text-foreground" />
@@ -57,13 +56,6 @@ export function AppHeaderContentInternal() {
               <Button variant="ghost" size="icon" aria-label="Open Calculator" onClick={() => setIsCalculatorOpen(true)}>
                 <CalculatorIcon className="h-5 w-5 text-foreground" />
               </Button>
-                <Button variant="outline" className="gap-2" onClick={() => setCommandMenuOpen(true)}>
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <span className="hidden sm:inline">AI Assistant</span>
-                    <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-                        <span className="text-xs">⌘</span>K
-                    </kbd>
-                </Button>
 
               <Popover>
                 <PopoverTrigger asChild>
@@ -103,7 +95,6 @@ export function AppHeaderContentInternal() {
        {isHydrated && (
         <>
             <Calculator isVisible={isCalculatorOpen} onClose={() => setIsCalculatorOpen(false)} />
-            <CommandMenu open={commandMenuOpen} setOpen={setCommandMenuOpen} />
         </>
        )}
 
