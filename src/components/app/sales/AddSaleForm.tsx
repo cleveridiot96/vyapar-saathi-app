@@ -31,7 +31,6 @@ import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { saleSchema, type SaleFormValues } from '@/lib/schemas/saleSchema';
 import type { MasterItem, MasterItemType, Sale, ExpenseItem, AggregatedInventoryItem } from '@/lib/types';
-import { useInventory } from '@/hooks/useInventory';
 import { MasterDataCombobox } from '@/components/shared/MasterDataCombobox';
 import { useToast } from '@/hooks/use-toast';
 import { MasterForm } from '@/components/app/masters/MasterForm';
@@ -43,6 +42,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useMasterData } from "@/hooks/useMasterData";
+import { useInventory } from "@/hooks/useInventory";
 
 
 interface AddSaleFormProps {
@@ -54,7 +54,7 @@ interface AddSaleFormProps {
   onMasterDataUpdate: (newItem: MasterItem) => void;
 }
 
-const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
+export const AddSaleForm: React.FC<AddSaleFormProps> = ({
   isOpen,
   onClose,
   onSubmit,
@@ -324,7 +324,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
               costOfGoodsSold: costOfGoodsSold,
               itemGrossProfit: Math.round(itemGrossProfit),
               itemNetProfit: Math.round(goodsValue - costOfGoodsSold - itemShareOfSaleExpenses),
-              costBreakdown: stock?.costBreakdown || { baseRate: 0, purchaseExpenses: 0, transferExpenses: 0 },
+              costBreakdown: stock?.costBreakdown,
           };
       }),
       expenses: values.expenses?.map(exp => ({ ...exp, id: `exp-${Date.now()}-${Math.random()}`, partyName: exp.partyName || 'Self' })),
@@ -508,7 +508,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                               <FormField control={control} name={`expenses.${index}.partyId`} render={({ field: itemField }) => (
                                 <FormItem className="md:col-span-3"><FormLabel>Party (Opt.)</FormLabel>
                                   <MasterDataCombobox value={itemField.value} onChange={itemField.onChange}
-                                    options={(getAllMasters()).map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
+                                    options={getAllMasters().map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
                                     placeholder="Select Party" addNewLabel="Add New Party"
                                     onAddNew={() => handleOpenMasterForm("Customer")} onEdit={(id) => handleEditMasterItem("Customer", id)}
                                     disabled={isCommission}
@@ -628,6 +628,3 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
     </>
   );
 };
-
-export const AddSaleForm = React.memo(AddSaleFormComponent);
-___________________________________________________

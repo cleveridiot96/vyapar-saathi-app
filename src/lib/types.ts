@@ -1,4 +1,4 @@
-export type MasterItemType = "Supplier" | "Customer" | "Agent" | "Warehouse" | "Transporter" | "Expense" | "Product";
+export type MasterItemType = "Supplier" | "Customer" | "Agent" | "Warehouse" | "Transporter" | "Expense" | "Product" | "Broker";
 
 export interface MasterItem {
   id: string;
@@ -14,11 +14,27 @@ export interface Agent extends MasterItem {
     }
 }
 
+export interface Broker extends MasterItem {
+  type: 'Broker';
+  details: {
+    commission?: number;
+    commissionType?: 'Percentage' | 'Fixed';
+  }
+}
+
+export interface Customer extends MasterItem {
+    type: 'Customer';
+}
+
+export interface Transporter extends MasterItem {
+    type: 'Transporter';
+}
+
 export interface ExpenseItem {
   id: string;
   account: string;
   amount: number;
-  paymentMode: 'Cash' | 'Bank' | 'Pending';
+  paymentMode: 'Cash' | 'Bank' | 'Pending' | 'Auto-adjusted';
   partyName?: string;
   partyId?: string;
 }
@@ -69,30 +85,97 @@ export interface PurchaseReturn {
   notes?: string;
 }
 
+export interface CostBreakdown {
+    baseRate: number;
+    purchaseExpenses: number;
+    transferExpenses: number;
+}
+
 export interface SaleItem {
+  id: string;
   lotNumber: string;
   quantity: number;
+  netWeight: number;
+  rate: number;
+  goodsValue: number;
+  purchaseRate: number;
+  costOfGoodsSold: number;
+  itemGrossProfit: number;
+  itemNetProfit: number;
+  costBreakdown?: CostBreakdown;
 }
 
 export interface Sale {
   id: string;
+  date: string;
+  billNumber?: string;
+  customerId: string;
+  customerName?: string;
+  brokerId?: string;
+  brokerName?: string;
+  transporterId?: string;
+  transporterName?: string;
   items: SaleItem[];
+  expenses?: ExpenseItem[];
+  totalGoodsValue: number;
+  billedAmount: number;
+  cbAmount?: number;
+  balanceAmount?: number;
+  totalQuantity: number;
+  totalNetWeight: number;
+  totalCostOfGoodsSold: number;
+  totalGrossProfit: number;
+  totalCalculatedProfit: number;
+  notes?: string;
+  isStockPaymentSale: boolean;
 }
 
-export interface LocationTransferItem {
+export interface SaleReturn {
+    id: string;
+    date: string;
+    originalSaleId: string;
+    originalBillNumber?: string;
+    originalCustomerId: string;
+    originalCustomerName?: string;
     originalLotNumber: string;
+    originalSaleRate: number;
+    quantityReturned: number;
+    netWeightReturned: number;
+    returnAmount: number;
+    restockingFee?: number;
+    returnReason?: string;
+    notes?: string;
+}
+
+
+export interface LocationTransferItem {
+    id: string;
+    originalLotNumber: string;
+    newLotNumber: string;
+    quantity: number;
+    netWeight: number;
+    costOfGoods: number;
 }
 
 export interface LocationTransfer {
     id: string;
+    date: string;
+    fromLocationId: string;
+    fromLocationName: string;
+    toLocationId: string;
+    toLocationName: string;
     items: LocationTransferItem[];
+    transportCost?: number;
+    otherExpenses?: number;
+    totalTransferCost: number;
+    notes?: string;
 }
 
 
 export type LedgerEntry = {
   id: string;
   date: string;
-  type: 'Expense' | 'Purchase';
+  type: 'Expense' | 'Purchase' | 'Sale' | 'Payment' | 'Receipt';
   account: string;
   debit: number;
   credit: number;
@@ -101,8 +184,22 @@ export type LedgerEntry = {
   partyId?: string;
   relatedVoucher: string;
   linkedTo: {
-    voucherType: 'Purchase';
+    voucherType: 'Purchase' | 'Sale';
     voucherId: string;
   };
   remarks: string;
 };
+
+export interface AggregatedInventoryItem {
+    lotNumber: string;
+    originalBags: number;
+    currentBags: number;
+    purchaseRate: number;
+    effectiveRate: number;
+    locationId: string;
+    locationName: string;
+    supplierName: string;
+    purchaseDate: string;
+    averageWeightPerBag: number;
+    costBreakdown?: CostBreakdown;
+}

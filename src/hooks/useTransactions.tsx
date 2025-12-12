@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useContext, createContext, ReactNode } from 'react';
-import type { Purchase, PurchaseReturn, Sale, LocationTransfer, LedgerEntry } from '@/lib/types';
+import type { Purchase, PurchaseReturn, Sale, SaleReturn, LocationTransfer, LedgerEntry } from '@/lib/types';
 
 interface TransactionsContextType {
   purchases: Purchase[];
@@ -10,6 +10,8 @@ interface TransactionsContextType {
   setPurchaseReturns: React.Dispatch<React.SetStateAction<PurchaseReturn[]>>;
   sales: Sale[];
   setSales: React.Dispatch<React.SetStateAction<Sale[]>>;
+  saleReturns: SaleReturn[];
+  setSaleReturns: React.Dispatch<React.SetStateAction<SaleReturn[]>>;
   locationTransfers: LocationTransfer[];
   setLocationTransfers: React.Dispatch<React.SetStateAction<LocationTransfer[]>>;
   ledger: LedgerEntry[];
@@ -25,6 +27,7 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [purchaseReturns, setPurchaseReturns] = useState<PurchaseReturn[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [saleReturns, setSaleReturns] = useState<SaleReturn[]>([]);
   const [locationTransfers, setLocationTransfers] = useState<LocationTransfer[]>([]);
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
   const [isTransactionsLoaded, setIsTransactionsLoaded] = useState(true);
@@ -45,6 +48,8 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
     setPurchaseReturns,
     sales,
     setSales,
+    saleReturns,
+    setSaleReturns,
     locationTransfers,
     setLocationTransfers,
     ledger,
