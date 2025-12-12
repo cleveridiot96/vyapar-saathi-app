@@ -2,68 +2,135 @@
 
 import { useMemo } from 'react';
 import { useTransactions } from './useTransactions';
-import { useMasterData } from './useMasterData';
 import type { MasterItem } from '@/lib/types';
+import { useSettings } from '@/contexts/SettingsContext';
+import { isDateInFinancialYear, isDateBeforeFinancialYear } from '@/lib/utils';
+import { parseISO } from 'date-fns';
 
 export function useOutstandingBalances() {
-    const { sales, receipts, purchases, payments } = useTransactions();
-    const { data: masterData } = useMasterData();
+    const { purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger, getAllMasters, isTransactionsLoaded } = useTransactions();
+    const { financialYear, isAppHydrating } = useSettings();
 
-    const receivableParties = useMemo(() => {
-        const partyBalances = new Map<string, number>();
+    const { receivableParties, payableParties, balances } = useMemo(() => {
+        if (isAppHydrating || !isTransactionsLoaded) {
+            return { receivableParties: [], payableParties: [], balances: new Map() };
+        }
 
-        // Customers from sales
-        sales.forEach(sale => {
-            if (sale.customerId) {
-                partyBalances.set(sale.customerId, (partyBalances.get(sale.customerId) || 0) + sale.billedAmount);
+        const allMasters = getAllMasters();
+        const balances = new Map<string, number>();
+
+        // 1. Set opening balances from before the financial year
+        allMasters.forEach(m => {
+            if (m.type !== 'Warehouse' && m.type !== 'Expense' && m.type !== 'Product') {
+                balances.set(m.id, m.details?.openingBalanceType === 'Cr' ? -(m.details?.openingBalance || 0) : (m.details?.openingBalance || 0));
             }
         });
         
-        // Brokers from sales (commission is an expense, not a receivable from them)
-        // If a broker is also a customer, their sales will be handled above.
-
-        receipts.forEach(receipt => {
-            partyBalances.set(receipt.partyId, (partyBalances.get(receipt.partyId) || 0) - receipt.amount - (receipt.cashDiscount || 0));
-        });
+        const allTransactionsSorted = [
+            ...purchases.map(p => ({...p, txType: 'Purchase' as const})),
+            ...sales.map(s => ({...s, txType: 'Sale' as const})),
+            ...receipts.map(r => ({...r, txType: 'Receipt' as const})),
+            ...payments.map(p => ({...p, txType: 'Payment' as const})),
+            ...purchaseReturns.map(pr => ({...pr, txType: 'PurchaseReturn' as const})),
+            ...saleReturns.map(sr => ({...sr, txType: 'SaleReturn' as const})),
+            ...ledger.filter(l => ['Expense'].includes(l.type)).map(l => ({...l, txType: 'LedgerEntry' as const}))
+        ].sort((a,b) => parseISO(a.date).getTime() - parseISO(b.date).getTime());
         
-        const allParties = [...(masterData.Customer || []), ...(masterData.Broker || [])];
-        
-        return allParties.map(party => ({
-            ...party,
-            balance: partyBalances.get(party.id) || 0
-        })).filter(p => p.balance > 1 || p.balance < -1); 
-
-    }, [sales, receipts, masterData.Customer, masterData.Broker]);
-
-    const payableParties = useMemo(() => {
-        const partyBalances = new Map<string, number>();
-
-        // Suppliers from purchases
-        purchases.forEach(purchase => {
-            partyBalances.set(purchase.supplierId, (partyBalances.get(purchase.supplierId) || 0) - purchase.totalAmount);
-        });
-
-        // Agents & other expense parties from purchases
-        purchases.forEach(purchase => {
-             (purchase.expenses || []).forEach(exp => {
-                if(exp.partyId && exp.paymentMode === 'Pending') {
-                    partyBalances.set(exp.partyId, (partyBalances.get(exp.partyId) || 0) - exp.amount);
+        allTransactionsSorted.forEach(tx => {
+            if (isDateBeforeFinancialYear(tx.date, financialYear)) {
+                if (tx.txType === 'Sale') {
+                    const primaryDebtorId = tx.brokerId || tx.customerId;
+                    balances.set(primaryDebtorId, (balances.get(primaryDebtorId) || 0) + (tx.billedAmount || 0));
+                } else if (tx.txType === 'Purchase') {
+                    const primaryCreditorId = tx.agentId || tx.supplierId;
+                    balances.set(primaryCreditorId, (balances.get(primaryCreditorId) || 0) - (tx.totalAmount || 0));
+                } else if (tx.txType === 'Receipt') {
+                    balances.set(tx.partyId, (balances.get(tx.partyId) || 0) - (tx.amount + (tx.cashDiscount || 0)));
+                } else if (tx.txType === 'Payment') {
+                    balances.set(tx.partyId, (balances.get(tx.partyId) || 0) + (tx.amount || 0));
+                } else if (tx.txType === 'PurchaseReturn') {
+                    const p = purchases.find(p => p.id === tx.originalPurchaseId);
+                    if (p) {
+                        const primaryCreditorId = p.agentId || p.supplierId;
+                        balances.set(primaryCreditorId, (balances.get(primaryCreditorId) || 0) + (tx.returnAmount || 0));
+                    }
+                } else if (tx.txType === 'SaleReturn') {
+                    const s = sales.find(s => s.id === tx.originalSaleId);
+                    if (s) {
+                        const primaryDebtorId = s.brokerId || s.customerId;
+                        balances.set(primaryDebtorId, (balances.get(primaryDebtorId) || 0) - (tx.returnAmount || 0));
+                    }
                 }
-             })
+            }
         });
 
-        payments.forEach(payment => {
-            partyBalances.set(payment.partyId, (partyBalances.get(payment.partyId) || 0) + payment.amount);
+        // 2. Process transactions within the financial year
+        allTransactionsSorted.forEach(tx => {
+            if (!isDateInFinancialYear(tx.date, financialYear)) return;
+
+            if (tx.txType === 'Sale') {
+                const primaryDebtorId = tx.brokerId || tx.customerId;
+                balances.set(primaryDebtorId, (balances.get(primaryDebtorId) || 0) + (tx.billedAmount || 0));
+
+                const brokerCommission = (tx.expenses || []).find(e => e.account === 'Broker Commission')?.amount || 0;
+                if (tx.brokerId && brokerCommission > 0) {
+                    balances.set(tx.brokerId, (balances.get(tx.brokerId) || 0) - brokerCommission);
+                }
+                
+            } else if (tx.txType === 'Purchase') {
+                const primaryCreditorId = tx.agentId || tx.supplierId;
+                balances.set(primaryCreditorId, (balances.get(primaryCreditorId) || 0) - (tx.totalAmount || 0));
+            } else if (tx.txType === 'Receipt') {
+                balances.set(tx.partyId, (balances.get(tx.partyId) || 0) - (tx.amount + (tx.cashDiscount || 0)));
+            } else if (tx.txType === 'Payment') {
+                balances.set(tx.partyId, (balances.get(tx.partyId) || 0) + (tx.amount || 0));
+            } else if (tx.txType === 'PurchaseReturn') {
+                const p = purchases.find(p => p.id === tx.originalPurchaseId);
+                if (p) {
+                    const primaryCreditorId = p.agentId || p.supplierId;
+                    balances.set(primaryCreditorId, (balances.get(primaryCreditorId) || 0) + (tx.returnAmount || 0));
+                }
+            } else if (tx.txType === 'SaleReturn') {
+                const s = sales.find(s => s.id === tx.originalSaleId);
+                if (s) {
+                    const primaryDebtorId = s.brokerId || s.customerId;
+                    balances.set(primaryDebtorId, (balances.get(primaryDebtorId) || 0) - (tx.returnAmount || 0));
+                }
+            } else if (tx.txType === 'LedgerEntry' && tx.partyId && tx.paymentMode === 'Pending') {
+                 balances.set(tx.partyId, (balances.get(tx.partyId) || 0) + (tx.debit - tx.credit));
+            }
+        });
+
+        const receivableParties: MasterItem[] = [];
+        const payableParties: MasterItem[] = [];
+
+        allMasters.forEach(party => {
+            const balance = balances.get(party.id);
+            if (balance === undefined) return;
+            
+            if (balance > 0.01) { 
+                receivableParties.push({ ...party, balance });
+            } else if (balance < -0.01) {
+                payableParties.push({ ...party, balance });
+            }
         });
         
-        const allParties: MasterItem[] = [...(masterData.Supplier || []), ...(masterData.Agent || []), ...(masterData.Transporter || [])];
+        receivableParties.sort((a,b) => Math.abs(b.balance || 0) - Math.abs(a.balance || 0));
+        payableParties.sort((a,b) => Math.abs(b.balance || 0) - Math.abs(a.balance || 0));
 
-        return allParties.map(party => ({
-            ...party,
-            balance: partyBalances.get(party.id) || 0
-        })).filter(p => p.balance < -1 || p.balance > 1);
+        return { receivableParties, payableParties, balances };
+    }, [isAppHydrating, financialYear, getAllMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger, isTransactionsLoaded]);
 
-    }, [purchases, payments, masterData.Supplier, masterData.Agent, masterData.Transporter]);
+    const getPartyName = (partyId: string) => {
+        const party = getAllMasters().find(p => p.id === partyId);
+        return party?.name || partyId;
+    }
 
-    return { receivableParties, payableParties };
-}
+    return {
+        receivableParties,
+        payableParties,
+        getPartyName,
+        balances,
+        isBalancesLoading: isAppHydrating || !isTransactionsLoaded
+    };
+};

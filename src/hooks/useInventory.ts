@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useTransactions } from './useTransactions';
 import type { AggregatedInventoryItem, Purchase, PurchaseReturn, Sale, SaleReturn, LocationTransfer, StockAdjustment, CostBreakdown } from '@/lib/types';
 import { FIXED_WAREHOUSES } from '@/lib/constants';
+import { parseISO } from 'date-fns';
 
 const KEY_SEPARATOR = '_$_';
 
@@ -93,7 +94,7 @@ export function useInventory(saleIdToExclude?: string) {
                 }
 
                 const sourceItem = inventory[sourceKey];
-                const transferExpensePerKg = item.netWeight > 0 ? (lt.totalTransferCost / item.netWeight) : 0;
+                const transferExpensePerKg = item.netWeight > 0 ? (lt.totalTransferCost / lt.items.reduce((sum, i) => sum + i.netWeight, 0)) : 0;
                 
                 if (!inventory[destKey]) {
                     inventory[destKey] = {
@@ -140,7 +141,8 @@ export function useInventory(saleIdToExclude?: string) {
             if (sale) {
                 const originalSaleItem = sale.items.find(i => i.lotNumber === sr.originalLotNumber);
                 if (originalSaleItem) {
-                    const key = `${FIXED_WAREHOUSES.MUMBAI_ID}${KEY_SEPARATOR}${sr.originalLotNumber}`; // Assuming returns go to mumbai
+                    const mumbaiWarehouse = Object.values(inventory).find(i => i.locationId === FIXED_WAREHOUSES.MUMBAI_ID);
+                    const key = `${mumbaiWarehouse?.locationId || FIXED_WAREHOUSES.MUMBAI_ID}${KEY_SEPARATOR}${sr.originalLotNumber}`;
                      if (inventory[key]) {
                         inventory[key].currentBags += sr.quantityReturned;
                         inventory[key].currentWeight += sr.netWeightReturned;
@@ -151,9 +153,10 @@ export function useInventory(saleIdToExclude?: string) {
 
         // 5. Subtract Sales
         sales.forEach(s => {
-            if (s.id === saleIdToExclude || s.isStockPaymentSale) return;
+            if (s.id === saleIdToExclude) return;
             s.items.forEach(item => {
-                 const key = `${FIXED_WAREHOUSES.MUMBAI_ID}${KEY_SEPARATOR}${item.lotNumber}`;
+                 const mumbaiWarehouse = Object.values(inventory).find(i => i.locationId === FIXED_WAREHOUSES.MUMBAI_ID);
+                 const key = `${mumbaiWarehouse?.locationId || FIXED_WAREHOUSES.MUMBAI_ID}${KEY_SEPARATOR}${item.lotNumber}`;
                  if (inventory[key]) {
                     inventory[key].currentBags -= item.quantity;
                     inventory[key].currentWeight -= item.netWeight;
