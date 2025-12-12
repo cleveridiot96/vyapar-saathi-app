@@ -16,6 +16,7 @@ import { CommandMenu } from '../command-menu';
 import { Sparkles } from 'lucide-react';
 import { LowStockThresholdSetting } from './LowStockThresholdSetting';
 import { FormatButton } from './FormatButton';
+import { useHydrated } from '@/hooks/useHydrated';
 
 
 export function AppHeaderContentInternal() {
@@ -23,6 +24,7 @@ export function AppHeaderContentInternal() {
   const router = useRouter();
   const { fontSize, setFontSize } = useSettings();
   const [commandMenuOpen, setCommandMenuOpen] = React.useState(false);
+  const isHydrated = useHydrated();
 
   const handleLogout = () => {
     // In a real app, this would involve clearing tokens, etc.
@@ -44,58 +46,66 @@ export function AppHeaderContentInternal() {
       <div className="flex flex-1 items-center gap-x-4 sm:gap-x-6">
         <SearchBar />
         <div className="ml-auto flex items-center gap-x-2 sm:gap-x-4">
-           <Link href="/financial-summary">
-            <Button variant="outline" className="hidden sm:flex">
-                <Landmark className="mr-2 h-4 w-4"/>
-                Financial Summary
-            </Button>
-          </Link>
-          <Button variant="ghost" size="icon" aria-label="Open Calculator" onClick={() => setIsCalculatorOpen(true)}>
-            <CalculatorIcon className="h-5 w-5 text-foreground" />
-          </Button>
-            <Button variant="outline" className="gap-2" onClick={() => setCommandMenuOpen(true)}>
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="hidden sm:inline">AI Assistant</span>
-                <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-                    <span className="text-xs">⌘</span>K
-                </kbd>
-            </Button>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Settings">
-                <SettingsIcon className="h-5 w-5 text-foreground" />
+           {isHydrated && (
+            <>
+              <Link href="/financial-summary">
+                <Button variant="outline" className="hidden sm:flex">
+                    <Landmark className="mr-2 h-4 w-4"/>
+                    Financial Summary
+                </Button>
+              </Link>
+              <Button variant="ghost" size="icon" aria-label="Open Calculator" onClick={() => setIsCalculatorOpen(true)}>
+                <CalculatorIcon className="h-5 w-5 text-foreground" />
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-4 space-y-4" align="end">
-              <div className="space-y-3">
-                  <Label className="text-sm font-medium text-foreground flex items-center gap-2">
-                    <Text className="h-4 w-4" /> Font Size
-                  </Label>
-                  <div className="flex items-center gap-4">
-                      <span className="text-xs">A</span>
-                      <Slider
-                          min={12}
-                          max={20}
-                          step={1}
-                          value={[fontSize]}
-                          onValueChange={(value) => setFontSize(value[0])}
-                      />
-                      <span className="text-xl">A</span>
+                <Button variant="outline" className="gap-2" onClick={() => setCommandMenuOpen(true)}>
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <span className="hidden sm:inline">AI Assistant</span>
+                    <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+                        <span className="text-xs">⌘</span>K
+                    </kbd>
+                </Button>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Settings">
+                    <SettingsIcon className="h-5 w-5 text-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4 space-y-4" align="end">
+                  <div className="space-y-3">
+                      <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Text className="h-4 w-4" /> Font Size
+                      </Label>
+                      <div className="flex items-center gap-4">
+                          <span className="text-xs">A</span>
+                          <Slider
+                              min={12}
+                              max={20}
+                              step={1}
+                              value={[fontSize]}
+                              onValueChange={(value) => setFontSize(value[0])}
+                          />
+                          <span className="text-xl">A</span>
+                      </div>
                   </div>
-              </div>
-              <LowStockThresholdSetting />
-              <FormatButton />
-            </PopoverContent>
-          </Popover>
-          <Button variant="ghost" size="icon" aria-label="Logout" onClick={handleLogout}>
-            <LogOut className="h-5 w-5 text-destructive" />
-          </Button>
+                  <LowStockThresholdSetting />
+                  <FormatButton />
+                </PopoverContent>
+              </Popover>
+              <Button variant="ghost" size="icon" aria-label="Logout" onClick={handleLogout}>
+                <LogOut className="h-5 w-5 text-destructive" />
+              </Button>
+            </>
+           )}
         </div>
       </div>
-
-       <Calculator isVisible={isCalculatorOpen} onClose={() => setIsCalculatorOpen(false)} />
-       <CommandMenu open={commandMenuOpen} setOpen={setCommandMenuOpen} />
+      
+       {isHydrated && (
+        <>
+            <Calculator isVisible={isCalculatorOpen} onClose={() => setIsCalculatorOpen(false)} />
+            <CommandMenu open={commandMenuOpen} setOpen={setCommandMenuOpen} />
+        </>
+       )}
 
     </header>
     </>

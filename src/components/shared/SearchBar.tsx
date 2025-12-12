@@ -10,6 +10,7 @@ import { format, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import type { FuseResult } from 'fuse.js';
+import { useHydrated } from '@/hooks/useHydrated';
 
 const HighlightedText: React.FC<{ text: string; indices: readonly [number, number][] | undefined }> = ({ text, indices }) => {
   if (!indices || indices.length === 0) {
@@ -41,6 +42,7 @@ const SearchBar = () => {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const commandRef = useRef<HTMLDivElement>(null);
+  const isHydrated = useHydrated();
   
   const { purchases, sales, payments, receipts, getAllMasters, locationTransfers, isTransactionsLoaded, isMasterDataLoaded } = useTransactions();
   
@@ -115,6 +117,17 @@ const SearchBar = () => {
       return { text: item.item.title, indices: undefined };
   };
 
+
+  if (!isHydrated) {
+    return (
+      <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md flex-shrink min-w-0">
+        <div className="relative rounded-md border border-input shadow-sm h-9 flex items-center px-3">
+           <SearchIcon className="h-5 w-5 text-muted-foreground" />
+           <span className="ml-2 text-muted-foreground text-sm">Search anything...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md flex-shrink min-w-0" ref={commandRef}>
