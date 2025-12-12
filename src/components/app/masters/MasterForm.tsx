@@ -22,7 +22,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import type { MasterItem, MasterItemType, Agent } from "@/lib/types";
+import type { MasterItem, MasterItemType, Agent, Broker } from "@/lib/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTransactions } from "@/hooks/useTransactions";
 
 interface MasterFormProps {
   isOpen: boolean;
@@ -34,7 +36,11 @@ interface MasterFormProps {
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
+  type: z.custom<MasterItemType>(),
   commission: z.coerce.number().optional(),
+  commissionType: z.enum(['Percentage', 'Fixed']).optional(),
+  openingBalance: z.coerce.number().optional(),
+  openingBalanceType: z.enum(['Dr', 'Cr']).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -43,47 +49,90 @@ export function MasterForm({
   isOpen,
   onClose,
   onSubmit,
-  itemType,
+  itemType: initialItemType,
   initialData,
 }: MasterFormProps) {
+
+  const { masterData } = useTransactions();
+  const [itemType, setItemType] = React.useState<MasterItemType>(initialData?.type || initialItemType);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: initialData?.name || "",
-      commission: (initialData as Agent)?.commission || undefined,
+      type: initialData?.type || initialItemType,
+      commission: (initialData as Agent | Broker)?.details?.commission || undefined,
+      commissionType: (initialData as Broker)?.details?.commissionType || 'Percentage',
+      openingBalance: initialData?.details?.openingBalance || undefined,
+      openingBalanceType: initialData?.details?.openingBalanceType || 'Dr',
     },
   });
   
   React.useEffect(() => {
+    const type = initialData?.type || initialItemType;
+    setItemType(type);
     form.reset({
       name: initialData?.name || "",
-      commission: (initialData as Agent)?.commission || undefined,
+      type: type,
+      commission: (initialData as Agent | Broker)?.details?.commission || undefined,
+      commissionType: (initialData as Broker)?.details?.commissionType || 'Percentage',
+      openingBalance: initialData?.details?.openingBalance || undefined,
+      openingBalanceType: initialData?.details?.openingBalanceType || 'Dr',
     });
-  }, [initialData, form]);
+  }, [initialData, initialItemType, form]);
 
   const handleSubmit = (values: FormValues) => {
     const itemData: MasterItem = {
       id: initialData?.id || `${itemType.toLowerCase()}-${Date.now()}`,
-      type: itemType,
+      type: values.type,
       name: values.name,
-      details: itemType === 'Agent' ? { commission: values.commission } : {},
+      details: {
+        ...(values.type === 'Agent' || values.type === 'Broker' ? { commission: values.commission, commissionType: values.commissionType } : {}),
+        openingBalance: values.openingBalance,
+        openingBalanceType: values.openingBalanceType,
+      },
     };
     onSubmit(itemData);
+    onClose();
   };
+  
+  const allMasterTypes = Object.keys(masterData) as MasterItemType[];
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {initialData ? "Edit" : "Add"} {itemType}
+            {initialData ? "Edit" : "Add"} Master Item
           </DialogTitle>
           <DialogDescription>
-            Fill in the details for the {itemType.toLowerCase()}.
+            Fill in the details for the master item.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+             <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Item Type</FormLabel>
+                    <Select onValueChange={(val: MasterItemType) => { field.onChange(val); setItemType(val); }} value={field.value}>
+                        <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select an item type" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {allMasterTypes.map(type => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
             <FormField
               control={form.control}
               name="name"
@@ -97,21 +146,79 @@ export function MasterForm({
                 </FormItem>
               )}
             />
-            {itemType === 'Agent' && (
-              <FormField
-                control={form.control}
-                name="commission"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Commission (%)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="Enter commission rate" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
+            {(itemType === 'Agent' || itemType === 'Broker') && (
+              <div className="grid grid-cols-2 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="commission"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Commission</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 1.5" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {itemType === 'Broker' && (
+                    <FormField
+                      control={form.control}
+                      name="commissionType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Commission Type</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                             <FormControl><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger></FormControl>
+                             <SelectContent>
+                                <SelectItem value="Percentage">Percentage (%)</SelectItem>
+                                <SelectItem value="Fixed">Fixed (₹)</SelectItem>
+                              </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+              </div>
             )}
+            
+            {(['Supplier', 'Customer', 'Agent', 'Broker'].includes(itemType)) && (
+               <div className="grid grid-cols-2 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="openingBalance"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Opening Balance (₹)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                      control={form.control}
+                      name="openingBalanceType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Balance Type</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                             <FormControl><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger></FormControl>
+                             <SelectContent>
+                                <SelectItem value="Dr">Debit (Receivable)</SelectItem>
+                                <SelectItem value="Cr">Credit (Payable)</SelectItem>
+                              </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+              </div>
+            )}
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel

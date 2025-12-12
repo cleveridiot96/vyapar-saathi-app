@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -124,6 +123,26 @@ export default function PurchasesPage() {
   } | null>(null);
 
   const [activeTab, setActiveTab] = React.useState("purchases");
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.altKey && e.key.toLowerCase() === 'n') {
+            e.preventDefault();
+            const activeElement = document.activeElement;
+            if (activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement.tagName)) {
+                return;
+            }
+            if(activeTab === 'purchases') {
+              openAddPurchaseForm();
+            } else {
+              openAddPurchaseReturnForm();
+            }
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab]);
+
 
   const filteredPurchases = React.useMemo(() => {
     if (isAppHydrating || !isTransactionsLoaded) return [];
