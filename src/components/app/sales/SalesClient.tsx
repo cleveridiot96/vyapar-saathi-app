@@ -20,13 +20,12 @@ import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useTransactions } from "@/hooks/useTransactions";
-import type { Sale, SaleReturn, MasterItem, MasterItemType } from "@/lib/types";
+import type { Sale, SaleReturn, MasterItem } from "@/lib/types";
 import { SaleTable } from "@/components/app/sales/SaleTable";
 import { AddSaleForm } from "@/components/app/sales/AddSaleForm";
 import { SaleChittiPrint } from "@/components/app/sales/SaleChittiPrint";
 import { AddSaleReturnForm } from "@/components/app/sales/AddSaleReturnForm";
 import { SaleReturnTable } from "@/components/app/sales/SaleReturnTable";
-import { useMasterData } from "@/hooks/useMasterData";
 import { renderToStaticMarkup } from 'react-dom/server';
 
 
@@ -84,8 +83,7 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 export function SalesClient() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
-  const { sales, saleReturns, setSales, setSaleReturns, isTransactionsLoaded } = useTransactions();
-  const { addOrUpdateMaster } = useMasterData();
+  const { sales, saleReturns, setSales, setSaleReturns, isTransactionsLoaded, addOrUpdateMaster } = useTransactions();
 
   const [isAddSaleFormOpen, setIsAddSaleFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
@@ -97,6 +95,27 @@ export function SalesClient() {
   
   const [activeTab, setActiveTab] = React.useState('sales');
   
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.altKey && e.key.toLowerCase() === 'n') {
+            e.preventDefault();
+            const activeElement = document.activeElement;
+            if (activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement.tagName)) {
+                return;
+            }
+            if(activeTab === 'sales') {
+              setSaleToEdit(null);
+              setIsAddSaleFormOpen(true);
+            } else {
+              setSaleReturnToEdit(null);
+              setIsAddSaleReturnFormOpen(true);
+            }
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab]);
+
   const filteredSales = React.useMemo(() => {
     if (isAppHydrating || !isTransactionsLoaded) return [];
     return sales.filter(sale => sale && sale.date && isDateInFinancialYear(sale.date, financialYear) && !sale.isStockPaymentSale);
