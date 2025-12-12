@@ -25,6 +25,7 @@ const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+const INACTIVITY_TIMEOUT = 5000; // 5 seconds
 
 type SidebarContext = {
   state: "expanded" | "collapsed"
@@ -69,9 +70,8 @@ const SidebarProvider = React.forwardRef<
   ) => {
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
+    const inactivityTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
-    // This is the internal state of the sidebar.
-    // We use openProp and setOpenProp for control from outside the component.
     const [_open, _setOpen] = React.useState(defaultOpen)
     const open = openProp ?? _open
     const setOpen = React.useCallback(
@@ -82,21 +82,45 @@ const SidebarProvider = React.forwardRef<
         } else {
           _setOpen(openState)
         }
-
-        // This sets the cookie to keep the sidebar state.
         document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
       },
       [setOpenProp, open]
     )
 
-    // Helper to toggle the sidebar.
+    const resetInactivityTimer = React.useCallback(() => {
+        if (inactivityTimerRef.current) {
+            clearTimeout(inactivityTimerRef.current);
+        }
+        inactivityTimerRef.current = setTimeout(() => {
+            if (open && !isMobile) {
+                setOpen(false);
+            }
+        }, INACTIVITY_TIMEOUT);
+    }, [open, isMobile, setOpen]);
+
+    React.useEffect(() => {
+        const events = ['mousemove', 'keydown', 'mousedown', 'touchstart'];
+        const handleActivity = () => resetInactivityTimer();
+
+        events.forEach(event => window.addEventListener(event, handleActivity));
+        resetInactivityTimer();
+
+        return () => {
+            if (inactivityTimerRef.current) {
+                clearTimeout(inactivityTimerRef.current);
+            }
+            events.forEach(event => window.removeEventListener(event, handleActivity));
+        };
+    }, [resetInactivityTimer]);
+
+
     const toggleSidebar = React.useCallback(() => {
+      resetInactivityTimer();
       return isMobile
         ? setOpenMobile((open) => !open)
         : setOpen((open) => !open)
-    }, [isMobile, setOpen, setOpenMobile])
+    }, [isMobile, setOpen, setOpenMobile, resetInactivityTimer])
 
-    // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
         if (
@@ -112,8 +136,6 @@ const SidebarProvider = React.forwardRef<
       return () => window.removeEventListener("keydown", handleKeyDown)
     }, [toggleSidebar])
 
-    // We add a state so that we can do data-state="expanded" or "collapsed".
-    // This makes it easier to style the sidebar with Tailwind classes.
     const state = open ? "expanded" : "collapsed"
 
     const contextValue = React.useMemo<SidebarContext>(
