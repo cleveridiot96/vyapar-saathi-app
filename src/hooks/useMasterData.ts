@@ -27,7 +27,7 @@ const initialMasterData: Record<MasterItemType, MasterItem[]> = {
         { id: 'exp3', type: 'Expense', name: 'Commission' },
     ],
     Product: [
-        { id: 'prod1', type: 'Product', name 'Arecanut' },
+        { id: 'prod1', type: 'Product', name: 'Arecanut' },
     ]
 };
 
