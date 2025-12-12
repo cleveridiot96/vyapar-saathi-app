@@ -3,11 +3,12 @@
 import { useMemo } from 'react';
 import { useTransactions } from './useTransactions';
 import type { AggregatedInventoryItem, Purchase, PurchaseReturn, Sale, SaleReturn, LocationTransfer, StockAdjustment, CostBreakdown } from '@/lib/types';
+import { FIXED_WAREHOUSES } from '@/lib/constants';
 
 const KEY_SEPARATOR = '_$_';
 
 export function useInventory(saleIdToExclude?: string) {
-    const { purchases, purchaseReturns, sales, locationTransfers, adjustments, isTransactionsLoaded } = useTransactions();
+    const { purchases, purchaseReturns, sales, saleReturns, locationTransfers, adjustments, isTransactionsLoaded } = useTransactions();
 
     const allAggregatedInventory = useMemo(() => {
         if (!isTransactionsLoaded) return [];
@@ -167,7 +168,7 @@ export function useInventory(saleIdToExclude?: string) {
 
         return Object.values(inventory);
 
-    }, [purchases, purchaseReturns, sales, locationTransfers, adjustments, isTransactionsLoaded, saleIdToExclude]);
+    }, [purchases, purchaseReturns, sales, saleReturns, locationTransfers, adjustments, isTransactionsLoaded, saleIdToExclude]);
 
     const availableStock = useMemo(() => allAggregatedInventory.filter(item => item.currentBags > 0.01), [allAggregatedInventory]);
 
