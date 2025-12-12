@@ -37,7 +37,7 @@ export function SidebarNav() {
         <SidebarMenu>
           {features.map((feature) => (
             <SidebarMenuItem key={feature.href}>
-              <Link href={feature.href} passHref legacyBehavior>
+              <Link href={feature.href} passHref>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname.startsWith(feature.href)}

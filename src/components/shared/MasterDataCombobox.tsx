@@ -30,6 +30,7 @@ interface MasterDataComboboxProps {
   addNewLabel?: string;
   onAddNew?: () => void;
   onEdit?: (id: string) => void;
+  className?: string;
 }
 
 export function MasterDataCombobox({
@@ -42,6 +43,7 @@ export function MasterDataCombobox({
   addNewLabel,
   onAddNew,
   onEdit,
+  className,
 }: MasterDataComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const selectedOption = options.find((option) => option.value === value);
@@ -49,7 +51,7 @@ export function MasterDataCombobox({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className="relative">
+        <div className={cn("relative", className)}>
           <Button
             variant="outline"
             role="combobox"
