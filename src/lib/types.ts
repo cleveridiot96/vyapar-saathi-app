@@ -9,10 +9,12 @@ export interface MasterItem {
 
 export interface Agent extends MasterItem {
     type: 'Agent';
-    commission?: number;
+    details: {
+      commission?: number;
+    }
 }
 
-export interface Expense {
+export interface ExpenseItem {
   id: string;
   account: string;
   amount: number;
@@ -28,7 +30,6 @@ export interface PurchaseItem {
   quantity: number;
   netWeight: number;
   rate: number;
-  amount: number;
   goodsValue: number;
   landedCostPerKg: number;
 }
@@ -45,7 +46,7 @@ export interface Purchase {
   locationId: string;
   locationName: string;
   items: PurchaseItem[];
-  expenses?: Expense[];
+  expenses?: ExpenseItem[];
   totalGoodsValue: number;
   totalQuantity: number;
   totalNetWeight: number;
@@ -56,10 +57,16 @@ export interface Purchase {
 export interface PurchaseReturn {
   id: string;
   date: string;
-  supplierName: string;
-  supplierId: string;
-  items: PurchaseItem[];
-  totalAmount: number;
+  originalPurchaseId: string;
+  originalLotNumber: string;
+  originalSupplierId: string;
+  originalSupplierName: string;
+  originalPurchaseRate: number;
+  quantityReturned: number;
+  netWeightReturned: number;
+  returnAmount: number;
+  returnReason?: string;
+  notes?: string;
 }
 
 export interface SaleItem {
@@ -89,7 +96,7 @@ export type LedgerEntry = {
   account: string;
   debit: number;
   credit: number;
-  paymentMode: 'Cash' | 'Bank';
+  paymentMode: 'Cash' | 'Bank' | 'Pending';
   party: string;
   partyId?: string;
   relatedVoucher: string;

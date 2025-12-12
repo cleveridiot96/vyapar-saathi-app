@@ -27,7 +27,7 @@ import { CalendarIcon, Info, PlusCircle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { purchaseSchema, type PurchaseFormValues } from "@/lib/schemas/purchaseSchema";
-import type { MasterItem, Purchase, MasterItemType, Expense } from "@/lib/types";
+import type { MasterItem, Purchase, MasterItemType, Agent, ExpenseItem } from "@/lib/types";
 import { useMasterData } from "@/hooks/useMasterData";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { useToast } from "@/hooks/use-toast";
@@ -94,31 +94,31 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   const { control, watch, setValue, handleSubmit: formHandleSubmit, formState: { errors }, reset } = formMethods;
 
   React.useEffect(() => {
-    const defaultVals = purchaseToEdit
-    ? {
-        date: new Date(purchaseToEdit.date),
-        locationId: purchaseToEdit.locationId,
-        supplierId: purchaseToEdit.supplierId,
-        agentId: purchaseToEdit.agentId || undefined,
-        transporterId: purchaseToEdit.transporterId || undefined,
-        items: purchaseToEdit.items.map(item => ({
-            lotNumber: item.lotNumber,
-            quantity: item.quantity,
-            netWeight: item.netWeight,
-            rate: item.rate
-        })),
-        expenses: purchaseToEdit.expenses || [],
-      }
-    : {
-        date: new Date(),
-        locationId: undefined,
-        supplierId: undefined,
-        agentId: undefined,
-        transporterId: undefined,
-        items: [{ lotNumber: "", quantity: undefined, netWeight: undefined, rate: undefined }],
-        expenses: [],
-      };
-    reset(defaultVals);
+    reset(purchaseToEdit
+      ? {
+          date: new Date(purchaseToEdit.date),
+          locationId: purchaseToEdit.locationId,
+          supplierId: purchaseToEdit.supplierId,
+          agentId: purchaseToEdit.agentId || undefined,
+          transporterId: purchaseToEdit.transporterId || undefined,
+          items: purchaseToEdit.items.map(item => ({
+              lotNumber: item.lotNumber,
+              quantity: item.quantity,
+              netWeight: item.netWeight,
+              rate: item.rate
+          })),
+          expenses: purchaseToEdit.expenses || [],
+        }
+      : {
+          date: new Date(),
+          locationId: undefined,
+          supplierId: undefined,
+          agentId: undefined,
+          transporterId: undefined,
+          items: [{ lotNumber: "", quantity: undefined, netWeight: undefined, rate: undefined }],
+          expenses: [],
+        }
+    )
   }, [isOpen, purchaseToEdit, reset]);
 
 
@@ -145,7 +145,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
         return { ...item, goodsValue };
     });
 
-    const totalExpenses = (formExpenses || []).reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
+    const totalExpenses = (formExpenses || []).reduce((sum, exp) => sum + (exp.amount || 0), 0);
     const totalAmount = totalGoodsValue + totalExpenses;
     const expensesPerKg = totalNetWeight > 0 ? totalExpenses / totalNetWeight : 0;
     
@@ -199,8 +199,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     const totalAmount = Math.round(summary.totalAmount);
     const effectiveRate = summary.totalNetWeight > 0 ? totalAmount / summary.totalNetWeight : 0;
 
-    const purchaseData: Omit<Purchase, 'id'> & { id?: string } = {
-      id: purchaseToEdit?.id,
+    const purchaseData: Purchase = {
+      id: purchaseToEdit?.id || `purchase-${Date.now()}`,
       date: format(values.date, "yyyy-MM-dd"),
       locationId: values.locationId as string,
       locationName: (warehouses || []).find(w => w.id === values.locationId)?.name || '',
@@ -213,11 +213,10 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
       items: summary.itemsWithLandedCost.map(item => ({
         id: `pitem-${Date.now()}-${Math.random()}`,
         lotNumber: item.lotNumber,
-        category: 'default', // Add a default or derived category
+        category: 'default',
         quantity: Math.round(item.quantity || 0),
         netWeight: item.netWeight || 0,
         rate: item.rate || 0,
-        amount: Math.round(item.goodsValue || 0),
         goodsValue: Math.round(item.goodsValue || 0),
         landedCostPerKg: item.landedCostPerKg,
       })),
@@ -225,14 +224,14 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
         ...exp,
         id: `exp-${Date.now()}-${Math.random()}`,
         partyName: getAllMasters().find(p => p.id === exp.partyId)?.name || exp.partyName,
-      })),
+      })) as ExpenseItem[],
       totalGoodsValue: Math.round(summary.totalGoodsValue),
       totalQuantity: Math.round(summary.totalQuantity),
       totalNetWeight: summary.totalNetWeight,
       totalAmount,
       effectiveRate,
     };
-    onSubmit(purchaseData as Purchase);
+    onSubmit(purchaseData);
     setIsSubmitting(false);
     onClose();
   }, [summary, purchaseToEdit, warehouses, suppliers, agents, transporters, getAllMasters, onSubmit, onClose]);
@@ -259,11 +258,11 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                                   <FormLabel>PURCHASE DATE</FormLabel>
                                   <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}><PopoverTrigger asChild><FormControl>
                                       <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                          {field.value ? format(new Date(field.value), "dd/MM/yy") : <span>PICK A DATE</span>}
+                                          {field.value ? format(field.value, "dd/MM/yy") : <span>PICK A DATE</span>}
                                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                       </Button></FormControl></PopoverTrigger>
                                   <PopoverContent className="w-auto p-0" align="start">
-                                      <Calendar mode="single" selected={field.value ? new Date(field.value): undefined} onSelect={(date) => { if(date) field.onChange(date); setIsDatePickerOpen(false); }} disabled={(date) => date > new Date()} initialFocus />
+                                      <Calendar mode="single" selected={field.value} onSelect={(date) => { if(date) field.onChange(date); setIsDatePickerOpen(false); }} disabled={(date) => date > new Date()} initialFocus />
                                   </PopoverContent>
                                   </Popover><FormMessage />
                               </FormItem>)} />
