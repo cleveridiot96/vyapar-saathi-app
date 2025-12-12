@@ -1,8 +1,22 @@
+export type MasterItemType = "Supplier" | "Customer" | "Agent" | "Warehouse" | "Transporter" | "Expense" | "Product";
+
+export interface MasterItem {
+  id: string;
+  type: MasterItemType;
+  name: string;
+  details?: Record<string, any>;
+}
+
+export interface Agent extends MasterItem {
+    type: 'Agent';
+    commission?: number;
+}
+
 export interface Expense {
   id: string;
   account: string;
   amount: number;
-  paymentMode: 'Cash' | 'Bank';
+  paymentMode: 'Cash' | 'Bank' | 'Pending';
   partyName?: string;
   partyId?: string;
 }
@@ -12,8 +26,11 @@ export interface PurchaseItem {
   lotNumber: string;
   category: string;
   quantity: number;
+  netWeight: number;
   rate: number;
   amount: number;
+  goodsValue: number;
+  landedCostPerKg: number;
 }
 
 export interface Purchase {
@@ -21,9 +38,19 @@ export interface Purchase {
   date: string;
   supplierName: string;
   supplierId: string;
+  agentId?: string;
+  agentName?: string;
+  transporterId?: string;
+  transporterName?: string;
+  locationId: string;
+  locationName: string;
   items: PurchaseItem[];
   expenses?: Expense[];
+  totalGoodsValue: number;
+  totalQuantity: number;
+  totalNetWeight: number;
   totalAmount: number;
+  effectiveRate: number;
 }
 
 export interface PurchaseReturn {
