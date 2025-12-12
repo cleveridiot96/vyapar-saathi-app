@@ -27,15 +27,14 @@ import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { paymentSchema, type PaymentFormValues } from "@/lib/schemas/paymentSchema";
-import type { MasterItem, Payment, MasterItemType, Purchase, AggregatedInventoryItem } from "@/lib/types";
+import type { MasterItem, Payment, MasterItemType, Purchase } from "@/lib/types";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { MasterForm } from "@/components/app/masters/MasterForm";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@/components/ui/command";
 import { useInventory } from "@/hooks/useInventory";
 
 interface AddPaymentFormProps {
@@ -91,7 +90,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
           againstPurchases: []
         },
   });
-  const { control, handleSubmit, reset, watch } = methods;
+  const { control, handleSubmit, watch } = methods;
   const { fields: stockItemFields, append: appendStockItem, remove: removeStockItem } = useFieldArray({ control, name: "stockItems" });
 
   const watchedPaymentType = watch('paymentType');
@@ -113,7 +112,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
 
   const handleMasterFormSubmit = (newItem: MasterItem) => {
     onMasterDataUpdate(newItem);
-    if (newItem.type === "Supplier" || newItem.type === "Agent" || newItem.type === "Transporter") { 
+    if (["Supplier", "Agent", "Transporter"].includes(newItem.type)) { 
         methods.setValue('partyId', newItem.id, { shouldValidate: true });
     }
     setIsMasterFormOpen(false);
@@ -167,7 +166,6 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
             </DialogDescription>
           </DialogHeader>
           <FormProvider {...methods}>
-            <Form {...methods}>
               <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto p-1 pr-3">
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField control={control} name="date" render={({ field }) => (
@@ -267,13 +265,12 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
                   </FormItem>)}
                 />
                 <DialogFooter className="pt-4">
-                  <DialogClose asChild><Button type="button" variant="outline" onClick={() => { onClose();}}>Cancel</Button></DialogClose>
+                  <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
                   <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? (paymentToEdit ? "Saving..." : "Adding...") : (paymentToEdit ? "Save Changes" : "Add Payment")}
                   </Button>
                 </DialogFooter>
               </form>
-            </Form>
           </FormProvider>
         </DialogContent>
       </Dialog>

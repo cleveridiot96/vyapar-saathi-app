@@ -378,7 +378,7 @@ export const AddReceiptForm: React.FC<AddReceiptFormProps> = ({
                   </FormItem>)}
                 />
                 <DialogFooter className="pt-4">
-                  <DialogClose asChild><Button type="button" variant="outline" onClick={() => { onClose();}}>Cancel</Button></DialogClose>
+                  <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
                   <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? (receiptToEdit ? "Saving..." : "Adding...") : (receiptToEdit ? "Save Changes" : "Add Receipt")}
                   </Button>

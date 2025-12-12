@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
 import { format, parseISO, startOfDay, endOfDay, isWithinInterval, subMonths, subDays, startOfMonth } from "date-fns";
-import { BookOpen, PlusCircle } from "lucide-react";
+import { BookOpen, PlusCircle, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { AddPaymentForm } from "@/components/app/payments/AddPaymentForm";
@@ -215,6 +215,10 @@ export function CashbookClient() {
               <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('yesterday')}>Yesterday</Button>
               <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('dayBeforeYesterday')}>
                   {format(subDays(new Date(), 2), 'EEEE')}
+              </Button>
+               <Button variant="outline" size="icon" onClick={() => window.print()}>
+                  <Printer className="h-5 w-5" />
+                  <span className="sr-only">Print</span>
               </Button>
             </div>
           </div>

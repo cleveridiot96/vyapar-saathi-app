@@ -63,7 +63,7 @@ export const AddSaleForm: React.FC<AddSaleFormProps> = ({
   onMasterDataUpdate,
 }) => {
   const { toast } = useToast();
-  const { data: masterData, addOrUpdateMaster, getAllMasters } = useMasterData();
+  const { data: masterData, getAllMasters } = useMasterData();
   const { Customer: customers, Transporter: transporters, Broker: brokers, Expense: expenses, Warehouse: warehouses } = masterData || {};
   const { availableStock } = useInventory(saleToEdit?.id);
 
@@ -110,7 +110,7 @@ export const AddSaleForm: React.FC<AddSaleFormProps> = ({
     mode: 'onChange',
   });
   
-  const { control, watch, reset, setValue, handleSubmit, formState: { errors } } = formMethods;
+  const { control, watch, setValue, handleSubmit, formState: { errors } } = formMethods;
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const { fields: expenseFields, append: appendExpense, remove: removeExpense } = useFieldArray({ control, name: "expenses" });
@@ -327,7 +327,7 @@ export const AddSaleForm: React.FC<AddSaleFormProps> = ({
               costBreakdown: stock?.costBreakdown,
           };
       }),
-      expenses: values.expenses?.map(exp => ({ ...exp, id: `exp-${Date.now()}-${Math.random()}`, partyName: exp.partyName || 'Self' })),
+      expenses: values.expenses?.map(exp => ({ ...exp, id: exp.id || `exp-${Date.now()}-${Math.random()}`, partyName: exp.partyName || 'Self' })),
       totalGoodsValue: Math.round(summary.totalGoodsValue),
       billedAmount: Math.round(summary.billedAmount),
       cbAmount: values.cbAmount,
@@ -532,7 +532,7 @@ export const AddSaleForm: React.FC<AddSaleFormProps> = ({
                             </div>
                           );
                         })}
-                      <Button type="button" variant="outline" size="sm" onClick={() => appendExpense({ id: `exp-${Date.now()}`, account: undefined, amount: undefined, paymentMode: "Auto-adjusted", partyName: "Self" })} className="mt-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => appendExpense({ id: `exp-${Date.now()}`, account: '', amount: 0, paymentMode: "Auto-adjusted" })} className="mt-2">
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Expense Row
                       </Button>
                   </div>
@@ -628,3 +628,5 @@ export const AddSaleForm: React.FC<AddSaleFormProps> = ({
     </>
   );
 };
+
+export const AddSaleForm = React.memo(AddSaleFormComponent);

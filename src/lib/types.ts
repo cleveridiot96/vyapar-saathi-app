@@ -164,8 +164,7 @@ export interface LocationTransfer {
     toLocationId: string;
     toLocationName: string;
     items: LocationTransferItem[];
-    transportCost?: number;
-    otherExpenses?: number;
+    transporterId?: string;
     totalTransferCost: number;
     notes?: string;
     expenses?: ExpenseItem[];

@@ -22,7 +22,7 @@ export const LocationTransferSlipPrint: React.FC<LocationTransferSlipPrintProps>
         <h1 className="text-xl font-bold mt-1">Location Transfer Slip</h1>
       </div>
 
-      <div className="flex-between mb-2">
+      <div className="flex justify-between mb-2">
         <span>Date: <strong>{format(parseISO(transfer.date), "dd/MM/yy")}</strong></span>
         <span>Transfer ID: <strong>{transfer.id.slice(-6).toUpperCase()}</strong></span>
       </div>
@@ -62,7 +62,7 @@ export const LocationTransferSlipPrint: React.FC<LocationTransferSlipPrintProps>
       </table>
       
        {totalExpenses > 0 && (
-         <div className="mt-4 text-xs font-bold flex-between">
+         <div className="mt-4 text-xs font-bold flex justify-between">
            <span>Total Transfer Charges:</span>
            <span>₹{totalExpenses.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
          </div>
@@ -74,7 +74,7 @@ export const LocationTransferSlipPrint: React.FC<LocationTransferSlipPrintProps>
         </div>
       )}
       
-      <div className="mt-8 pt-8 flex-between text-xs">
+      <div className="mt-8 pt-8 flex justify-between text-xs">
         <div>
           <p>Dispatched By Signature</p>
           <p className="mt-8 border-t border-gray-400 pt-1">____________________</p>

@@ -34,6 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { useInventory } from "@/hooks/useInventory";
 import { z } from "zod";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface AddLocationTransferFormProps {
   isOpen: boolean;
@@ -82,8 +83,14 @@ export const AddLocationTransferForm: React.FC<AddLocationTransferFormProps> = (
           date: new Date(transferToEdit.date),
           fromLocationId: transferToEdit.fromLocationId,
           toLocationId: transferToEdit.toLocationId,
-          transporterId: transferToEdit.transportCost ? 'transporter-manual' : undefined,
-          items: transferToEdit.items,
+          transporterId: transferToEdit.transporterId || undefined,
+          items: transferToEdit.items.map(i => ({
+            originalLotNumber: i.originalLotNumber,
+            newLotNumber: i.newLotNumber,
+            quantity: i.quantity,
+            netWeight: i.netWeight,
+            costOfGoods: i.costOfGoods,
+          })),
           expenses: transferToEdit.expenses || [],
           notes: transferToEdit.notes || "",
         }
@@ -105,7 +112,6 @@ export const AddLocationTransferForm: React.FC<AddLocationTransferFormProps> = (
 
     const fromLocation = warehouses.find(w => w.id === values.fromLocationId);
     const toLocation = warehouses.find(w => w.id === values.toLocationId);
-    const transporter = transporters.find(t => t.id === values.transporterId);
 
     const totalExpenses = values.expenses?.reduce((sum, exp) => sum + exp.amount, 0) || 0;
 
@@ -116,11 +122,11 @@ export const AddLocationTransferForm: React.FC<AddLocationTransferFormProps> = (
       fromLocationName: fromLocation?.name || 'Unknown',
       toLocationId: values.toLocationId,
       toLocationName: toLocation?.name || 'Unknown',
-      items: values.items,
+      items: values.items.map(i => ({...i, id: `lti-${Math.random()}`})),
       totalTransferCost: totalExpenses,
       notes: values.notes,
       expenses: values.expenses,
-      transportCost: values.expenses?.find(e => e.account === 'Transport')?.amount,
+      transporterId: values.transporterId,
     };
     
     onSubmit(transferData);

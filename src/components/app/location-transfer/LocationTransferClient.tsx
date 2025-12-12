@@ -192,8 +192,8 @@ export function LocationTransferClient() {
     expandedTransfers.forEach(transfer => {
         totalBags += transfer.item.quantity;
         totalWeight += transfer.item.netWeight;
-        const perKgExpense = (transfer.totalTransferCost && totalWeight > 0) ? transfer.totalTransferCost / totalWeight : 0;
         const stockItem = availableStock.find(s => s.lotNumber === transfer.item.originalLotNumber);
+        const perKgExpense = (transfer.totalTransferCost && totalWeight > 0) ? transfer.totalTransferCost / totalWeight : 0;
         const finalLandedCost = (stockItem?.effectiveRate || 0) + perKgExpense;
         totalValue += finalLandedCost * transfer.item.netWeight;
     });

@@ -47,7 +47,7 @@ export function ReceiptsClient() {
 
     setReceiptToEdit(null);
     setIsAddReceiptFormOpen(false);
-    toast({ title: "Success!", description: receipts.some(r => r.id === receipt.id) ? "Receipt updated successfully." : "Receipt added successfully." });
+    toast({ title: "Success!", description: isEditing ? "Receipt updated successfully." : "Receipt added successfully." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
   }, [receipts, setReceipts, toast]); 
 
