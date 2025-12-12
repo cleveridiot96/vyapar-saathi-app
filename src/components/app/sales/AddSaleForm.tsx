@@ -622,11 +622,9 @@ export const AddSaleForm: React.FC<AddSaleFormProps> = ({
             onClose={() => { setIsMasterFormOpen(false); setMasterItemToEdit(null); }} 
             onSubmit={handleMasterFormSubmit}
             initialData={masterItemToEdit}
-            itemType={masterFormItemType!}
+            itemTypeFromButton={masterFormItemType!}
         />
       )}
     </>
   );
 };
-
-export const AddSaleForm = React.memo(AddSaleFormComponent);
