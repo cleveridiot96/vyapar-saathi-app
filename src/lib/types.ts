@@ -205,6 +205,9 @@ export interface Receipt {
   againstBills?: {
       billId: string;
       amount: number;
+      billDate?: string;
+      billTotal?: number;
+      billVakkal?: string;
   }[];
   source?: string;
   notes?: string;
@@ -231,9 +234,11 @@ export type LedgerEntry = {
 };
 
 export interface AggregatedInventoryItem {
+    key: string;
     lotNumber: string;
     originalBags: number;
     currentBags: number;
+    currentWeight: number;
     purchaseRate: number;
     effectiveRate: number;
     locationId: string;
@@ -241,5 +246,28 @@ export interface AggregatedInventoryItem {
     supplierName: string;
     purchaseDate: string;
     averageWeightPerBag: number;
-    costBreakdown?: CostBreakdown;
+    costBreakdown: CostBreakdown;
+    cogs: number;
 }
+
+export interface StockAdjustment {
+  id: string;
+  date: string;
+  lotNumber: string;
+  locationId: string;
+  locationName: string;
+  bags: number; // can be negative for reduction
+  weight: number; // can be negative for reduction
+  type: 'Correction' | 'Wastage' | 'Theft' | 'Reversal' | 'Initial Stock';
+  reason: string;
+}
+
+export interface SearchableItem {
+  id: string;
+  type: 'Sale' | 'Purchase' | 'Payment' | 'Receipt' | 'Lot' | 'Party' | 'Transfer';
+  title: string;
+  description: string;
+  date?: string;
+  href: string;
+}
+

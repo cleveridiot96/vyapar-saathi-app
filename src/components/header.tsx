@@ -6,9 +6,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { features } from "@/lib/features";
 import { CommandMenu } from "@/components/command-menu";
-import { Bot, Sparkles } from "lucide-react";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { Sparkles } from "lucide-react";
 
 export function Header() {
   const pathname = usePathname();
@@ -32,6 +30,7 @@ export function Header() {
                     <span className="text-xs">⌘</span>K
                 </kbd>
             </Button>
+            <SidebarTrigger />
         </div>
       </header>
       <CommandMenu open={commandMenuOpen} setOpen={setCommandMenuOpen} />
