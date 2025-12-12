@@ -33,7 +33,8 @@ export function AppHeaderContentInternal() {
     <>
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
        <SidebarTrigger className="sm:hidden" />
-        <div className="hidden sm:flex items-center gap-2">
+        <div className="flex items-center gap-2">
+            <SidebarTrigger className="hidden sm:flex" />
             <Link href="/dashboard" aria-label="Dashboard">
               <Button variant="ghost" size="icon" aria-label="Home">
                 <Home className="h-5 w-5 text-foreground" />
@@ -90,7 +91,6 @@ export function AppHeaderContentInternal() {
           <Button variant="ghost" size="icon" aria-label="Logout" onClick={handleLogout}>
             <LogOut className="h-5 w-5 text-destructive" />
           </Button>
-           <SidebarTrigger className="hidden sm:flex" />
         </div>
       </div>
 
