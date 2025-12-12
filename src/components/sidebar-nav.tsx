@@ -38,16 +38,15 @@ export function SidebarNav() {
         <SidebarMenu>
           {features.map((feature) => (
             <SidebarMenuItem key={feature.href}>
-              <SidebarMenuButton
-                isActive={pathname.startsWith(feature.href)}
-                tooltip={feature.title}
-                className="p-0"
-              >
-                <Link href={feature.href} className="flex h-full w-full items-center gap-2 p-2">
-                  <feature.icon />
-                  <span>{feature.title}</span>
-                </Link>
-              </SidebarMenuButton>
+              <Link href={feature.href} passHref>
+                  <SidebarMenuButton
+                    isActive={pathname.startsWith(feature.href)}
+                    tooltip={feature.title}
+                  >
+                    <feature.icon />
+                    <span>{feature.title}</span>
+                  </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
