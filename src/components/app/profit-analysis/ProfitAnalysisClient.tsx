@@ -5,16 +5,31 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import { useTransactions } from '@/hooks/useTransactions';
 import type { Sale } from '@/lib/types';
-import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, eachMonthOfInterval, getYear } from "date-fns";
+import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, eachMonthOfInterval, getYear, subMonths, subWeeks, startOfYear, endOfDay } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PieChart, TrendingUp, TrendingDown, DollarSign, Calculator } from "lucide-react";
 import { MasterDataCombobox } from '@/components/shared/MasterDataCombobox';
+import { Button } from '@/components/ui/button';
 
 export function ProfitAnalysisClient() {
     const { sales, isTransactionsLoaded } = useTransactions();
     const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: startOfMonth(new Date()), to: new Date() });
     const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+
+    const setDatePreset = (preset: 'ytd' | '6m' | '3m' | '1m' | '1w' | 'today') => {
+      const to = endOfDay(new Date());
+      let from;
+      switch (preset) {
+          case 'ytd': from = startOfYear(to); break;
+          case '6m': from = startOfDay(subMonths(to, 6)); break;
+          case '3m': from = startOfDay(subMonths(to, 3)); break;
+          case '1m': from = startOfDay(subMonths(to, 1)); break;
+          case '1w': from = startOfDay(subWeeks(to, 1)); break;
+          case 'today': from = startOfDay(to); break;
+      }
+      setDateRange({ from, to });
+    };
 
     const filteredSales: Sale[] = useMemo(() => {
         if (!isTransactionsLoaded || !dateRange?.from) return [];
@@ -73,7 +88,17 @@ export function ProfitAnalysisClient() {
                     <CardDescription>Analyze sales profitability over a selected period.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
+                    <div className="flex flex-wrap items-center gap-2">
+                        <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
+                        <div className="flex gap-1">
+                            <Button variant="outline" size="sm" onClick={() => setDatePreset('today')}>Today</Button>
+                            <Button variant="outline" size="sm" onClick={() => setDatePreset('1w')}>1W</Button>
+                            <Button variant="outline" size="sm" onClick={() => setDatePreset('1m')}>1M</Button>
+                            <Button variant="outline" size="sm" onClick={() => setDatePreset('3m')}>3M</Button>
+                            <Button variant="outline" size="sm" onClick={() => setDatePreset('6m')}>6M</Button>
+                            <Button variant="outline" size="sm" onClick={() => setDatePreset('ytd')}>YTD</Button>
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -129,3 +154,5 @@ export function ProfitAnalysisClient() {
         </div>
     )
 }
+
+    

@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
-import { format, parseISO, startOfDay, endOfDay, isWithinInterval, subMonths, subDays, startOfMonth } from "date-fns";
+import { format, parseISO, startOfDay, endOfDay, isWithinInterval, subMonths, subWeeks, startOfYear, subDays } from "date-fns";
 import { BookOpen, PlusCircle, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
@@ -51,7 +51,7 @@ export function CashbookClient() {
   const [tempOpeningBalance, setTempOpeningBalance] = React.useState('0');
 
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
-    from: startOfMonth(new Date()),
+    from: startOfDay(new Date()),
     to: endOfDay(new Date()),
   });
 
@@ -140,23 +140,16 @@ export function CashbookClient() {
     toast({title: "Info", description: `Master type ${item.type} updated.`});
   }, [addOrUpdateMaster, toast]);
 
-  const setDateQuickFilter = (preset: 'today' | 'yesterday' | 'dayBeforeYesterday') => {
-    const today = new Date();
-    let from, to;
-
+  const setDatePreset = (preset: 'ytd' | '6m' | '3m' | '1m' | '1w' | 'today') => {
+    const to = endOfDay(new Date());
+    let from;
     switch (preset) {
-      case 'today':
-        from = startOfDay(today);
-        to = endOfDay(today);
-        break;
-      case 'yesterday':
-        from = startOfDay(subDays(today, 1));
-        to = endOfDay(subDays(today, 1));
-        break;
-      case 'dayBeforeYesterday':
-        from = startOfDay(subDays(today, 2));
-        to = endOfDay(subDays(today, 2));
-        break;
+        case 'ytd': from = startOfYear(to); break;
+        case '6m': from = startOfDay(subMonths(to, 6)); break;
+        case '3m': from = startOfDay(subMonths(to, 3)); break;
+        case '1m': from = startOfDay(subMonths(to, 1)); break;
+        case '1w': from = startOfDay(subWeeks(to, 1)); break;
+        case 'today': from = startOfDay(to); break;
     }
     setDateRange({ from, to });
   };
@@ -211,11 +204,12 @@ export function CashbookClient() {
            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4 no-print flex-wrap">
             <DatePickerWithRange date={dateRange} onDateChange={setDateRange} className="max-w-sm w-full" />
             <div className="flex gap-1 items-center justify-end flex-grow">
-              <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('today')}>Today</Button>
-              <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('yesterday')}>Yesterday</Button>
-              <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('dayBeforeYesterday')}>
-                  {format(subDays(new Date(), 2), 'EEEE')}
-              </Button>
+                <Button variant="outline" size="sm" onClick={() => setDatePreset('today')}>Today</Button>
+                <Button variant="outline" size="sm" onClick={() => setDatePreset('1w')}>1W</Button>
+                <Button variant="outline" size="sm" onClick={() => setDatePreset('1m')}>1M</Button>
+                <Button variant="outline" size="sm" onClick={() => setDatePreset('3m')}>3M</Button>
+                <Button variant="outline" size="sm" onClick={() => setDatePreset('6m')}>6M</Button>
+                <Button variant="outline" size="sm" onClick={() => setDatePreset('ytd')}>YTD</Button>
                <Button variant="outline" size="icon" onClick={() => window.print()}>
                   <Printer className="h-5 w-5" />
                   <span className="sr-only">Print</span>
@@ -298,3 +292,5 @@ export function CashbookClient() {
     </div>
   );
 }
+
+    

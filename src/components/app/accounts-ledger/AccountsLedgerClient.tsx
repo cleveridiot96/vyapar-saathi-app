@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import type { MasterItem } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
-import { format, parseISO, startOfDay, endOfDay, isWithinInterval, isBefore } from "date-fns";
+import { format, parseISO, startOfDay, endOfDay, isWithinInterval, isBefore, subMonths, subWeeks, startOfYear } from "date-fns";
 import { BookUser, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -67,6 +67,20 @@ export function AccountsLedgerClient() {
     return allMasters.map(p => ({ value: p.id, label: `${p.name} (${p.type})` }));
   }, [allMasters]);
 
+  const setDatePreset = (preset: 'ytd' | '6m' | '3m' | '1m' | '1w' | 'today') => {
+    const to = endOfDay(new Date());
+    let from;
+    switch (preset) {
+        case 'ytd': from = startOfYear(to); break;
+        case '6m': from = startOfDay(subMonths(to, 6)); break;
+        case '3m': from = startOfDay(subMonths(to, 3)); break;
+        case '1m': from = startOfDay(subMonths(to, 1)); break;
+        case '1w': from = startOfDay(subWeeks(to, 1)); break;
+        case 'today': from = startOfDay(to); break;
+    }
+    setDateRange({ from, to });
+  };
+
   const ledgerData = useMemo(() => {
     if (!selectedPartyId || !isHydrated) return initialLedgerData;
 
@@ -92,7 +106,7 @@ export function AccountsLedgerClient() {
         openingBalance -= (r.amount + (r.cashDiscount || 0));
       }
     });
-    payments.forEach(p => {
+     payments.forEach(p => {
       if (isBefore(parseISO(p.date), fromDate) && p.partyId === selectedPartyId) {
         openingBalance += p.amount;
       }
@@ -157,7 +171,7 @@ export function AccountsLedgerClient() {
             <CardHeader>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                     <h1 className="text-2xl font-bold text-foreground">ACCOUNT LEDGER</h1>
-                     <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                     <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                         <MasterDataCombobox
                             value={selectedPartyId}
                             onChange={handlePartySelect}
@@ -167,7 +181,15 @@ export function AccountsLedgerClient() {
                             notFoundMessage="NO PARTY FOUND."
                             className="h-9 text-base w-full md:w-64"
                         />
-                        <DatePickerWithRange date={dateRange} onDateChange={setDateRange} className="w-full md:w-auto"/>
+                        <DatePickerWithRange date={dateRange} onDateChange={setDateRange} className="w-full sm:w-auto"/>
+                        <div className="flex gap-1">
+                            <Button variant="outline" size="sm" onClick={() => setDatePreset('today')}>Today</Button>
+                            <Button variant="outline" size="sm" onClick={() => setDatePreset('1w')}>1W</Button>
+                            <Button variant="outline" size="sm" onClick={() => setDatePreset('1m')}>1M</Button>
+                            <Button variant="outline" size="sm" onClick={() => setDatePreset('3m')}>3M</Button>
+                            <Button variant="outline" size="sm" onClick={() => setDatePreset('6m')}>6M</Button>
+                            <Button variant="outline" size="sm" onClick={() => setDatePreset('ytd')}>YTD</Button>
+                        </div>
                         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-5 w-5" /><span className="sr-only">Print</span></Button>
                     </div>
                 </div>
@@ -235,3 +257,5 @@ export function AccountsLedgerClient() {
     </div>
   )
 }
+
+    

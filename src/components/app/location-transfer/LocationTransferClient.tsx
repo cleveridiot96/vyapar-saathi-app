@@ -10,7 +10,7 @@ import { LocationTransferSlipPrint } from "./LocationTransferSlipPrint";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format as formatDateFn, parseISO, subDays, startOfDay, endOfDay } from 'date-fns';
+import { format as formatDateFn, parseISO, subDays, startOfDay, endOfDay, subMonths, subWeeks, startOfYear } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -207,13 +207,16 @@ export function LocationTransferClient() {
     return 'bg-primary hover:bg-primary/90';
   }, [activeTab]);
 
-  const setDateQuickFilter = (preset: 'today' | 'yesterday' | 'dayBeforeYesterday') => {
-    const today = new Date();
-    let from, to;
+  const setDatePreset = (preset: 'ytd' | '6m' | '3m' | '1m' | '1w' | 'today') => {
+    const to = endOfDay(new Date());
+    let from;
     switch (preset) {
-      case 'today': from = startOfDay(today); to = endOfDay(today); break;
-      case 'yesterday': from = startOfDay(subDays(today, 1)); to = endOfDay(subDays(today, 1)); break;
-      case 'dayBeforeYesterday': from = startOfDay(subDays(today, 2)); to = endOfDay(subDays(today, 2)); break;
+        case 'ytd': from = startOfYear(to); break;
+        case '6m': from = startOfDay(subMonths(to, 6)); break;
+        case '3m': from = startOfDay(subMonths(to, 3)); break;
+        case '1m': from = startOfDay(subMonths(to, 1)); break;
+        case '1w': from = startOfDay(subWeeks(to, 1)); break;
+        case 'today': from = startOfDay(to); break;
     }
     setDateRange({ from, to });
   };
@@ -295,11 +298,12 @@ export function LocationTransferClient() {
               <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-2 no-print">
                 <DatePickerWithRange date={dateRange} onDateChange={setDateRange} className="max-w-sm w-full"/>
                  <div className="flex gap-1 ml-auto">
-                    <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('today')}>Today</Button>
-                    <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('yesterday')}>Yesterday</Button>
-                    <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('dayBeforeYesterday')}>
-                        {formatDateFn(subDays(new Date(), 2), 'EEEE')}
-                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setDatePreset('today')}>Today</Button>
+                    <Button variant="outline" size="sm" onClick={() => setDatePreset('1w')}>1W</Button>
+                    <Button variant="outline" size="sm" onClick={() => setDatePreset('1m')}>1M</Button>
+                    <Button variant="outline" size="sm" onClick={() => setDatePreset('3m')}>3M</Button>
+                    <Button variant="outline" size="sm" onClick={() => setDatePreset('6m')}>6M</Button>
+                    <Button variant="outline" size="sm" onClick={() => setDatePreset('ytd')}>YTD</Button>
                 </div>
               </div>
               <ScrollArea className="h-[400px] border rounded-md print:h-auto print:overflow-visible">
@@ -407,3 +411,5 @@ export function LocationTransferClient() {
     </div>
   );
 }
+
+    

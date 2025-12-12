@@ -7,14 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
-import { format, parseISO, startOfDay, endOfDay, isWithinInterval, subMonths, subYears, isBefore } from "date-fns";
+import { format, parseISO, startOfDay, endOfDay, isWithinInterval, subMonths, subWeeks, startOfYear, isBefore } from "date-fns";
 import { BookUser, Printer, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useSearchParams, useRouter } from "next/navigation";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { purchaseMigrator, salesMigrator } from '@/lib/dataMigrators';
 import { useToast } from "@/hooks/use-toast";
 import { MasterForm } from "@/components/app/masters/MasterForm";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -241,14 +240,16 @@ export function LedgerClient() {
     return allMasters.find(p => p.id === selectedPartyId);
   }, [selectedPartyId, allMasters]);
 
-  const setDatePreset = (preset: '1m' | '3m' | '6m' | '1y') => {
+  const setDatePreset = (preset: 'ytd' | '6m' | '3m' | '1m' | '1w' | 'today') => {
     const to = endOfDay(new Date());
     let from;
     switch (preset) {
-      case '1m': from = startOfDay(subMonths(to, 1)); break;
-      case '3m': from = startOfDay(subMonths(to, 3)); break;
-      case '6m': from = startOfDay(subMonths(to, 6)); break;
-      case '1y': from = startOfDay(subYears(to, 1)); break;
+        case 'ytd': from = startOfYear(to); break;
+        case '6m': from = startOfDay(subMonths(to, 6)); break;
+        case '3m': from = startOfDay(subMonths(to, 3)); break;
+        case '1m': from = startOfDay(subMonths(to, 1)); break;
+        case '1w': from = startOfDay(subWeeks(to, 1)); break;
+        case 'today': from = startOfDay(to); break;
     }
     setDateRange({ from, to });
   };
@@ -279,21 +280,23 @@ export function LedgerClient() {
         <CardHeader>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                 <h1 className="text-2xl font-bold text-foreground">STOCK LEDGER</h1>
-                <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                     <MasterDataCombobox
                         value={selectedPartyId}
                         onChange={handlePartySelect} options={partyOptions}
                         placeholder="SELECT PARTY..." searchPlaceholder="SEARCH PARTIES..."
-                        notFoundMessage="NO PARTY FOUND." className="h-9 text-base w-full md:w-64"
+                        notFoundMessage="NO PARTY FOUND." className="h-9 text-base w-full sm:w-64"
                         onEdit={handleEditParty}
                     />
+                     <DatePickerWithRange date={dateRange} onDateChange={setDateRange} className="w-full sm:w-auto"/>
                     <div className="flex gap-1">
+                      <Button variant="outline" size="sm" onClick={() => setDatePreset('today')}>Today</Button>
+                      <Button variant="outline" size="sm" onClick={() => setDatePreset('1w')}>1W</Button>
                       <Button variant="outline" size="sm" onClick={() => setDatePreset('1m')}>1M</Button>
                       <Button variant="outline" size="sm" onClick={() => setDatePreset('3m')}>3M</Button>
                       <Button variant="outline" size="sm" onClick={() => setDatePreset('6m')}>6M</Button>
-                      <Button variant="outline" size="sm" onClick={() => setDatePreset('1y')}>1Y</Button>
+                      <Button variant="outline" size="sm" onClick={() => setDatePreset('ytd')}>YTD</Button>
                     </div>
-                    <DatePickerWithRange date={dateRange} onDateChange={setDateRange} className="w-full md:w-auto"/>
                     <Button variant="outline" size="icon" onClick={() => window.print()} title="Print">
                         <Printer className="h-5 w-5" /><span className="sr-only">Print</span>
                     </Button>
@@ -435,3 +438,5 @@ export function LedgerClient() {
     </div>
   );
 }
+
+    
