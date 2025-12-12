@@ -11,7 +11,7 @@ export function BalanceSheetClient() {
     
     const totalReceivables = receivableParties.reduce((sum, party) => sum + party.balance, 0);
     const totalPayables = payableParties.reduce((sum, party) => sum + party.balance, 0);
-    const totalStockValue = allAggregatedInventory.reduce((sum, item) => sum + item.cogs, 0);
+    const totalStockValue = (allAggregatedInventory || []).reduce((sum, item) => sum + item.cogs, 0);
 
     const netPosition = totalStockValue + totalReceivables + totalPayables;
 
