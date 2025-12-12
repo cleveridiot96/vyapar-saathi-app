@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sidebar';
 import { features } from '@/lib/features';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 
 export function SidebarNav() {
@@ -35,15 +35,18 @@ export function SidebarNav() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {features.map((feature, index) => (
+          {features.map((feature) => (
             <SidebarMenuItem key={feature.href}>
-              <Link href={feature.href} passHref>
+              <Link href={feature.href} passHref legacyBehavior>
                 <SidebarMenuButton
+                  asChild
                   isActive={pathname.startsWith(feature.href)}
                   tooltip={feature.title}
                 >
-                  <feature.icon />
-                  <span>{feature.title}</span>
+                  <a>
+                    <feature.icon />
+                    <span>{feature.title}</span>
+                  </a>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>

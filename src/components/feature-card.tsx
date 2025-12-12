@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { features, type Feature } from '@/lib/features';
+import { features } from '@/lib/features';
 
 type FeatureCardProps = {
   featureTitle: string;
@@ -9,15 +9,15 @@ export function FeatureCard({ featureTitle }: FeatureCardProps) {
   const feature = features.find(f => f.title === featureTitle);
 
   if (!feature) {
-    return null; // or a placeholder/error component
+    return null; 
   }
   
   const Icon = feature.icon;
 
   return (
-    <Link href={feature.href} className="group block">
+    <Link href={feature.href} className="group block h-full">
       <div
-        className="relative flex h-40 flex-col items-center justify-center rounded-xl p-4 text-center shadow-lg transition-all duration-300 ease-in-out group-hover:-translate-y-1 group-hover:shadow-2xl"
+        className="relative flex h-full flex-col items-center justify-center rounded-xl p-4 text-center shadow-lg transition-all duration-300 ease-in-out group-hover:-translate-y-1 group-hover:shadow-2xl"
         style={{
           backgroundImage: `linear-gradient(to bottom right, ${feature.gradientFrom}, ${feature.gradientTo})`,
           boxShadow: feature.shadow,
