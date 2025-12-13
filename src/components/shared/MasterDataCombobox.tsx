@@ -1,6 +1,8 @@
+
 "use client";
 
 import * as React from "react";
+import * as PopoverPrimitive from "@radix-ui/react-popover"
 import { Check, ChevronsUpDown, Edit2, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -77,52 +79,58 @@ export function MasterDataCombobox({
           )}
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} />
-          <CommandList>
-            <ScrollArea className="max-h-60">
-              <CommandEmpty>{notFoundMessage}</CommandEmpty>
-              <CommandGroup>
-                {options.map((option) => (
-                  <CommandItem
-                    key={option.value}
-                    value={option.label}
-                    onSelect={() => {
-                      onChange(option.value);
-                      setOpen(false);
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value === option.value ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {option.label}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </ScrollArea>
-            {onAddNew && addNewLabel && (
-              <>
-                <CommandSeparator />
+      <PopoverPrimitive.Portal>
+        <PopoverContent 
+          className="w-[var(--radix-popover-trigger-width)] p-0"
+          side="bottom"
+          align="start"
+        >
+          <Command>
+            <CommandInput placeholder={searchPlaceholder} />
+            <CommandList>
+              <ScrollArea className="max-h-60">
+                <CommandEmpty>{notFoundMessage}</CommandEmpty>
                 <CommandGroup>
-                  <CommandItem
-                    onSelect={() => {
-                      onAddNew();
-                      setOpen(false);
-                    }}
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    {addNewLabel}
-                  </CommandItem>
+                  {options.map((option) => (
+                    <CommandItem
+                      key={option.value}
+                      value={option.label}
+                      onSelect={() => {
+                        onChange(option.value);
+                        setOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          value === option.value ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      {option.label}
+                    </CommandItem>
+                  ))}
                 </CommandGroup>
-              </>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
+              </ScrollArea>
+              {onAddNew && addNewLabel && (
+                <>
+                  <CommandSeparator />
+                  <CommandGroup>
+                    <CommandItem
+                      onSelect={() => {
+                        onAddNew();
+                        setOpen(false);
+                      }}
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      {addNewLabel}
+                    </CommandItem>
+                  </CommandGroup>
+                </>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </PopoverPrimitive.Portal>
     </Popover>
   );
 }
