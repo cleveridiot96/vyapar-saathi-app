@@ -1,3 +1,4 @@
+
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { SidebarNav } from '@/components/sidebar-nav';
 import { AppHeaderContentInternal } from '@/components/layout/AppHeader';
@@ -8,8 +9,8 @@ import { MasterDataProvider } from '@/contexts/MasterDataContext';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SettingsProvider>
-      <MasterDataProvider>
-        <TransactionsProvider>
+      <TransactionsProvider>
+        <MasterDataProvider>
           <SidebarProvider>
             <Sidebar>
               <SidebarNav />
@@ -21,8 +22,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </main>
             </SidebarInset>
           </SidebarProvider>
-        </TransactionsProvider>
-      </MasterDataProvider>
+        </MasterDataProvider>
+      </TransactionsProvider>
     </SettingsProvider>
   );
 }
