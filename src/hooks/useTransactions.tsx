@@ -4,6 +4,7 @@ import React, { useState, useContext, createContext, ReactNode, useEffect } from
 import type { Purchase, PurchaseReturn, Sale, SaleReturn, LocationTransfer, LedgerEntry, Payment, Receipt, MasterItem, MasterItemType, StockAdjustment } from '@/lib/types';
 import { useLocalStorageState } from './useLocalStorageState';
 import { purchaseMigrator, salesMigrator } from '@/lib/dataMigrators';
+import { useMasterData } from '@/contexts/MasterDataContext';
 
 interface TransactionsContextType {
   purchases: Purchase[];
@@ -27,25 +28,13 @@ interface TransactionsContextType {
   addLedgerEntry: (entries: LedgerEntry | LedgerEntry[]) => void;
   removeLedgerEntries: (relatedVoucherId: string) => void;
   isTransactionsLoaded: boolean;
-  isMasterDataLoaded: boolean;
-  masterData: Record<MasterItemType, MasterItem[]>;
-  addOrUpdateMaster: (item: MasterItem) => void;
-  getAllMasters: () => MasterItem[];
+  isMasterDataLoaded: boolean; // Kept for compatibility but might be redundant
+  masterData: Record<MasterItemType, MasterItem[]>; // From new context
+  addOrUpdateMaster: (item: MasterItem) => void; // From new context
+  getAllMasters: () => MasterItem[]; // From new context
 }
 
 const TransactionsContext = createContext<TransactionsContextType | undefined>(undefined);
-
-const initialMasterData: Record<MasterItemType, MasterItem[]> = {
-    Supplier: [{ id: 'sup1', type: 'Supplier', name: 'Krishna Traders' },{ id: 'sup2', type: 'Supplier', name: 'Radha Trading Co' },],
-    Customer: [{ id: 'cus1', type: 'Customer', name: 'Gopal Dairy' },],
-    Agent: [{ id: 'agent1', type: 'Agent', name: 'Shyam Sundar', details: { commission: 2 } },],
-    Broker: [],
-    Warehouse: [{ id: 'wh1', type: 'Warehouse', name: 'Main Godown' }, { id: 'wh2', type: 'Warehouse', name: 'Mumbai' },],
-    Transporter: [{ id: 'trans1', type: 'Transporter', name: 'Ganesh Roadways' },],
-    Expense: [{ id: 'exp1', type: 'Expense', name: 'Freight' },{ id: 'exp2', type: 'Expense', name: 'Labour' },{ id: 'exp3', type: 'Expense', name: 'Commission' },],
-    Product: [{ id: 'prod1', type: 'Product', name: 'Arecanut' },]
-};
-
 
 export function TransactionsProvider({ children }: { children: ReactNode }) {
   const [purchases, setPurchases] = useLocalStorageState<Purchase[]>('purchasesData', [], purchaseMigrator);
@@ -56,16 +45,14 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
   const [payments, setPayments] = useLocalStorageState<Payment[]>('paymentsData', []);
   const [receipts, setReceipts] = useLocalStorageState<Receipt[]>('receiptsData', []);
   const [ledger, setLedger] = useLocalStorageState<LedgerEntry[]>('ledgerData', []);
-  const [masterData, setMasterData] = useLocalStorageState<Record<MasterItemType, MasterItem[]>>('masterData', initialMasterData);
   const [adjustments, setAdjustments] = useLocalStorageState<StockAdjustment[]>('adjustmentsData', []);
-
-
   const [isTransactionsLoaded, setIsTransactionsLoaded] = useState(false);
-  const [isMasterDataLoaded, setIsMasterDataLoaded] = useState(false);
+
+  // Integrate the new MasterDataContext
+  const { data: masterData, setData: setMasterDataItem, getAllMasters } = useMasterData();
 
   useEffect(() => {
     setIsTransactionsLoaded(true);
-    setIsMasterDataLoaded(true);
   }, []);
 
   const addLedgerEntry = (entries: LedgerEntry | LedgerEntry[]) => {
@@ -78,22 +65,17 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
   };
   
   const addOrUpdateMaster = (item: MasterItem) => {
-    setMasterData(prevData => {
-      const existingItems = prevData[item.type] || [];
-      const itemIndex = existingItems.findIndex(i => i.id === item.id);
-      
-      let updatedItems;
+    setMasterDataItem(item.type, prev => {
+      const itemIndex = prev.findIndex(i => i.id === item.id);
       if (itemIndex > -1) {
-        updatedItems = [...existingItems.slice(0, itemIndex), item, ...existingItems.slice(itemIndex + 1)];
+        const newItems = [...prev];
+        newItems[itemIndex] = item;
+        return newItems;
       } else {
-        const newItem = { ...item, id: item.id || `${item.type.toLowerCase()}-${Date.now()}` };
-        updatedItems = [newItem, ...existingItems];
+        return [{...item, id: item.id || `${item.type}-${Date.now()}`}, ...prev];
       }
-      return { ...prevData, [item.type]: updatedItems };
     });
   };
-
-  const getAllMasters = () => Object.values(masterData).flat();
 
   const value = {
     purchases, setPurchases,
@@ -108,7 +90,7 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
     addLedgerEntry, removeLedgerEntries,
     isTransactionsLoaded,
     masterData,
-    isMasterDataLoaded,
+    isMasterDataLoaded: true, // Now always true as it's handled by its own context
     addOrUpdateMaster,
     getAllMasters,
   };

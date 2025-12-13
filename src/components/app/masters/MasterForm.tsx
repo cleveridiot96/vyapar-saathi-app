@@ -24,14 +24,15 @@ import {
 import { Input } from "@/components/ui/input";
 import type { MasterItem, MasterItemType, Agent, Broker } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTransactions } from "@/hooks/useTransactions";
+import { MASTER_TYPES_CONFIG } from "@/lib/constants";
 
 interface MasterFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (item: MasterItem) => void;
-  itemType: MasterItemType;
+  itemTypeFromButton: MasterItemType;
   initialData?: MasterItem | null;
+  fixedIds?: string[];
 }
 
 const formSchema = z.object({
@@ -49,28 +50,28 @@ export function MasterForm({
   isOpen,
   onClose,
   onSubmit,
-  itemType: initialItemType,
+  itemTypeFromButton,
   initialData,
+  fixedIds = [],
 }: MasterFormProps) {
-
-  const { masterData } = useTransactions();
-  const [itemType, setItemType] = React.useState<MasterItemType>(initialData?.type || initialItemType);
+  const isEditingFixed = initialData ? fixedIds.includes(initialData.id) : false;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: initialData?.name || "",
-      type: initialData?.type || initialItemType,
-      commission: (initialData as Agent | Broker)?.details?.commission || undefined,
-      commissionType: (initialData as Broker)?.details?.commissionType || 'Percentage',
-      openingBalance: initialData?.details?.openingBalance || undefined,
-      openingBalanceType: initialData?.details?.openingBalanceType || 'Dr',
+      name: "",
+      type: "Customer",
+      commission: undefined,
+      commissionType: 'Percentage',
+      openingBalance: undefined,
+      openingBalanceType: 'Dr',
     },
   });
+
+  const itemType = form.watch('type');
   
   React.useEffect(() => {
-    const type = initialData?.type || initialItemType;
-    setItemType(type);
+    const type = initialData?.type || itemTypeFromButton;
     form.reset({
       name: initialData?.name || "",
       type: type,
@@ -79,7 +80,7 @@ export function MasterForm({
       openingBalance: initialData?.details?.openingBalance || undefined,
       openingBalanceType: initialData?.details?.openingBalanceType || 'Dr',
     });
-  }, [initialData, initialItemType, form]);
+  }, [initialData, itemTypeFromButton, form]);
 
   const handleSubmit = (values: FormValues) => {
     const itemData: MasterItem = {
@@ -96,8 +97,7 @@ export function MasterForm({
     onClose();
   };
   
-  const allMasterTypes = Object.keys(masterData) as MasterItemType[];
-
+  const allMasterTypes = Object.keys(MASTER_TYPES_CONFIG) as MasterItemType[];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -118,7 +118,7 @@ export function MasterForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Item Type</FormLabel>
-                    <Select onValueChange={(val: MasterItemType) => { field.onChange(val); setItemType(val); }} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isEditingFixed}>
                         <FormControl>
                             <SelectTrigger><SelectValue placeholder="Select an item type" /></SelectTrigger>
                         </FormControl>
@@ -140,7 +140,7 @@ export function MasterForm({
                 <FormItem>
                   <FormLabel>{itemType} Name</FormLabel>
                   <FormControl>
-                    <Input placeholder={`Enter ${itemType.toLowerCase()} name`} {...field} />
+                    <Input placeholder={`Enter ${itemType.toLowerCase()} name`} {...field} disabled={isEditingFixed} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -156,7 +156,7 @@ export function MasterForm({
                       <FormItem>
                         <FormLabel>Commission</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="e.g., 1.5" {...field} />
+                          <Input type="number" placeholder="e.g., 1.5" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -169,7 +169,7 @@ export function MasterForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Commission Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                              <FormControl><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger></FormControl>
                              <SelectContent>
                                 <SelectItem value="Percentage">Percentage (%)</SelectItem>
@@ -193,7 +193,7 @@ export function MasterForm({
                       <FormItem>
                         <FormLabel>Opening Balance (₹)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="0" {...field} />
+                          <Input type="number" placeholder="0" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
