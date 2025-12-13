@@ -10,9 +10,20 @@ Let's peel back the layers and look directly at the code that powers both the si
 
 ### The Simple Dropdown (`Select`)
 
-This component is fundamentally a styled wrapper around a library called Radix UI, which provides the core accessibility and behavior for UI primitives.
+This is your standard, basic dropdown. You see it when you need to pick from a small, predefined set of choices, like "Payment Method" (Cash, Bank, UPI) or "Commission Type" (Percentage, Fixed).
 
-Let's look at the key parts of the Select component's code:
+**File of Interest:** `src/components/ui/select.tsx` (the component itself) and any form that uses it, like `src/components/app/payments/AddPaymentForm.tsx`.
+
+**How it Works & Connects:**
+
+It works just like a standard HTML `<select>` element but is styled professionally. The form that uses this dropdown is in complete control. It provides two essential props:
+
+*   **`value`**: The currently selected value (e.g., "Cash").
+*   **`onValueChange`**: A function to call when the user selects a new option.
+
+#### Component Code
+
+This component is fundamentally a styled wrapper around a library called Radix UI, which provides the core accessibility and behavior for UI primitives.
 
 ```tsx
 // Simplified from src/components/ui/select.tsx
@@ -52,6 +63,8 @@ const SelectItem = React.forwardRef(({ className, children, ...props }, ref) => 
 *   **Delegation:** Notice that our `Select` component doesn't have any complex state logic (`useState`, `useEffect`). It's almost entirely delegating its work to `SelectPrimitive` from Radix UI.
 *   **Styling:** Its main job is to apply `className` styles (using `cn` and tailwind) to the Radix components to make them look consistent with our app's theme.
 *   **Composition:** It's built by composing smaller parts: a `Root`, a `Trigger`, a `Content` panel, and `Items`.
+
+#### Usage Example
 
 Here is how a parent form, like `AddPaymentForm`, uses the `Select` component.
 
@@ -105,9 +118,22 @@ import { FormField, FormControl } from "@/components/ui/form";
 
 ### The Smart Combobox (`MasterDataCombobox`)
 
-This component is a mini-application in itself. It has its own state and logic.
+This is the advanced, searchable dropdown used everywhere you need to select from your business data. It's designed to handle hundreds or thousands of items efficiently.
 
-Let's dissect its internal workings:
+**File of Interest:** `src/components/shared/MasterDataCombobox.tsx`
+
+**How it Works & Connects:**
+
+This component is much more sophisticated. It's a combination of a pop-up, a search command palette, and an intelligent filtering engine. The parent form provides:
+
+*   **`options`**: An array of objects, where each object has a `value` (the unique ID) and a `label` (the name to display). Example: `[{ value: 'cust-123', label: 'ABC TRADERS' }]`.
+*   **`value`**: The unique ID of the currently selected item (e.g., `cust-123`).
+*   **`onChange`**: The function to call with the new ID when the user selects an item.
+*   **`onAddNew` / `onEdit` (Optional)**: Functions that the combobox can call if the user wants to add or edit an item directly.
+
+#### Component Code
+
+This component is a mini-application in itself. It has its own state and logic.
 
 ```tsx
 // Simplified from src/components/shared/MasterDataCombobox.tsx
