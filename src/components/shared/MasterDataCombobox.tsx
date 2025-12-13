@@ -89,7 +89,6 @@ export function MasterDataCombobox({
             <CommandInput placeholder={searchPlaceholder} />
             <CommandList>
               <ScrollArea className="max-h-60">
-                <CommandEmpty>{notFoundMessage}</CommandEmpty>
                 <CommandGroup>
                   {options.map((option) => (
                     <CommandItem
