@@ -1,136 +1,186 @@
-
 "use client";
 
 import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover"
-import { Check, ChevronsUpDown, Edit2, PlusCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Command, CommandInput, CommandList, CommandEmpty, CommandItem, CommandSeparator } from "@/components/ui/command";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { ScrollArea } from "../ui/scroll-area";
+import { Check, Plus, ChevronsUpDown, Pencil } from "lucide-react";
+import { cn } from "@/lib/utils";
+import Fuse from 'fuse.js';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+interface Option {
+  value: string;
+  label: string;
+  tooltipContent?: React.ReactNode;
+}
 
 interface MasterDataComboboxProps {
-  value?: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
+  value: string | undefined;
+  onChange: (value: string | undefined) => void;
+  options: Option[];
   placeholder?: string;
   searchPlaceholder?: string;
   notFoundMessage?: string;
   addNewLabel?: string;
   onAddNew?: () => void;
-  onEdit?: (id: string) => void;
+  onEdit?: (value: string) => void;
+  disabled?: boolean;
   className?: string;
+  triggerId?: string;
 }
 
-export function MasterDataCombobox({
+export const MasterDataCombobox: React.FC<MasterDataComboboxProps> = ({
   value,
   onChange,
   options,
   placeholder = "Select an option",
   searchPlaceholder = "Search...",
-  notFoundMessage = "No results found.",
-  addNewLabel,
+  notFoundMessage = "No match found.",
+  addNewLabel = "Add New",
   onAddNew,
   onEdit,
+  disabled,
   className,
-}: MasterDataComboboxProps) {
+  triggerId,
+}) => {
   const [open, setOpen] = React.useState(false);
-  const selectedOption = options.find((option) => option.value === value);
+  const [search, setSearch] = React.useState("");
+
+  const fuse = React.useMemo(() => new Fuse(options, {
+    keys: ['label'],
+    threshold: 0.3,
+  }), [options]);
+
+  const filteredOptions = React.useMemo(() => {
+    if (!search) {
+      return options;
+    }
+    return fuse.search(search).map(result => result.item);
+  }, [options, search, fuse]);
+
+  const selectedLabel = options.find((opt) => opt.value === value)?.label;
+
+  const handleSelect = (selectedValue: string | undefined) => {
+    onChange(selectedValue);
+    setOpen(false);
+    setSearch("");
+  };
+
+  const handleAddNew = () => {
+    if (onAddNew) {
+      onAddNew();
+      setOpen(false);
+      setSearch("");
+    }
+  };
+  
+  const handleEdit = (e: React.MouseEvent, value: string) => {
+    e.stopPropagation();
+    if (onEdit) {
+      onEdit(value);
+      setOpen(false);
+      setSearch("");
+    }
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className={cn("relative", className)}>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between pr-8"
-          >
-            {selectedOption ? selectedOption.label : placeholder}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-          {selectedOption && onEdit && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="absolute right-8 top-1/2 h-6 w-6 -translate-y-1/2"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(selectedOption.value);
-              }}
-            >
-              <Edit2 className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-      </PopoverTrigger>
-      <PopoverPrimitive.Portal>
-        <PopoverContent 
-          className="w-[var(--radix-popover-trigger-width)] p-0"
-          side="bottom"
-          align="start"
+        <Button
+          id={triggerId}
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn("w-full justify-between text-sm uppercase h-auto", !value && "text-muted-foreground", className)}
+          disabled={disabled}
         >
-          <Command>
-            <CommandInput placeholder={searchPlaceholder} />
-            <CommandList>
-              <ScrollArea className="max-h-60">
-                <CommandEmpty>{notFoundMessage}</CommandEmpty>
-                <CommandGroup>
-                  {options.map((option) => (
-                    <CommandItem
-                      key={option.value}
-                      value={option.label}
-                      onSelect={() => {
-                        onChange(option.value);
-                        setOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === option.value ? "opacity-100" : "opacity-0"
+          <span className="truncate">
+            {selectedLabel || placeholder}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverPrimitive.Portal>
+        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[99999]">
+          <Command shouldFilter={false} className="max-h-[300px]">
+            <CommandInput
+              placeholder={searchPlaceholder}
+              value={search}
+              onValueChange={setSearch}
+              autoFocus
+            />
+            <TooltipProvider>
+              <CommandList className="max-h-[calc(300px-theme(spacing.12)-theme(spacing.2))]">
+                  <CommandItem
+                      onSelect={() => handleSelect(undefined)}
+                      className={cn(
+                          "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground text-muted-foreground",
+                          !value && "font-semibold bg-accent"
+                      )}
+                  >
+                      <Check className={cn("mr-2 h-4 w-4", !value ? "opacity-100" : "opacity-0")} />
+                      <span className="italic">Clear selection</span>
+                  </CommandItem>
+                  <CommandSeparator className="my-1" />
+
+                {filteredOptions.length === 0 && search.length > 0 ? (
+                  <CommandEmpty>
+                    {notFoundMessage}
+                    {onAddNew && (
+                      <CommandItem onSelect={handleAddNew} className="cursor-pointer">
+                        <Plus className="h-4 w-4 mr-2" /> {addNewLabel}
+                      </CommandItem>
+                    )}
+                  </CommandEmpty>
+                ) : (
+                  <>
+                    {filteredOptions.map((option) => (
+                      <Tooltip key={option.value} delayDuration={300}>
+                        <TooltipTrigger asChild>
+                          <CommandItem
+                            value={option.value}
+                            onSelect={() => handleSelect(option.value)}
+                            className="uppercase"
+                          >
+                            <Check
+                                className={cn("mr-2 h-4 w-4", value === option.value ? "opacity-100" : "opacity-0")}
+                            />
+                            <span className="flex-grow truncate">{option.label}</span>
+                            {onEdit && (
+                              <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 shrink-0 ml-2 rounded-md p-1 opacity-50 hover:opacity-100"
+                                  onClick={(e) => handleEdit(e, option.value)}
+                                  aria-label={`Edit ${option.label}`}
+                              >
+                                  <Pencil className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </CommandItem>
+                        </TooltipTrigger>
+                        {option.tooltipContent && (
+                          <TooltipContent side="right" align="start">
+                            {option.tooltipContent}
+                          </TooltipContent>
                         )}
-                      />
-                      {option.label}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </ScrollArea>
-              {onAddNew && addNewLabel && (
-                <>
-                  <CommandSeparator />
-                  <CommandGroup>
-                    <CommandItem
-                      onSelect={() => {
-                        onAddNew();
-                        setOpen(false);
-                      }}
-                    >
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      {addNewLabel}
-                    </CommandItem>
-                  </CommandGroup>
-                </>
-              )}
-            </CommandList>
+                      </Tooltip>
+                    ))}
+                    {onAddNew && (
+                      <CommandItem onSelect={handleAddNew} className="cursor-pointer mt-1 border-t">
+                        <Plus className="h-4 w-4 mr-2" /> {addNewLabel}
+                      </CommandItem>
+                    )}
+                  </>
+                )}
+              </CommandList>
+            </TooltipProvider>
           </Command>
         </PopoverContent>
       </PopoverPrimitive.Portal>
     </Popover>
   );
-}
+};
