@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -48,7 +49,7 @@ interface AddReceiptFormProps {
   receiptToEdit?: Receipt | null;
 }
 
-export const AddReceiptForm: React.FC<AddReceiptFormProps> = ({
+const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
   isOpen,
   onClose,
   onSubmit,
@@ -400,3 +401,5 @@ export const AddReceiptForm: React.FC<AddReceiptFormProps> = ({
     </>
   );
 };
+
+export const AddReceiptForm = React.memo(AddReceiptFormComponent);

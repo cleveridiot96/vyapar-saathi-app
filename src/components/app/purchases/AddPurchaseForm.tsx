@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -44,15 +45,14 @@ interface AddPurchaseFormProps {
   purchaseToEdit?: Purchase | null;
 }
 
-export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
+const AddPurchaseFormComponent: React.FC<AddPurchaseFormProps> = ({
   isOpen,
   onClose,
   onSubmit,
   purchaseToEdit,
 }) => {
   const { toast } = useToast();
-  const { data: masterData, addOrUpdateMaster, getAllMasters } = useMasterData();
-  const { Supplier: suppliers, Agent: agents, Warehouse: warehouses, Transporter: transporters, Expense: expenses } = masterData || {};
+  const { Supplier: suppliers, Agent: agents, Warehouse: warehouses, Transporter: transporters, Expense: expenses, addOrUpdateMaster, getAllMasters } = useMasterData();
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
@@ -483,3 +483,5 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     </>
   );
 };
+
+export const AddPurchaseForm = React.memo(AddPurchaseFormComponent);

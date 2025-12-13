@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -54,7 +55,7 @@ interface AddSaleFormProps {
   onMasterDataUpdate: (newItem: MasterItem) => void;
 }
 
-export const AddSaleForm: React.FC<AddSaleFormProps> = ({
+const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   isOpen,
   onClose,
   onSubmit,
@@ -63,8 +64,7 @@ export const AddSaleForm: React.FC<AddSaleFormProps> = ({
   onMasterDataUpdate,
 }) => {
   const { toast } = useToast();
-  const { data: masterData, getAllMasters } = useMasterData();
-  const { Customer: customers, Transporter: transporters, Broker: brokers, Expense: expenses, Warehouse: warehouses } = masterData || {};
+  const { Customer: customers, Transporter: transporters, Broker: brokers, Expense: expenses, Warehouse: warehouses, getAllMasters } = useMasterData();
   const { availableStock } = useInventory(saleToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -628,3 +628,5 @@ export const AddSaleForm: React.FC<AddSaleFormProps> = ({
     </>
   );
 };
+
+export const AddSaleForm = React.memo(AddSaleFormComponent);

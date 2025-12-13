@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -48,7 +49,7 @@ interface AddPaymentFormProps {
   paymentToEdit?: Payment | null;
 }
 
-export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
+const AddPaymentFormComponent: React.FC<AddPaymentFormProps> = ({
   isOpen,
   onClose,
   onSubmit,
@@ -287,3 +288,5 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
     </>
   );
 };
+
+export const AddPaymentForm = React.memo(AddPaymentFormComponent);

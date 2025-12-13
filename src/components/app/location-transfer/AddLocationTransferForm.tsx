@@ -1,3 +1,4 @@
+
 "use client";
 import * as React from "react";
 import { useForm, FormProvider, useFieldArray, Controller } from "react-hook-form";
@@ -67,10 +68,9 @@ const locationTransferSchema = z.object({
 });
 type LocationTransferFormValues = z.infer<typeof locationTransferSchema>;
 
-export const AddLocationTransferForm: React.FC<AddLocationTransferFormProps> = ({ isOpen, onClose, onSubmit, transferToEdit }) => {
+const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> = ({ isOpen, onClose, onSubmit, transferToEdit }) => {
   const { toast } = useToast();
-  const { data: masterData, addOrUpdateMaster, getAllMasters } = useMasterData();
-  const { Warehouse: warehouses, Transporter: transporters, Expense: expenseAccounts } = masterData;
+  const { Warehouse: warehouses, Transporter: transporters, Expense: expenseAccounts, addOrUpdateMaster, getAllMasters } = useMasterData();
   const { availableStock } = useInventory(transferToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -267,3 +267,5 @@ export const AddLocationTransferForm: React.FC<AddLocationTransferFormProps> = (
     </Dialog>
   );
 };
+
+export const AddLocationTransferForm = React.memo(AddLocationTransferFormComponent);
