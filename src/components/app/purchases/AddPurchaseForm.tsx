@@ -240,7 +240,7 @@ const AddPurchaseFormComponent: React.FC<AddPurchaseFormProps> = ({
 
   return (
     <>
-    <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(openState) => { if (!openState) onClose(); }} modal={false}>
+    <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(openState) => { if (!openState) onClose(); }}>
         <DialogContent className="sm:max-w-4xl">
             <DialogHeader>
                 <DialogTitle>{purchaseToEdit ? 'EDIT PURCHASE' : 'ADD NEW PURCHASE'}</DialogTitle>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -171,7 +172,7 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
   if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(openState) => { if (!openState) onClose(); }} modal={false}>
+    <Dialog open={isOpen} onOpenChange={(openState) => { if (!openState) onClose(); }}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{purchaseReturnToEdit ? "Edit Purchase Return" : "New Purchase Return"}</DialogTitle>

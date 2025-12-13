@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -168,7 +169,7 @@ export const AddSaleReturnForm: React.FC<AddSaleReturnFormProps> = ({
     if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(openState) => { if (!openState) onClose(); }} modal={false}>
+    <Dialog open={isOpen} onOpenChange={(openState) => { if (!openState) onClose(); }}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{saleReturnToEdit ? "Edit Sale Return" : "New Sale Return"}</DialogTitle>
