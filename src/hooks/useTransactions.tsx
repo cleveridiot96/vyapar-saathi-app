@@ -53,7 +53,7 @@ interface TransactionsContextType {
 const TransactionsContext = createContext<TransactionsContextType | undefined>(undefined);
 
 export function TransactionsProvider({ children }: { children: ReactNode }) {
-  // WORKAROUND: Use standard useState instead of useLocalStorageState to bypass CSP issues.
+  // WORKAROUND: Use standard useState with mock data to bypass CSP issues in Firebase Studio.
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [purchaseReturns, setPurchaseReturns] = useState<PurchaseReturn[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -64,9 +64,18 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
   const [adjustments, setAdjustments] = useState<StockAdjustment[]>([]);
   
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [agents, setAgents] = useState<Agent[]>([]);
+  // Inject mock data for dropdown testing
+  const [customers, setCustomers] = useState<Customer[]>([
+    { id: "C-201", name: "Kiran & Sons", type: "Customer" },
+    { id: "C-202", name: "Zenith Corp", type: "Customer" }
+  ]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([
+    { id: "S-101", name: "Ramesh Traders", type: "Supplier" },
+    { id: "S-102", name: "Priya Enterprises", type: "Supplier" }
+  ]);
+  const [agents, setAgents] = useState<Agent[]>([
+     { id: 'agent1', type: 'Agent', name: 'Shyam Sundar', details: { commission: 2 } },
+  ]);
   const [transporters, setTransporters] = useState<Transporter[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([...FIXED_WAREHOUSES] as Warehouse[]);
   const [brokers, setBrokers] = useState<Broker[]>([]);
@@ -77,7 +86,7 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
   const [isMasterDataLoaded, setIsMasterDataLoaded] = useState(false);
   
   useEffect(() => {
-    // This simulates a successful, fast data load.
+    // This simulates a successful, fast data load, bypassing the localStorage read failure.
     setIsMasterDataLoaded(true);
     setIsTransactionsLoaded(true);
   }, []);
