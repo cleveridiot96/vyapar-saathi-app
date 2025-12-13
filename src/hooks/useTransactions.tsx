@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useContext, createContext, ReactNode, useEffect, useMemo } from 'react';
@@ -112,7 +113,7 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
     ];
   }, [customers, suppliers, agents, transporters, warehouses, brokers, expenses]);
 
-  const value = {
+  const value = useMemo(() => ({
     purchases, setPurchases,
     purchaseReturns, setPurchaseReturns,
     sales, setSales,
@@ -133,7 +134,27 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
     isTransactionsLoaded,
     isMasterDataLoaded,
     getAllMasters,
-  };
+  }), [
+    purchases, setPurchases,
+    purchaseReturns, setPurchaseReturns,
+    sales, setSales,
+    saleReturns, setSaleReturns,
+    locationTransfers, setLocationTransfers,
+    payments, setPayments,
+    receipts, setReceipts,
+    ledger, setLedger,
+    adjustments, setAdjustments,
+    customers, setCustomers,
+    suppliers, setSuppliers,
+    agents, setAgents,
+    transporters, setTransporters,
+    warehouses, setWarehouses,
+    brokers, setBrokers,
+    expenses, setExpenses,
+    isTransactionsLoaded,
+    isMasterDataLoaded,
+    getAllMasters,
+  ]);
 
   return (
     <TransactionsContext.Provider value={value}>
