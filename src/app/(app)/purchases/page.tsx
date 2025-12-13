@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import ReactDOM from "react-dom";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, ListCollapse, RotateCcw } from "lucide-react";
 import type { Purchase, PurchaseReturn, LedgerEntry } from "@/lib/types";
@@ -27,19 +26,15 @@ import { PrintHeaderSymbol } from "@/components/shared/PrintHeaderSymbol";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useTransactions } from "@/hooks/useTransactions";
+import { renderToStaticMarkup } from 'react-dom/server';
 
-function openPrintWindow(
-  reactNode: React.ReactElement,
-  title: string = "Document"
-) {
+function openPrintWindow(htmlContent: string, title = "Document") {
   const printWindow = window.open("", "_blank", "noopener,noreferrer");
   if (!printWindow) {
     alert("Please allow pop-ups to print this document.");
     return;
   }
-
-  const printDocument = printWindow.document;
-  printDocument.write(`
+  printWindow.document.write(`
     <html>
       <head>
         <title>${title}</title>
@@ -74,7 +69,7 @@ function openPrintWindow(
         </style>
       </head>
       <body>
-        <div id="print-root"></div>
+        ${htmlContent}
         <script>
           setTimeout(function() {
             window.print();
@@ -84,13 +79,9 @@ function openPrintWindow(
       </body>
     </html>
   `);
-  printDocument.close();
-
-  const printRoot = printDocument.getElementById("print-root");
-  if (printRoot) {
-    ReactDOM.render(reactNode, printRoot);
-  }
+  printWindow.document.close();
 }
+
 
 export default function PurchasesPage() {
   const { toast } = useToast();
@@ -327,10 +318,8 @@ export default function PurchasesPage() {
   }, []);
 
   const triggerPrintPurchaseChitti = React.useCallback((purchase: Purchase) => {
-    openPrintWindow(
-      <PurchaseChittiPrint purchase={purchase} />,
-      `PurchaseChitti_${purchase.items[0]?.lotNumber || "Purchase"}`
-    );
+    const slipHtml = renderToStaticMarkup(<PurchaseChittiPrint purchase={purchase} />);
+    openPrintWindow(slipHtml, `PurchaseChitti_${purchase.items[0]?.lotNumber || "Purchase"}`);
   }, []);
 
   const addButtonDynamicClass = React.useMemo(() => {
