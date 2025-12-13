@@ -21,10 +21,10 @@ export function FeatureCard({ featureTitle }: FeatureCardProps) {
         style={{
           backgroundImage: `linear-gradient(to bottom right, ${feature.gradientFrom}, ${feature.gradientTo})`,
           boxShadow: feature.shadow,
-          color: feature.textColor,
+          color: feature.textColor === 'white' ? 'white' : 'black',
         }}
       >
-        <div className="absolute inset-0 rounded-xl bg-white/[.08] backdrop-blur-sm" />
+        <div className="absolute inset-0 rounded-xl bg-black/[.08] backdrop-blur-sm" />
         <div className="relative z-10 flex flex-col items-center justify-center gap-3">
           <Icon className="h-8 w-8" />
           <h3 className="font-semibold">{feature.title}</h3>

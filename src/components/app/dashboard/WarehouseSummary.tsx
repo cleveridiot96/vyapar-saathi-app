@@ -51,39 +51,39 @@ export const WarehouseSummary = () => {
     
     if(warehouseSummary.length === 0) {
         return (
-             <Card className="col-span-1">
+             <Card className="col-span-1 text-white" style={{background: 'linear-gradient(to top right, #f97316, #facc15)'}}>
                 <CardHeader>
                     <CardTitle className="text-xl">Warehouse Stock</CardTitle>
-                    <CardDescription>Current bag totals by location.</CardDescription>
+                    <CardDescription className="text-white/80">Current bag totals by location.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex items-center justify-center h-48">
-                    <p className="text-muted-foreground">No stock in any warehouse.</p>
+                    <p>No stock in any warehouse.</p>
                 </CardContent>
             </Card>
         );
     }
 
     return (
-        <Card className="col-span-1">
+        <Card className="col-span-1 text-white" style={{background: 'linear-gradient(to top right, #f97316, #facc15)'}}>
             <CardHeader>
                 <CardTitle className="text-xl">Warehouse Stock</CardTitle>
-                <CardDescription>Current bag totals by location.</CardDescription>
+                <CardDescription className="text-white/80">Current bag totals by location.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-2">
                 {warehouseSummary.map(wh => (
                     <Link key={wh.id} href={`/inventory?warehouseId=${wh.id}`} className="block group">
-                        <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center justify-between p-4 border border-white/20 rounded-lg hover:bg-white/20 transition-colors">
                             <div className="flex items-center gap-3">
-                                <Warehouse className="h-6 w-6 text-muted-foreground" />
+                                <Warehouse className="h-6 w-6" />
                                 <div>
-                                    <p className="font-semibold text-foreground">{wh.name}</p>
-                                    <p className="text-sm text-muted-foreground">{Math.round(wh.netWeight).toLocaleString()} kg</p>
+                                    <p className="font-semibold">{wh.name}</p>
+                                    <p className="text-sm text-white/80">{Math.round(wh.netWeight).toLocaleString()} kg</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                               <p className="font-bold text-lg text-primary">{Math.round(wh.bags).toLocaleString()}</p>
-                               <span className="text-xs text-muted-foreground">BAGS</span>
-                               <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1"/>
+                               <p className="font-bold text-lg">{Math.round(wh.bags).toLocaleString()}</p>
+                               <span className="text-xs text-white/80">BAGS</span>
+                               <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1"/>
                             </div>
                         </div>
                     </Link>

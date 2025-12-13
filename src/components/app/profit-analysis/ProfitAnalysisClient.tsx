@@ -82,21 +82,21 @@ export function ProfitAnalysisClient() {
 
     return (
         <div className="space-y-6">
-            <Card>
+            <Card className="text-white" style={{background: 'linear-gradient(to top right, #a855f7, #ec4899)'}}>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><PieChart/> Profitability Analysis</CardTitle>
-                    <CardDescription>Analyze sales profitability over a selected period.</CardDescription>
+                    <CardDescription className="text-white/80">Analyze sales profitability over a selected period.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-wrap items-center gap-2">
                         <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
                         <div className="flex gap-1">
-                            <Button variant="outline" size="sm" onClick={() => setDatePreset('today')}>Today</Button>
-                            <Button variant="outline" size="sm" onClick={() => setDatePreset('1w')}>1W</Button>
-                            <Button variant="outline" size="sm" onClick={() => setDatePreset('1m')}>1M</Button>
-                            <Button variant="outline" size="sm" onClick={() => setDatePreset('3m')}>3M</Button>
-                            <Button variant="outline" size="sm" onClick={() => setDatePreset('6m')}>6M</Button>
-                            <Button variant="outline" size="sm" onClick={() => setDatePreset('ytd')}>YTD</Button>
+                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20">Today</Button>
+                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20">1W</Button>
+                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20">1M</Button>
+                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20">3M</Button>
+                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20">6M</Button>
+                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20">YTD</Button>
                         </div>
                     </div>
                 </CardContent>
@@ -154,5 +154,3 @@ export function ProfitAnalysisClient() {
         </div>
     )
 }
-
-    
