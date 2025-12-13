@@ -24,7 +24,7 @@ const HighlightedText: React.FC<{ text: string; indices: readonly [number, numbe
     if (start > lastIndex) {
       parts.push(text.substring(lastIndex, start));
     }
-    parts.push(<mark key={i} className="bg-yellow-300 text-black rounded-sm px-0.5">{text.substring(start, end + 1)}</mark>);
+    parts.push(<mark key={i} className="bg-primary/20 text-primary-foreground rounded-sm px-0.5">{text.substring(start, end + 1)}</mark>);
     lastIndex = end + 1;
   });
 
@@ -109,12 +109,12 @@ const SearchBar = () => {
     }
   };
 
-  const getBestMatch = (item: FuseResult<SearchableItem>): { text: string; indices: readonly [number, number][] | undefined } => {
-      const titleMatch = item.matches?.find(m => m.key === 'title');
-      if (titleMatch && titleMatch.value) {
-          return { text: titleMatch.value, indices: titleMatch.indices };
-      }
-      return { text: item.item.title, indices: undefined };
+  const getBestMatch = (item: FuseResult<SearchableItem>, key: 'title' | 'description'): { text: string; indices: readonly [number, number][] | undefined } => {
+      const match = item.matches?.find(m => m.key === key);
+      return {
+        text: item.item[key],
+        indices: match?.indices
+      };
   };
 
 
@@ -150,7 +150,8 @@ const SearchBar = () => {
               {results.length > 0 ? (
                 results.map((result) => {
                     const { item } = result;
-                    const bestMatch = getBestMatch(result);
+                    const titleMatch = getBestMatch(result, 'title');
+                    const descriptionMatch = getBestMatch(result, 'description');
                     return (
                         <Link
                             key={item.id}
@@ -166,10 +167,10 @@ const SearchBar = () => {
                             >
                                 <div className="flex flex-col uppercase">
                                     <span className="font-medium">
-                                       <HighlightedText text={bestMatch.text} indices={bestMatch.indices} />
+                                       <HighlightedText text={titleMatch.text} indices={titleMatch.indices} />
                                     </span>
                                     <span className="text-xs text-muted-foreground uppercase">
-                                        {item.type} {item.date ? `- ${format(parseISO(item.date), 'dd/MM/yy')}` : ''}
+                                        <HighlightedText text={descriptionMatch.text} indices={descriptionMatch.indices} />
                                     </span>
                                 </div>
                             </a>

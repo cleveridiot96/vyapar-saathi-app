@@ -5,13 +5,14 @@ let fuse: Fuse<SearchableItem>;
 
 const options: Fuse.IFuseOptions<SearchableItem> = {
   keys: [
-    { name: 'title', weight: 0.7 },
-    { name: 'description', weight: 0.3 },
+    { name: 'title', weight: 0.6 },
+    { name: 'description', weight: 0.4 },
   ],
   includeScore: true,
   includeMatches: true,
-  threshold: 0.4,
-  minMatchCharLength: 2,
+  threshold: 0.4, // A good balance for fuzzy search
+  minMatchCharLength: 1,
+  ignoreLocation: true, // Search the entire string
 };
 
 export const initSearchEngine = (data: SearchableItem[]) => {
