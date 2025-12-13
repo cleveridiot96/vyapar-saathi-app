@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -27,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useTransactions } from "@/hooks/useTransactions";
 import { renderToStaticMarkup } from 'react-dom/server';
+import { Skeleton } from "@/components/ui/skeleton";
 
 function openPrintWindow(htmlContent: string, title = "Document") {
   const printWindow = window.open("", "_blank", "noopener,noreferrer");
@@ -96,6 +98,7 @@ export default function PurchasesPage() {
     addLedgerEntry,
     removeLedgerEntries,
     isTransactionsLoaded,
+    isMasterDataLoaded
   } = useTransactions();
 
   const [isAddPurchaseFormOpen, setIsAddPurchaseFormOpen] =
@@ -332,10 +335,15 @@ export default function PurchasesPage() {
     return "bg-primary hover:bg-primary/90"; // Fallback
   }, [activeTab]);
 
-  if (isAppHydrating || !isTransactionsLoaded)
+  if (isAppHydrating || !isTransactionsLoaded || !isMasterDataLoaded)
     return (
-      <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
-        <p className="text-lg text-muted-foreground">Loading data...</p>
+       <div className="space-y-4 p-4">
+        <div className="flex justify-between items-center">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-10 w-32" />
+        </div>
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-[calc(100vh-22rem)] w-full" />
       </div>
     );
 
