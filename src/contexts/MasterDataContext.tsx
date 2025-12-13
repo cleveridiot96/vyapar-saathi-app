@@ -1,16 +1,25 @@
+
 "use client";
 
 import React, { createContext, useContext, useMemo, ReactNode, useCallback } from 'react';
-import type { MasterItem, MasterItemType } from '@/lib/types';
+import type { MasterItem, MasterItemType, Customer, Supplier, Agent, Transporter, Warehouse, Broker, Expense } from '@/lib/types';
 import { useTransactions } from '@/hooks/useTransactions';
 
-// Define the context type
+// Define the context type to be more flexible
 interface MasterDataContextType {
     data: Record<MasterItemType, MasterItem[]>;
     setData: (type: MasterItemType, data: MasterItem[] | ((prev: MasterItem[]) => MasterItem[])) => void;
     getAllMasters: () => MasterItem[];
     addOrUpdateMaster: (item: MasterItem) => void;
     isMasterDataLoaded: boolean;
+    // Add direct access to each master data type
+    Customer: Customer[];
+    Supplier: Supplier[];
+    Agent: Agent[];
+    Transporter: Transporter[];
+    Warehouse: Warehouse[];
+    Broker: Broker[];
+    Expense: Expense[];
 }
 
 // Create the context with a default undefined value
@@ -46,12 +55,11 @@ export function MasterDataProvider({ children }: { children: ReactNode }) {
         Warehouse: warehouses || [],
         Broker: brokers || [],
         Expense: expenses || [],
-        // Ensure all MasterItemTypes are covered, even if empty
         Product: [], 
     }), [customers, suppliers, agents, transporters, warehouses, brokers, expenses]);
 
     const setData = useCallback((type: MasterItemType, updatedData: MasterItem[] | ((prev: MasterItem[]) => MasterItem[])) => {
-        const setterMap: Record<MasterItemType, React.Dispatch<React.SetStateAction<MasterItem[]>> | undefined> = {
+        const setterMap: Record<MasterItemType, React.Dispatch<React.SetStateAction<any[]>> | undefined> = {
             Customer: setCustomers,
             Supplier: setSuppliers,
             Agent: setAgents,
@@ -59,7 +67,7 @@ export function MasterDataProvider({ children }: { children: ReactNode }) {
             Warehouse: setWarehouses,
             Broker: setBrokers,
             Expense: setExpenses,
-            Product: undefined, // No setter for Product as it's not managed in useTransactions
+            Product: undefined,
         };
 
         const setter = setterMap[type];
@@ -69,16 +77,13 @@ export function MasterDataProvider({ children }: { children: ReactNode }) {
     }, [setCustomers, setSuppliers, setAgents, setTransporters, setWarehouses, setBrokers, setExpenses]);
 
     const addOrUpdateMaster = useCallback((item: MasterItem) => {
-        const type = item.type;
-        setData(type, (prev) => {
+        setData(item.type, (prev) => {
             const existingIndex = prev.findIndex(i => i.id === item.id);
             if (existingIndex >= 0) {
-                // Update existing
                 const updated = [...prev];
                 updated[existingIndex] = item;
                 return updated.sort((a,b) => a.name.localeCompare(b.name));
             } else {
-                // Add new
                 return [...prev, item].sort((a,b) => a.name.localeCompare(b.name));
             }
         });
@@ -90,7 +95,15 @@ export function MasterDataProvider({ children }: { children: ReactNode }) {
         getAllMasters,
         addOrUpdateMaster,
         isMasterDataLoaded,
-    }), [data, setData, getAllMasters, addOrUpdateMaster, isMasterDataLoaded]);
+        // Provide direct access
+        Customer: customers,
+        Supplier: suppliers,
+        Agent: agents,
+        Transporter: transporters,
+        Warehouse: warehouses,
+        Broker: brokers,
+        Expense: expenses,
+    }), [data, setData, getAllMasters, addOrUpdateMaster, isMasterDataLoaded, customers, suppliers, agents, transporters, warehouses, brokers, expenses]);
 
     return (
         <MasterDataContext.Provider value={contextValue}>
