@@ -11,12 +11,13 @@ export function useOutstandingBalances() {
     const { purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger, getAllMasters, isTransactionsLoaded } = useTransactions();
     const { financialYear, isAppHydrating } = useSettings();
 
-    const { receivableParties, payableParties, balances } = useMemo(() => {
+    const allMasters = useMemo(() => getAllMasters(), [getAllMasters]);
+
+    const balances = useMemo(() => {
         if (isAppHydrating || !isTransactionsLoaded) {
-            return { receivableParties: [], payableParties: [], balances: new Map() };
+            return new Map<string, number>();
         }
 
-        const allMasters = getAllMasters();
         const balances = new Map<string, number>();
 
         // 1. Set opening balances from before the financial year
@@ -101,6 +102,10 @@ export function useOutstandingBalances() {
             }
         });
 
+        return balances;
+    }, [isAppHydrating, financialYear, allMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger, isTransactionsLoaded]);
+
+    const { receivableParties, payableParties } = useMemo(() => {
         const receivableParties: MasterItem[] = [];
         const payableParties: MasterItem[] = [];
 
@@ -117,12 +122,13 @@ export function useOutstandingBalances() {
         
         receivableParties.sort((a,b) => Math.abs(b.balance || 0) - Math.abs(a.balance || 0));
         payableParties.sort((a,b) => Math.abs(b.balance || 0) - Math.abs(a.balance || 0));
+        
+        return { receivableParties, payableParties };
+    }, [allMasters, balances]);
 
-        return { receivableParties, payableParties, balances };
-    }, [isAppHydrating, financialYear, getAllMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger, isTransactionsLoaded]);
 
     const getPartyName = (partyId: string) => {
-        const party = getAllMasters().find(p => p.id === partyId);
+        const party = allMasters.find(p => p.id === partyId);
         return party?.name || partyId;
     }
 

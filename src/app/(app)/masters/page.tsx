@@ -17,7 +17,6 @@ export default function MastersPage() {
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.altKey && e.key.toLowerCase() === 'n') {
-            e.preventDefault();
             const activeElement = document.activeElement;
             if (activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement.tagName)) {
                 return;

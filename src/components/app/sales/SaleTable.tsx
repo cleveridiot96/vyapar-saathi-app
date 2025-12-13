@@ -32,7 +32,7 @@ interface SaleTableProps {
   onDownloadPdf?: (sale: Sale) => void;
 }
 
-export const SaleTable: React.FC<SaleTableProps> = ({ data, onEdit, onDelete, onDownloadPdf }) => {
+const SaleTableComponent: React.FC<SaleTableProps> = ({ data, onEdit, onDelete, onDownloadPdf }) => {
 
   const columns = React.useMemo<ColumnDef<Sale>[]>(() => [
     {
@@ -118,3 +118,5 @@ export const SaleTable: React.FC<SaleTableProps> = ({ data, onEdit, onDelete, on
     />
   );
 }
+
+export const SaleTable = React.memo(SaleTableComponent);
