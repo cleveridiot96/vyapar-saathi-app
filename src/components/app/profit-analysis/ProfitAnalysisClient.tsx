@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import type { Sale } from '@/lib/types';
 import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, eachMonthOfInterval, getYear, subMonths, subWeeks, startOfYear, endOfDay } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PieChart, TrendingUp, TrendingDown, DollarSign, Calculator } from "lucide-react";
+import { PieChart, TrendingUp, TrendingDown, DollarSign, Calculator, Trophy, BarChart, Scale } from "lucide-react";
 import { MasterDataCombobox } from '@/components/shared/MasterDataCombobox';
 import { Button } from '@/components/ui/button';
 
@@ -91,22 +92,22 @@ export function ProfitAnalysisClient() {
                     <div className="flex flex-wrap items-center gap-2">
                         <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
                         <div className="flex gap-1">
-                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20">Today</Button>
-                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20">1W</Button>
-                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20">1M</Button>
-                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20">3M</Button>
-                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20">6M</Button>
-                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20">YTD</Button>
+                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">Today</Button>
+                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">1W</Button>
+                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">1M</Button>
+                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">3M</Button>
+                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">6M</Button>
+                            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">YTD</Button>
                         </div>
                     </div>
                 </CardContent>
             </Card>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card><CardHeader><CardTitle>Total Net Profit</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">₹{kpis.totalProfit.toLocaleString('en-IN')}</p></CardContent></Card>
-                <Card><CardHeader><CardTitle>Total Sales Value</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">₹{kpis.totalSales.toLocaleString('en-IN')}</p></CardContent></Card>
-                <Card><CardHeader><CardTitle>Avg. Profit/Sale</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">₹{kpis.avgProfitPerSale.toLocaleString('en-IN')}</p></CardContent></Card>
-                <Card><CardHeader><CardTitle>Top Sale Profit</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">₹{kpis.topSale?.totalCalculatedProfit.toLocaleString('en-IN') || 'N/A'}</p></CardContent></Card>
+                <Card className="text-white" style={{background: 'linear-gradient(135deg, #28a745, #218838)'}}><CardHeader><CardTitle className="flex items-center gap-2"><DollarSign/>Total Net Profit</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">₹{kpis.totalProfit.toLocaleString('en-IN')}</p></CardContent></Card>
+                <Card className="text-white" style={{background: 'linear-gradient(135deg, #17a2b8, #138496)'}}><CardHeader><CardTitle className="flex items-center gap-2"><BarChart/>Total Sales Value</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">₹{kpis.totalSales.toLocaleString('en-IN')}</p></CardContent></Card>
+                <Card className="text-white" style={{background: 'linear-gradient(135deg, #ffc107, #e0a800)'}}><CardHeader><CardTitle className="text-black flex items-center gap-2"><Scale/>Avg. Profit/Sale</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-black">₹{kpis.avgProfitPerSale.toLocaleString('en-IN')}</p></CardContent></Card>
+                <Card className="text-white" style={{background: 'linear-gradient(135deg, #dc3545, #c82333)'}}><CardHeader><CardTitle className="flex items-center gap-2"><Trophy/>Top Sale Profit</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">₹{kpis.topSale?.totalCalculatedProfit.toLocaleString('en-IN') || 'N/A'}</p></CardContent></Card>
             </div>
             
             <div className="grid gap-6 lg:grid-cols-2">
