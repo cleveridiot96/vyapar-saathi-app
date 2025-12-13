@@ -7,12 +7,12 @@ import { useTransactions } from '@/hooks/useTransactions';
 
 // Define the context type to be more flexible
 interface MasterDataContextType {
-    data: Record<MasterItemType, MasterItem[]>;
+    data: Record<string, MasterItem[]>;
     setData: (type: MasterItemType, data: MasterItem[] | ((prev: MasterItem[]) => MasterItem[])) => void;
     getAllMasters: () => MasterItem[];
     addOrUpdateMaster: (item: MasterItem) => void;
     isMasterDataLoaded: boolean;
-    // Add direct access to each master data type
+    // Add direct access to each master data type for convenience
     Customer: Customer[];
     Supplier: Supplier[];
     Agent: Agent[];
@@ -55,11 +55,10 @@ export function MasterDataProvider({ children }: { children: ReactNode }) {
         Warehouse: warehouses || [],
         Broker: brokers || [],
         Expense: expenses || [],
-        Product: [], 
     }), [customers, suppliers, agents, transporters, warehouses, brokers, expenses]);
 
     const setData = useCallback((type: MasterItemType, updatedData: MasterItem[] | ((prev: MasterItem[]) => MasterItem[])) => {
-        const setterMap: Record<MasterItemType, React.Dispatch<React.SetStateAction<any[]>> | undefined> = {
+        const setterMap: Record<string, React.Dispatch<React.SetStateAction<any[]>> | undefined> = {
             Customer: setCustomers,
             Supplier: setSuppliers,
             Agent: setAgents,
@@ -67,7 +66,6 @@ export function MasterDataProvider({ children }: { children: ReactNode }) {
             Warehouse: setWarehouses,
             Broker: setBrokers,
             Expense: setExpenses,
-            Product: undefined,
         };
 
         const setter = setterMap[type];
@@ -89,7 +87,7 @@ export function MasterDataProvider({ children }: { children: ReactNode }) {
         });
     }, [setData]);
 
-    const contextValue = useMemo(() => ({
+    const contextValue: MasterDataContextType = useMemo(() => ({
         data,
         setData,
         getAllMasters,
