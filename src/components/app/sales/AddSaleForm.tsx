@@ -41,7 +41,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useMasterData } from "@/hooks/useMasterData";
+import { useMasterData } from "@/contexts/MasterDataContext";
 import { useInventory } from "@/hooks/useInventory";
 
 

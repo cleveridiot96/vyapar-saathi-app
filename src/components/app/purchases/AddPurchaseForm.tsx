@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { purchaseSchema, type PurchaseFormValues } from "@/lib/schemas/purchaseSchema";
 import type { MasterItem, Purchase, MasterItemType, Agent, ExpenseItem } from "@/lib/types";
-import { useMasterData } from "@/hooks/useMasterData";
+import { useMasterData } from "@/contexts/MasterDataContext";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { useToast } from "@/hooks/use-toast";
 import { MasterForm } from "@/components/app/masters/MasterForm";
