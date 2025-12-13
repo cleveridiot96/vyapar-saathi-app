@@ -157,7 +157,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
 
   return (
     <>
-      <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{paymentToEdit ? 'Edit Payment' : 'Add New Payment'}</DialogTitle>
@@ -281,7 +281,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
           onClose={() => { setIsMasterFormOpen(false); setMasterItemToEdit(null); }}
           onSubmit={handleMasterFormSubmit}
           initialData={masterItemToEdit}
-          itemType={masterFormItemType!} 
+          itemTypeFromButton={masterFormItemType!} 
         />
       )}
     </>

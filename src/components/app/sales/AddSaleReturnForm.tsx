@@ -168,7 +168,7 @@ export const AddSaleReturnForm: React.FC<AddSaleReturnFormProps> = ({
     if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(openState) => { if (!openState) onClose(); }}>
+    <Dialog open={isOpen} onOpenChange={(openState) => { if (!openState) onClose(); }} modal={false}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{saleReturnToEdit ? "Edit Sale Return" : "New Sale Return"}</DialogTitle>

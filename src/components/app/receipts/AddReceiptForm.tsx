@@ -230,7 +230,7 @@ export const AddReceiptForm: React.FC<AddReceiptFormProps> = ({
 
   return (
     <>
-      <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{receiptToEdit ? 'Edit Receipt' : 'Add New Receipt'}</DialogTitle>
@@ -394,7 +394,7 @@ export const AddReceiptForm: React.FC<AddReceiptFormProps> = ({
           onClose={() => { setIsMasterFormOpen(false); setMasterItemToEdit(null); }}
           onSubmit={handleMasterFormSubmit}
           initialData={masterItemToEdit}
-          itemType={masterFormItemType!} 
+          itemTypeFromButton={masterFormItemType!} 
         />
       )}
     </>

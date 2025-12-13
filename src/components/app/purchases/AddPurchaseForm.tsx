@@ -240,7 +240,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
 
   return (
     <>
-    <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(openState) => { if (!openState) onClose(); }}>
+    <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(openState) => { if (!openState) onClose(); }} modal={false}>
         <DialogContent className="sm:max-w-4xl">
             <DialogHeader>
                 <DialogTitle>{purchaseToEdit ? 'EDIT PURCHASE' : 'ADD NEW PURCHASE'}</DialogTitle>
@@ -477,7 +477,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
           onClose={() => { setIsMasterFormOpen(false); setMasterItemToEdit(null); }}
           onSubmit={handleMasterFormSubmit}
           initialData={masterItemToEdit}
-          itemType={masterFormItemType}
+          itemTypeFromButton={masterFormItemType}
         />
       )}
     </>

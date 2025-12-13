@@ -141,7 +141,7 @@ export const AddLocationTransferForm: React.FC<AddLocationTransferFormProps> = (
   , [availableStock, fromLocationId]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose} modal={false}>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>{transferToEdit ? 'Edit Location Transfer' : 'New Location Transfer'}</DialogTitle>
