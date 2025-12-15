@@ -64,7 +64,7 @@ export function SidebarNav() {
                     } : {}}
                   >
                     <Link href={feature.href}>
-                      {isActive && <div className="absolute inset-0 rounded-md bg-black/[.08] backdrop-blur-sm" />}
+                      {isActive && <div className="absolute inset-0 rounded-md bg-black/[.08]" />}
                       <feature.icon />
                       <span>{feature.title}</span>
                     </Link>
