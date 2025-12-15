@@ -24,9 +24,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useHydrated } from '@/hooks/useHydrated';
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const isHydrated = useHydrated();
 
   return (
     <>
@@ -44,7 +46,7 @@ export function SidebarNav() {
       <SidebarContent>
         <SidebarMenu>
           {features.map((feature) => {
-            const isActive = pathname.startsWith(feature.href);
+            const isActive = isHydrated && pathname.startsWith(feature.href);
             return (
               <SidebarMenuItem key={feature.href}>
                   <SidebarMenuButton
