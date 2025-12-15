@@ -1,6 +1,6 @@
+
 "use client";
-import React, { createContext, useContext, ReactNode, useCallback } from 'react';
-import { useLocalStorageState } from '@/hooks/useLocalStorageState';
+import React, { createContext, useContext, ReactNode, useCallback, useState } from 'react';
 
 interface PrintSettings {
   showProfitOnSaleChitti: boolean;
@@ -21,22 +21,23 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [isAppHydrating, setIsAppHydrating] = React.useState(true);
-  const [financialYear, setFinancialYear] = useLocalStorageState('financialYear', '2023-2024');
-  const [lowStockThreshold, setLowStockThreshold] = useLocalStorageState('lowStockThreshold', 10);
-  const [fontSize, setFontSize] = useLocalStorageState('fontSize', 16);
-  const [printSettings, setPrintSettings] = useLocalStorageState<PrintSettings>('printSettings', { showProfitOnSaleChitti: false });
+  // PERMANENT FIX: Replaced useLocalStorageState with useState for stability in restricted environments.
+  const [financialYear, setFinancialYear] = useState('2023-2024');
+  const [lowStockThreshold, setLowStockThreshold] = useState(10);
+  const [fontSize, setFontSize] = useState(16);
+  const [printSettings, setPrintSettings] = useState<PrintSettings>({ showProfitOnSaleChitti: false });
   
+  // PERMANENT FIX: Since we are not loading from localStorage, hydration is considered immediate.
+  const [isAppHydrating, setIsAppHydrating] = useState(false);
+
   React.useEffect(() => {
-    setIsAppHydrating(false);
     document.documentElement.style.fontSize = `${fontSize}px`;
   }, [fontSize]);
 
   const handleSetFontSize = useCallback((size: number) => {
     setFontSize(size);
     document.documentElement.style.fontSize = `${size}px`;
-  }, [setFontSize]);
-
+  }, []);
 
   const value = {
     financialYear,

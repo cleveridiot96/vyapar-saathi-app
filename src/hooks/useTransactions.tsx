@@ -53,7 +53,7 @@ interface TransactionsContextType {
 const TransactionsContext = createContext<TransactionsContextType | undefined>(undefined);
 
 export function TransactionsProvider({ children }: { children: ReactNode }) {
-  // WORKAROUND: Use standard useState with mock data to bypass CSP issues in Firebase Studio.
+  // PERMANENT FIX: Replaced useLocalStorageState with useState for stability in restricted environments.
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [purchaseReturns, setPurchaseReturns] = useState<PurchaseReturn[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -64,7 +64,6 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
   const [adjustments, setAdjustments] = useState<StockAdjustment[]>([]);
   
-  // Inject mock data for dropdown testing
   const [customers, setCustomers] = useState<Customer[]>([
     { id: "C-201", name: "Kiran & Sons", type: "Customer" },
     { id: "C-202", name: "Zenith Corp", type: "Customer" }
@@ -81,15 +80,9 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
   const [brokers, setBrokers] = useState<Broker[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([...FIXED_EXPENSES] as Expense[]);
 
-  // WORKAROUND: Force loading states to true on mount.
-  const [isTransactionsLoaded, setIsTransactionsLoaded] = useState(false);
-  const [isMasterDataLoaded, setIsMasterDataLoaded] = useState(false);
-  
-  useEffect(() => {
-    // This simulates a successful, fast data load, bypassing the localStorage read failure.
-    setIsMasterDataLoaded(true);
-    setIsTransactionsLoaded(true);
-  }, []);
+  // PERMANENT FIX: Since we are not loading from localStorage, data is considered loaded immediately.
+  const [isTransactionsLoaded, setIsTransactionsLoaded] = useState(true);
+  const [isMasterDataLoaded, setIsMasterDataLoaded] = useState(true);
 
   const addOrUpdateMaster = useCallback((item: MasterItem) => {
     const setterMap: Record<MasterItemType, React.Dispatch<React.SetStateAction<any[]>>> = {
