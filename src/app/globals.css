@@ -81,4 +81,16 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  @keyframes green-gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  [data-sidebar="sidebar"] {
+    background: linear-gradient(-45deg, #22c55e, #16a34a, #15803d, #166534);
+    background-size: 400% 400%;
+    animation: green-gradient 15s ease infinite;
+  }
 }
