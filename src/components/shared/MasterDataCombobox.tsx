@@ -86,7 +86,7 @@ export const MasterDataCombobox: React.FC<MasterDataComboboxProps> = ({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={true}>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           id={triggerId}
@@ -140,14 +140,14 @@ export const MasterDataCombobox: React.FC<MasterDataComboboxProps> = ({
                     {filteredOptions.map((option) => (
                       <Tooltip key={option.value} delayDuration={300}>
                         <TooltipTrigger asChild>
-                          <CommandItem
+                           <CommandItem
                             value={option.label}
                             onSelect={() => handleSelect(option.value)}
+                            className="uppercase"
                             onMouseDown={(e) => {
                                 e.preventDefault();
                                 handleSelect(option.value);
                             }}
-                            className="uppercase"
                           >
                             <Check
                                 className={cn("mr-2 h-4 w-4", value === option.value ? "opacity-100" : "opacity-0")}
