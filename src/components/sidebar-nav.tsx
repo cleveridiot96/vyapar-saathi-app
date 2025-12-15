@@ -53,7 +53,7 @@ export function SidebarNav() {
                     tooltip={feature.title}
                     className={cn(
                       "relative overflow-hidden",
-                      isActive && "shadow-lg text-white"
+                      isActive && "shadow-lg"
                     )}
                     style={isActive ? {
                       backgroundImage: `linear-gradient(to bottom right, ${feature.gradientFrom}, ${feature.gradientTo})`,
@@ -62,7 +62,7 @@ export function SidebarNav() {
                     } : {}}
                   >
                     <Link href={feature.href}>
-                      {isActive && <div className="absolute inset-0 rounded-md bg-black/[.1] backdrop-blur-sm" />}
+                      {isActive && <div className="absolute inset-0 rounded-md bg-black/[.08] backdrop-blur-sm" />}
                       <feature.icon />
                       <span>{feature.title}</span>
                     </Link>
