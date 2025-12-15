@@ -25,7 +25,6 @@ const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
-const INACTIVITY_TIMEOUT = 5000; // 5 seconds
 
 type SidebarContext = {
   state: "expanded" | "collapsed"
@@ -70,7 +69,6 @@ const SidebarProvider = React.forwardRef<
   ) => {
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
-    const inactivityTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
     const [_open, _setOpen] = React.useState(defaultOpen)
     const open = openProp ?? _open
@@ -87,39 +85,11 @@ const SidebarProvider = React.forwardRef<
       [setOpenProp, open]
     )
 
-    const resetInactivityTimer = React.useCallback(() => {
-        if (inactivityTimerRef.current) {
-            clearTimeout(inactivityTimerRef.current);
-        }
-        inactivityTimerRef.current = setTimeout(() => {
-            if (open && !isMobile) {
-                setOpen(false);
-            }
-        }, INACTIVITY_TIMEOUT);
-    }, [open, isMobile, setOpen]);
-
-    React.useEffect(() => {
-        const events = ['mousemove', 'keydown', 'mousedown', 'touchstart'];
-        const handleActivity = () => resetInactivityTimer();
-
-        events.forEach(event => window.addEventListener(event, handleActivity));
-        resetInactivityTimer();
-
-        return () => {
-            if (inactivityTimerRef.current) {
-                clearTimeout(inactivityTimerRef.current);
-            }
-            events.forEach(event => window.removeEventListener(event, handleActivity));
-        };
-    }, [resetInactivityTimer]);
-
-
     const toggleSidebar = React.useCallback(() => {
-      resetInactivityTimer();
       return isMobile
         ? setOpenMobile((open) => !open)
         : setOpen((open) => !open)
-    }, [isMobile, setOpen, setOpenMobile, resetInactivityTimer])
+    }, [isMobile, setOpen, setOpenMobile])
 
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
@@ -628,7 +598,7 @@ const SidebarMenuAction = React.forwardRef<
       ref={ref}
       data-sidebar="menu-action"
       className={cn(
-        "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
+        "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "peer-data-[size=sm]/menu-button:top-1",

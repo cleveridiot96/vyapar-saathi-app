@@ -72,6 +72,15 @@
     --sidebar-border: 217 32.6% 17.5%;
     --sidebar-ring: 217 91% 60%;
   }
+
+  .theme-green { --primary: 139 51% 41%; --accent: 140 45% 50%; }
+  .theme-red { --primary: 354 70% 45%; --accent: 354 60% 55%; }
+  .theme-purple { --primary: 263 45% 42%; --accent: 263 40% 52%; }
+  .theme-blue { --primary: 217 91% 60%; --accent: 217 80% 70%; }
+  .theme-orange { --primary: 24 95% 53%; --accent: 27 90% 60%; }
+  .theme-pink { --primary: 340 82% 61%; --accent: 340 75% 70%; }
+  .theme-teal { --primary: 173 58% 39%; --accent: 173 50% 49%; }
+  .theme-gray { --primary: 220 9% 46%; --accent: 220 9% 56%; }
 }
 
 @layer base {
@@ -81,16 +90,14 @@
   body {
     @apply bg-background text-foreground;
   }
-
-  @keyframes green-gradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-
+  
   [data-sidebar="sidebar"] {
-    background: linear-gradient(-45deg, #22c55e, #16a34a, #15803d, #166534);
-    background-size: 400% 400%;
-    animation: green-gradient 15s ease infinite;
+    background-color: hsl(var(--sidebar-background));
+    color: hsl(var(--sidebar-foreground));
+  }
+  
+  [data-sidebar="sidebar"] [data-active="true"] {
+     background-color: hsl(var(--primary));
+     color: hsl(var(--primary-foreground));
   }
 }
