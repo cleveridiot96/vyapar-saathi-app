@@ -27,7 +27,7 @@ export function DatePickerWithRange({
 
   return (
     <div className={cn("grid gap-2", className)}>
-      <Popover>
+      <Popover modal={true}>
         <PopoverTrigger asChild>
           <Button
             id="date"
