@@ -43,20 +43,33 @@ export function SidebarNav() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {features.map((feature) => (
-            <SidebarMenuItem key={feature.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname.startsWith(feature.href)}
-                  tooltip={feature.title}
-                >
-                  <Link href={feature.href}>
-                    <feature.icon />
-                    <span>{feature.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {features.map((feature) => {
+            const isActive = pathname.startsWith(feature.href);
+            return (
+              <SidebarMenuItem key={feature.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive}
+                    tooltip={feature.title}
+                    className={cn(
+                      "relative",
+                      isActive && "shadow-lg"
+                    )}
+                    style={isActive ? {
+                      backgroundImage: `linear-gradient(to bottom right, ${feature.gradientFrom}, ${feature.gradientTo})`,
+                      color: feature.textColor,
+                      boxShadow: feature.shadow,
+                    } : {}}
+                  >
+                    <Link href={feature.href}>
+                      {isActive && <div className="absolute inset-0 rounded-md bg-black/[.08] backdrop-blur-sm" />}
+                      <feature.icon />
+                      <span>{feature.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
         </SidebarMenu>
       </SidebarContent>
       <SidebarSeparator />
