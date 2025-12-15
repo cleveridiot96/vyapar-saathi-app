@@ -101,3 +101,26 @@
      color: hsl(var(--primary-foreground));
   }
 }
+
+
+@layer components {
+    [data-sidebar="menu-button"]:not([data-active="true"]):hover::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: radial-gradient(80% 80% at top left, hsl(var(--sidebar-accent) / 0.3), transparent);
+        animation: shine 0.5s ease-out;
+    }
+}
+
+@keyframes shine {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
