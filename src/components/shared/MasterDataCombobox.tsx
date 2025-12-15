@@ -1,14 +1,21 @@
 "use client";
 
 import * as React from "react";
-import * as PopoverPrimitive from "@radix-ui/react-popover"
-import { Command, CommandInput, CommandList, CommandEmpty, CommandItem, CommandSeparator } from "@/components/ui/command";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Check, Plus, ChevronsUpDown, Pencil } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Fuse from 'fuse.js';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface Option {
   value: string;
@@ -17,7 +24,7 @@ interface Option {
 }
 
 interface MasterDataComboboxProps {
-  value: string | undefined;
+  value?: string;
   onChange: (value: string | undefined) => void;
   options: Option[];
   placeholder?: string;
@@ -25,166 +32,131 @@ interface MasterDataComboboxProps {
   notFoundMessage?: string;
   addNewLabel?: string;
   onAddNew?: () => void;
-  onEdit?: (value: string) => void;
+  onEdit?: (id: string) => void;
   disabled?: boolean;
-  className?: string;
-  triggerId?: string;
 }
 
-export const MasterDataCombobox: React.FC<MasterDataComboboxProps> = ({
+export function MasterDataCombobox({
   value,
   onChange,
   options,
-  placeholder = "Select an option",
+  placeholder = "Select option...",
   searchPlaceholder = "Search...",
-  notFoundMessage = "No match found.",
-  addNewLabel = "Add New",
+  notFoundMessage = "No option found.",
+  addNewLabel = "Add new",
   onAddNew,
   onEdit,
-  disabled,
-  className,
-  triggerId,
-}) => {
+  disabled = false,
+}: MasterDataComboboxProps) {
   const [open, setOpen] = React.useState(false);
-  const [search, setSearch] = React.useState("");
 
-  const fuse = React.useMemo(() => new Fuse(options, {
-    keys: ['label'],
-    threshold: 0.3,
-  }), [options]);
-
-  const filteredOptions = React.useMemo(() => {
-    if (!search) {
-      return options;
-    }
-    return fuse.search(search).map(result => result.item);
-  }, [options, search, fuse]);
-
-  const selectedLabel = options.find((opt) => opt.value === value)?.label;
-
-  const handleSelect = (selectedValue: string | undefined) => {
-    onChange(selectedValue);
-    setOpen(false);
-    setSearch("");
-  };
-
-  const handleAddNew = () => {
-    if (onAddNew) {
-      onAddNew();
-      setOpen(false);
-      setSearch("");
-    }
-  };
-  
-  const handleEdit = (e: React.MouseEvent, value: string) => {
-    e.stopPropagation(); 
-    if (onEdit) {
-      onEdit(value);
-      setOpen(false);
-      setSearch("");
-    }
-  }
+  const selectedOption = options.find((opt) => opt.value === value);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          id={triggerId}
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between text-sm uppercase h-auto", !value && "text-muted-foreground", className)}
+          className="w-full justify-between"
           disabled={disabled}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setOpen(!open);
+          }}
         >
           <span className="truncate">
-            {selectedLabel || placeholder}
+            {selectedOption ? selectedOption.label : placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-
-      <PopoverPrimitive.Portal>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[99999]">
-          <Command shouldFilter={false} className="max-h-[300px]">
-            <CommandInput
-              placeholder={searchPlaceholder}
-              value={search}
-              onValueChange={setSearch}
-              autoFocus
-            />
-            <TooltipProvider>
-              <CommandList className="max-h-[calc(300px-theme(spacing.12)-theme(spacing.2))]">
-                  <CommandItem
-                      onSelect={() => handleSelect(undefined)}
-                      className={cn(
-                          "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground text-muted-foreground",
-                          !value && "font-semibold bg-accent"
-                      )}
+      <PopoverContent 
+        className="w-[var(--radix-popover-trigger-width)] p-0" 
+        align="start"
+        side="bottom"
+        sideOffset={4}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <Command>
+          <CommandInput placeholder={searchPlaceholder} />
+          <CommandEmpty>
+            {notFoundMessage}
+            {onAddNew && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start mt-2"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setOpen(false);
+                  onAddNew();
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {addNewLabel}
+              </Button>
+            )}
+          </CommandEmpty>
+          <CommandGroup className="max-h-[200px] overflow-auto">
+            {options.map((option) => (
+              <CommandItem
+                key={option.value}
+                value={option.label}
+                onSelect={() => {
+                  onChange(option.value === value ? undefined : option.value);
+                  setOpen(false);
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    value === option.value ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <span className="flex-1 truncate">{option.label}</span>
+                {onEdit && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 ml-2"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setOpen(false);
+                      onEdit(option.value);
+                    }}
                   >
-                      <Check className={cn("mr-2 h-4 w-4", !value ? "opacity-100" : "opacity-0")} />
-                      <span className="italic">Clear selection</span>
-                  </CommandItem>
-                  <CommandSeparator className="my-1" />
-
-                {filteredOptions.length === 0 && search.length > 0 ? (
-                  <CommandEmpty>
-                    {notFoundMessage}
-                    {onAddNew && (
-                      <CommandItem onSelect={handleAddNew} className="cursor-pointer">
-                        <Plus className="h-4 w-4 mr-2" /> {addNewLabel}
-                      </CommandItem>
-                    )}
-                  </CommandEmpty>
-                ) : (
-                  <>
-                    {filteredOptions.map((option) => (
-                      <Tooltip key={option.value} delayDuration={300}>
-                        <TooltipTrigger asChild>
-                           <CommandItem
-                            value={option.label}
-                            onSelect={() => handleSelect(option.value)}
-                            className="uppercase"
-                            onMouseDown={(e) => {
-                                e.preventDefault();
-                                handleSelect(option.value);
-                            }}
-                          >
-                            <Check
-                                className={cn("mr-2 h-4 w-4", value === option.value ? "opacity-100" : "opacity-0")}
-                            />
-                            <span className="flex-grow truncate">{option.label}</span>
-                            {onEdit && (
-                              <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6 shrink-0 ml-2 rounded-md p-1 opacity-50 hover:opacity-100"
-                                  onClick={(e) => handleEdit(e, option.value)}
-                                  aria-label={`Edit ${option.label}`}
-                              >
-                                  <Pencil className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </CommandItem>
-                        </TooltipTrigger>
-                        {option.tooltipContent && (
-                          <TooltipContent side="right" align="start">
-                            {option.tooltipContent}
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    ))}
-                    {onAddNew && (
-                      <CommandItem onSelect={handleAddNew} className="cursor-pointer mt-1 border-t">
-                        <Plus className="h-4 w-4 mr-2" /> {addNewLabel}
-                      </CommandItem>
-                    )}
-                  </>
+                    <Pencil className="h-3 w-3" />
+                  </Button>
                 )}
-              </CommandList>
-            </TooltipProvider>
-          </Command>
-        </PopoverContent>
-      </PopoverPrimitive.Portal>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          {onAddNew && options.length > 0 && (
+            <div className="border-t p-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setOpen(false);
+                  onAddNew();
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {addNewLabel}
+              </Button>
+            </div>
+          )}
+        </Command>
+      </PopoverContent>
     </Popover>
   );
-};
+}
