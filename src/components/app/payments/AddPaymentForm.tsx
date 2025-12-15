@@ -31,12 +31,15 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { paymentSchema, type PaymentFormValues } from "@/lib/schemas/paymentSchema";
 import type { MasterItem, Payment, MasterItemType, Purchase } from "@/lib/types";
-import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { MasterForm } from "@/components/app/masters/MasterForm";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { useInventory } from "@/hooks/useInventory";
+import dynamic from 'next/dynamic';
+
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
+
 
 interface AddPaymentFormProps {
   isOpen: boolean;

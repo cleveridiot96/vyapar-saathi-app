@@ -11,7 +11,6 @@ import { format, parseISO, differenceInDays } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
-import { MasterDataCombobox } from '@/components/shared/MasterDataCombobox';
 import {
   Accordion,
   AccordionContent,
@@ -28,6 +27,9 @@ import {
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTransactions } from '@/hooks/useTransactions';
+import dynamic from 'next/dynamic';
+
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
 interface OutstandingParty {
   partyId: string;
@@ -254,7 +256,7 @@ export function OutstandingClient() {
             <div className="flex flex-col md:flex-row justify-between items-center my-4 gap-2">
                 <MasterDataCombobox 
                     value={selectedPartyId}
-                    onChange={(value) => setSelectedPartyId(value)}
+                    onChange={(value) => setSelectedPartyId(value || undefined)}
                     options={partyOptions}
                     placeholder="FILTER BY PARTY..."
                     className="w-full md:w-1/3"

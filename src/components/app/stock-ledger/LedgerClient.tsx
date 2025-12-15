@@ -4,7 +4,6 @@ import { useLocalStorageState } from "@/hooks/useLocalStorageState";
 import type { MasterItem, Purchase, Sale, PurchaseReturn, SaleReturn, MasterItemType } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
 import { format, parseISO, startOfDay, endOfDay, isWithinInterval, subMonths, subWeeks, startOfYear, isBefore } from "date-fns";
@@ -19,6 +18,9 @@ import { MasterForm } from "@/components/app/masters/MasterForm";
 import { useTransactions } from "@/hooks/useTransactions";
 import { Input } from "@/components/ui/input";
 import { useHydrated } from '@/hooks/useHydrated';
+import dynamic from 'next/dynamic';
+
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
 
 const initialLedgerData = {
@@ -432,7 +434,7 @@ export function LedgerClient() {
             onClose={() => { setIsMasterFormOpen(false); setMasterItemToEdit(null); }}
             onSubmit={handleMasterFormSubmit}
             initialData={masterItemToEdit}
-            itemType={masterItemToEdit?.type || 'Supplier'}
+            itemTypeFromButton={masterItemToEdit?.type || 'Supplier'}
         />
       )}
     </div>

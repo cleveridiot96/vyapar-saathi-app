@@ -2,7 +2,6 @@
 import React, { useMemo } from 'react';
 import type { Purchase, Sale, PurchaseReturn, SaleReturn, LocationTransfer } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { format, parseISO } from "date-fns";
 import { PackageSearch, ArrowRight, ArrowLeft } from "lucide-react";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -16,6 +15,9 @@ import {
   TimelineDescription,
   TimelineContent,
 } from '@/components/ui/timeline';
+import dynamic from 'next/dynamic';
+
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
 
 export function LotLedgerClient() {
@@ -106,7 +108,7 @@ export function LotLedgerClient() {
             </CardTitle>
             <MasterDataCombobox
               value={selectedLot || ""}
-              onChange={(value) => setSelectedLot(value)}
+              onChange={(value) => setSelectedLot(value || null)}
               options={allLotNumbers}
               placeholder="SELECT A LOT NUMBER..."
               searchPlaceholder="SEARCH LOTS..."

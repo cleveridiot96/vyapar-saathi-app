@@ -4,7 +4,6 @@ import React, { useMemo, useEffect } from 'react';
 import type { MasterItem } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
-import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
 import { format, parseISO, startOfDay, endOfDay, isWithinInterval, isBefore, subMonths, subWeeks, startOfYear } from "date-fns";
@@ -16,6 +15,9 @@ import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useHydrated } from '@/hooks/useHydrated';
+import dynamic from 'next/dynamic';
+
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
 interface FinancialLedgerTransaction {
   id: string;

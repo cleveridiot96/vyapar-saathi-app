@@ -30,12 +30,14 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { LocationTransfer, MasterItem, ExpenseItem } from "@/lib/types";
 import { useMasterData } from "@/hooks/useMasterData";
-import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { useInventory } from "@/hooks/useInventory";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import dynamic from 'next/dynamic';
+
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
 interface AddLocationTransferFormProps {
   isOpen: boolean;

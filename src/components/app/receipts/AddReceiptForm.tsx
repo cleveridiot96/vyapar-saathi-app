@@ -31,12 +31,14 @@ import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { receiptSchema, type ReceiptFormValues } from "@/lib/schemas/receiptSchema";
 import type { MasterItem, Receipt, MasterItemType, Sale } from "@/lib/types";
-import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { MasterForm } from "@/components/app/masters/MasterForm";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@/components/ui/command";
+import dynamic from 'next/dynamic';
+
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
 interface AddReceiptFormProps {
   isOpen: boolean;

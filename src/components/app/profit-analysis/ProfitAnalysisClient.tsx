@@ -10,8 +10,10 @@ import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, eachMonth
 import type { DateRange } from "react-day-picker";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PieChart, TrendingUp, TrendingDown, DollarSign, Calculator, Trophy, BarChart, Scale } from "lucide-react";
-import { MasterDataCombobox } from '@/components/shared/MasterDataCombobox';
 import { Button } from '@/components/ui/button';
+import dynamic from 'next/dynamic';
+
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
 export function ProfitAnalysisClient() {
     const { sales, isTransactionsLoaded } = useTransactions();
@@ -133,7 +135,7 @@ export function ProfitAnalysisClient() {
                  <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Calculator/> Profit Calculator</CardTitle><CardDescription>Select a sale to see a detailed profit breakdown.</CardDescription></CardHeader>
                     <CardContent className="space-y-4">
-                        <MasterDataCombobox options={saleOptions} value={selectedSaleId || ''} onChange={setSelectedSaleId} placeholder="Select a sale..." />
+                        <MasterDataCombobox options={saleOptions} value={selectedSaleId || ''} onChange={(value) => setSelectedSaleId(value || null)} placeholder="Select a sale..." />
                         {selectedSaleDetails && (
                              <ScrollArea className="h-60 p-2 border rounded-md">
                                 {selectedSaleDetails.items.map(item => (
