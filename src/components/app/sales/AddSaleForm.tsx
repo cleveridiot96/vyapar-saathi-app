@@ -498,7 +498,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                                     <SelectContent>
                                       <SelectItem value="Broker Commission">Broker Commission</SelectItem>
                                       <SelectItem value="Extra Brokerage">Extra Brokerage</SelectItem>
-                                      {(expenses || []).map(opt => <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>)}
+                                      {(expenses || []).map((opt, i) => <SelectItem key={`${opt.id}-${i}`} value={opt.name}>{opt.name}</SelectItem>)}
                                     </SelectContent>
                                   </Select><FormMessage />
                                 </FormItem>)} />
@@ -632,3 +632,5 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
 };
 
 export const AddSaleForm = React.memo(AddSaleFormComponent);
+
+    
