@@ -112,8 +112,8 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   const processSubmit = (values: LocationTransferFormValues) => {
     setIsSubmitting(true);
 
-    const fromLocation = warehouses.find(w => w.id === values.fromLocationId);
-    const toLocation = warehouses.find(w => w.id === values.toLocationId);
+    const fromLocation = (warehouses || []).find(w => w.id === values.fromLocationId);
+    const toLocation = (warehouses || []).find(w => w.id === values.toLocationId);
 
     const totalExpenses = values.expenses?.reduce((sum, exp) => sum + exp.amount, 0) || 0;
 
@@ -167,13 +167,13 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
               )} />
               <FormField control={control} name="fromLocationId" render={({ field }) => (
                 <FormItem><FormLabel>From Warehouse</FormLabel>
-                  <MasterDataCombobox options={warehouses.map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" {...field} />
+                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" {...field} />
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={control} name="toLocationId" render={({ field }) => (
                 <FormItem><FormLabel>To Warehouse</FormLabel>
-                  <MasterDataCombobox options={warehouses.map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" {...field} />
+                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" {...field} />
                   <FormMessage />
                 </FormItem>
               )} />
