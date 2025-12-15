@@ -32,7 +32,6 @@ import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { saleSchema, type SaleFormValues } from '@/lib/schemas/saleSchema';
 import type { MasterItem, MasterItemType, Sale, ExpenseItem, AggregatedInventoryItem } from '@/lib/types';
-import { MasterDataCombobox } from '@/components/shared/MasterDataCombobox';
 import { useToast } from '@/hooks/use-toast';
 import { MasterForm } from '@/components/app/masters/MasterForm';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -44,6 +43,9 @@ import {
 } from "@/components/ui/accordion";
 import { useMasterData } from "@/contexts/MasterDataContext";
 import { useInventory } from "@/hooks/useInventory";
+import dynamic from 'next/dynamic';
+
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
 
 interface AddSaleFormProps {
