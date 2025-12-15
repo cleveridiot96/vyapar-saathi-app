@@ -77,7 +77,7 @@ export const MasterDataCombobox: React.FC<MasterDataComboboxProps> = ({
   };
   
   const handleEdit = (e: React.MouseEvent, value: string) => {
-    e.stopPropagation();
+    e.stopPropagation(); 
     if (onEdit) {
       onEdit(value);
       setOpen(false);
@@ -141,8 +141,12 @@ export const MasterDataCombobox: React.FC<MasterDataComboboxProps> = ({
                       <Tooltip key={option.value} delayDuration={300}>
                         <TooltipTrigger asChild>
                           <CommandItem
-                            value={option.value}
+                            value={option.label}
                             onSelect={() => handleSelect(option.value)}
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                handleSelect(option.value);
+                            }}
                             className="uppercase"
                           >
                             <Check
