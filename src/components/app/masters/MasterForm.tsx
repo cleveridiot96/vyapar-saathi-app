@@ -112,8 +112,7 @@ export function MasterForm({
   }
   const singularLabel = getSingularLabel(itemType);
 
-  const handleUnlock = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleUnlock = () => {
     if (initialData && onToggleLock) {
       onToggleLock(initialData);
       onClose();
