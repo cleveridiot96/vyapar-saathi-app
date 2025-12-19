@@ -39,7 +39,7 @@ export function ReceiptsClient() {
 
   const filteredReceipts = React.useMemo(() => {
     if (isAppHydrating || !isTransactionsLoaded) return [];
-    return receipts.filter(receipt => receipt && isDateInFinancialYear(receipt.date, financialYear));
+    return receipts.filter(receipt => receipt && receipt.date && isDateInFinancialYear(receipt.date, financialYear));
   }, [receipts, financialYear, isAppHydrating, isTransactionsLoaded]);
 
   const handleAddOrUpdateReceipt = React.useCallback((receipt: Receipt) => {

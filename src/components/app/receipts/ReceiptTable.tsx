@@ -15,6 +15,7 @@ import {
 import { DataTable } from "@/components/shared/DataTable";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/shared/DataTableColumnHeader";
+import { Badge } from "@/components/ui/badge";
 
 interface ReceiptTableProps {
   data: Receipt[];
@@ -32,17 +33,22 @@ export const ReceiptTable: React.FC<ReceiptTableProps> = ({ data, onEdit, onDele
     {
       accessorKey: 'partyName',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Party" />,
-      cell: ({ row }) => `${row.original.partyName} (${row.original.partyType})`,
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+            <span className="font-medium">{row.original.partyName}</span>
+            <Badge variant="outline" className="w-fit">{row.original.partyType}</Badge>
+        </div>
+      )
     },
     {
       accessorKey: 'amount',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Amount (₹)" className="justify-end" />,
-      cell: ({ row }) => <div className="text-right font-semibold">{row.original.amount.toLocaleString('en-IN')}</div>,
+      cell: ({ row }) => <div className="text-right font-semibold">{row.original.amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>,
     },
     {
         accessorKey: 'cashDiscount',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Discount (₹)" className="justify-end" />,
-        cell: ({ row }) => <div className="text-right">{row.original.cashDiscount?.toLocaleString('en-IN') || '-'}</div>,
+        cell: ({ row }) => <div className="text-right">{row.original.cashDiscount?.toLocaleString('en-IN', {minimumFractionDigits: 2}) || '-'}</div>,
     },
     {
       accessorKey: 'paymentMethod',
@@ -55,10 +61,12 @@ export const ReceiptTable: React.FC<ReceiptTableProps> = ({ data, onEdit, onDele
     {
       accessorKey: 'notes',
       header: 'Notes',
+       cell: ({ row }) => <div className="truncate max-w-[150px]">{row.original.notes || '-'}</div>
     },
     {
       id: 'actions',
       cell: ({ row }) => (
+        <div className="text-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -73,9 +81,14 @@ export const ReceiptTable: React.FC<ReceiptTableProps> = ({ data, onEdit, onDele
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       ),
     },
   ], [onEdit, onDelete]);
 
-  return <DataTable columns={columns} data={data} />;
+  if (data.length === 0) {
+    return <p className="text-center text-muted-foreground py-8">No receipts recorded yet.</p>;
+  }
+
+  return <DataTable columns={columns} data={data} getRowId={(row) => row.id} />;
 };

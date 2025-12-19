@@ -4,7 +4,13 @@ export interface MasterItem {
   id: string;
   type: MasterItemType;
   name: string;
-  details?: Record<string, any>;
+  details?: {
+    commission?: number;
+    commissionType?: 'Percentage' | 'Fixed';
+    openingBalance?: number;
+    openingBalanceType?: 'Dr' | 'Cr';
+  };
+  balance?: number;
 }
 
 export interface Agent extends MasterItem {
@@ -177,9 +183,11 @@ export interface Payment {
   partyName: string;
   partyType: MasterItemType;
   amount: number;
-  paymentMethod: 'Cash' | 'Bank' | 'UPI';
-  paymentType: 'Regular' | 'Stock';
+  paymentMethod?: 'Cash' | 'Bank' | 'UPI';
+  paymentType: 'Cash' | 'Stock';
+  transactionType: 'On Account' | 'Against Bill';
   notes?: string;
+  source?: string;
   stockItems?: {
     lotNumber: string;
     quantity: number;
@@ -187,9 +195,12 @@ export interface Payment {
     rate: number;
     value: number;
   }[];
-  againstPurchases?: {
-    purchaseId: string;
+  againstBills?: {
+    billId: string;
     amount: number;
+    billDate?: string;
+    billTotal?: number;
+    billVakkal?: string;
   }[];
 }
 
@@ -291,4 +302,27 @@ export interface Warehouse extends MasterItem {
 
 export interface Expense extends MasterItem {
   type: 'Expense';
+}
+
+export interface TransactionalProfitInfo {
+  saleId: string;
+  date: string;
+  billNumber?: string;
+  customerName?: string;
+  brokerName?: string;
+  lotNumber: string;
+  saleNetWeightKg: number;
+  saleQuantityBags: number;
+  basePurchaseRate: number;
+  landedCostPerKg: number;
+  saleRatePerKg: number;
+  goodsValue: number;
+  costOfGoodsSold: number;
+  grossProfit: number;
+  netProfit: number;
+  costBreakdown: CostBreakdown;
+  saleExpenses: {
+    total: number;
+    [key: string]: number;
+  };
 }
