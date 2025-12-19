@@ -109,16 +109,16 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
   }, [setCustomers, setSuppliers, setAgents, setTransporters, setWarehouses, setBrokers, setExpenses]);
 
 
-  const addLedgerEntry = (entries: LedgerEntry | LedgerEntry[]) => {
+  const addLedgerEntry = useCallback((entries: LedgerEntry | LedgerEntry[]) => {
     const entriesToAdd = Array.isArray(entries) ? entries : [entries];
     setLedger(prev => [...prev, ...entriesToAdd]);
-  };
+  }, [setLedger]);
 
-  const removeLedgerEntries = (relatedVoucherId: string) => {
+  const removeLedgerEntries = useCallback((relatedVoucherId: string) => {
     setLedger(prev => prev.filter(entry => entry.relatedVoucher !== relatedVoucherId));
-  };
+  }, [setLedger]);
   
-  const getAllMasters = useMemo(() => () => {
+  const getAllMasters = useCallback(() => {
     return [
       ...customers,
       ...suppliers,
@@ -169,7 +169,8 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
     customers, suppliers, agents, transporters, warehouses, brokers, expenses,
     isTransactionsLoaded, isMasterDataLoaded, getAllMasters, addOrUpdateMaster, masterData,
     setPurchases, setPurchaseReturns, setSales, setSaleReturns, setLocationTransfers, setPayments, setReceipts, setLedger, setAdjustments,
-    setCustomers, setSuppliers, setAgents, setTransporters, setWarehouses, setBrokers, setExpenses
+    setCustomers, setSuppliers, setAgents, setTransporters, setWarehouses, setBrokers, setExpenses,
+    addLedgerEntry, removeLedgerEntries
   ]);
 
   return (

@@ -51,10 +51,6 @@ const TABS_CONFIG: { value: MasterPageTabKey; label: string; icon: React.Element
   { value: "Expense", label: "EXPENSES", icon: DollarSign, colorClass: 'bg-purple-500 hover:bg-purple-600 text-white data-[state=active]:bg-purple-600 data-[state=active]:text-white' },
 ];
 
-const dispatchSearchReindex = () => {
-    window.dispatchEvent(new CustomEvent('reindex-search'));
-};
-
 const fuseOptions = {
   keys: ['name'],
   includeScore: true,
@@ -82,10 +78,8 @@ export default function MastersPage() {
   const [displayLimit, setDisplayLimit] = useState(DISPLAY_LIMIT_OPTIONS[1]);
 
   const allMasterItems = useMemo(() => getAllMasters(), [getAllMasters]);
-  const prevAllMasterItemsRef = useRef<MasterItem[]>(allMasterItems);
   
-  const fuseRef = useRef<Fuse<MasterItem> | null>(null);
-  const [fuseKey, setFuseKey] = useState(0); 
+  const fuseInstances = useRef<Record<string, Fuse<MasterItem>>>({});
 
   useEffect(() => { setHydrated(true); }, []);
 
@@ -119,37 +113,6 @@ export default function MastersPage() {
     };
   }, [openFormForNewItem]);
 
-  useEffect(() => {
-    if (hydrated) {
-      if (JSON.stringify(prevAllMasterItemsRef.current) !== JSON.stringify(allMasterItems)) {
-          dispatchSearchReindex();
-      }
-      prevAllMasterItemsRef.current = allMasterItems;
-    }
-  }, [allMasterItems, hydrated, toast]);
-
-  const hydrateFixedItems = <T extends MasterItem>(currentItems: T[], fixedItems: readonly T[], setter: React.Dispatch<React.SetStateAction<T[]>>) => {
-    const itemsMap = new Map(currentItems.map(item => [item.id, item]));
-    let updated = false;
-    fixedItems.forEach(fixedItem => {
-      if (!itemsMap.has(fixedItem.id) || JSON.stringify(itemsMap.get(fixedItem.id)) !== JSON.stringify(fixedItem)) {
-        itemsMap.set(fixedItem.id, fixedItem);
-        updated = true;
-      }
-    });
-    if (updated) {
-      setter(Array.from(itemsMap.values()).sort((a, b) => a.name.localeCompare(b.name)) as T[]);
-    }
-  };
-
-  useEffect(() => {
-    if (hydrated) {
-      hydrateFixedItems(warehouses, FIXED_WAREHOUSES as any, setWarehouses);
-      hydrateFixedItems(expenses, FIXED_EXPENSES as any, setExpenses);
-    }
-  }, [hydrated, warehouses, expenses, setWarehouses, setExpenses]);
-
-
   const getMasterDataStateForTab = useCallback((type: MasterPageTabKey) => {
     if (type === 'All') {
         return allMasterItems;
@@ -167,10 +130,12 @@ export default function MastersPage() {
   }, [allMasterItems, warehouses, expenses, getAllMasters]);
   
   useEffect(() => {
-    const data = getMasterDataStateForTab(activeTab);
-    fuseRef.current = new Fuse(data.filter(validateMasterItem), fuseOptions);
-    setFuseKey(k => k + 1);
-  }, [activeTab, allMasterItems, getMasterDataStateForTab]);
+      TABS_CONFIG.forEach(tab => {
+          const data = getMasterDataStateForTab(tab.value);
+          fuseInstances.current[tab.value] = new Fuse(data.filter(validateMasterItem), fuseOptions);
+      });
+  }, [allMasterItems, warehouses, expenses, getMasterDataStateForTab]);
+
 
   const debouncedSearch = useCallback(debounce((value: string) => {
     setSearchQuery(value);
@@ -278,7 +243,8 @@ export default function MastersPage() {
     if (!searchQuery) {
         return data.map(item => ({ item, matches: [], score: 1 }));
     }
-    const fuse = fuseRef.current ?? new Fuse(data, fuseOptions);
+    const fuse = fuseInstances.current[tabValue];
+    if (!fuse) return [];
     return fuse.search(searchQuery);
   };
 
@@ -365,7 +331,6 @@ export default function MastersPage() {
                   </CardHeader>
                   <CardContent className="p-0">
                     <MasterList
-                      key={fuseKey}
                       data={paginatedData}
                       itemType={tab.value as MasterItemType | 'All'}
                       isAllItemsTab={tab.value === "All"}
