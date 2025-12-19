@@ -8,6 +8,8 @@ interface PrintSettings {
 interface SettingsContextType {
   financialYear: string;
   setFinancialYear: (year: string) => void;
+  availableFinancialYears: string[];
+  setAvailableFinancialYears: React.Dispatch<React.SetStateAction<string[]>>;
   isAppHydrating: boolean;
   lowStockThreshold: number;
   setLowStockThreshold: (threshold: number) => void;
@@ -24,6 +26,7 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export function SettingsProvider({ children }: { children: ReactNode }) {
   // PERMANENT FIX: Replaced useLocalStorageState with useState for stability in restricted environments.
   const [financialYear, setFinancialYear] = useState('2023-2024');
+  const [availableFinancialYears, setAvailableFinancialYears] = useState<string[]>(['2023-2024']);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [fontSize, setFontSize] = useState(16);
   const [printSettings, setPrintSettings] = useState<PrintSettings>({ showProfitOnSaleChitti: false });
@@ -59,6 +62,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const value = {
     financialYear,
     setFinancialYear,
+    availableFinancialYears,
+    setAvailableFinancialYears,
     isAppHydrating,
     lowStockThreshold,
     setLowStockThreshold,

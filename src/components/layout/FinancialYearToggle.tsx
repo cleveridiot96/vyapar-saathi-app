@@ -20,6 +20,8 @@ export function FinancialYearToggle() {
   const { 
     financialYear, 
     setFinancialYear, 
+    availableFinancialYears,
+    setAvailableFinancialYears,
     getNextFinancialYear 
   } = useSettings();
   const { toast } = useToast();
@@ -30,51 +32,32 @@ export function FinancialYearToggle() {
     setButtonText(`FY ${financialYear}`);
   }, [financialYear]);
   
-  const generateYearOptions = useCallback(() => {
-    const options = [];
-    const currentFyParts = financialYear.split('-').map(Number);
-    if (currentFyParts.length !== 2 || isNaN(currentFyParts[0])) {
-        const currentActualYear = new Date().getFullYear();
-         for (let i = 2; i >= -2; i--) {
-            const startYear = currentActualYear - i;
-            options.push(`${startYear}-${startYear + 1}`);
-        }
-        return options.sort((a,b) => b.localeCompare(a));
-    }
-
-    const [currentFyStart] = currentFyParts;
-    
-    for (let i = 2; i >= -2; i--) { // Show current, 2 past, 2 future
-      const startYear = currentFyStart - i;
-      options.push(`${startYear}-${startYear + 1}`);
-    }
-    return options.sort((a,b) => b.localeCompare(a)); // Show most recent first
-  }, [financialYear]);
-
-  const yearOptions = generateYearOptions();
-
   const handleAddNextFinancialYear = () => {
     const nextFy = getNextFinancialYear();
-    setFinancialYear(nextFy);
-    toast({
-      title: "New Financial Year Added",
-      description: `Switched to FY ${nextFy}. Accounts for FY ${financialYear} would be finalized.`,
-    });
-    toast({
-      title: "Conceptual Action",
-      description: `Closing balances for FY ${financialYear} would be carried forward to FY ${nextFy}.`,
-      duration: 4000,
-    });
-    toast({
-      title: "Info",
-      description: "PDF report generation for closing balances is a planned feature.",
-      duration: 4000,
-    });
+    if (!availableFinancialYears.includes(nextFy)) {
+      const updatedYears = [...availableFinancialYears, nextFy].sort((a,b) => b.localeCompare(a));
+      setAvailableFinancialYears(updatedYears);
+      setFinancialYear(nextFy);
+      toast({
+        title: "New Financial Year Added",
+        description: `Switched to FY ${nextFy}.`,
+      });
+    } else {
+      setFinancialYear(nextFy);
+      toast({
+        title: "Switched Financial Year",
+        description: `Now viewing FY ${nextFy}.`,
+      });
+    }
   };
   
   const handleYearSelect = (year: string) => {
     setFinancialYear(year);
   };
+
+  const sortedYearOptions = React.useMemo(() => {
+    return [...availableFinancialYears].sort((a,b) => b.localeCompare(a));
+  }, [availableFinancialYears]);
 
 
   return (
@@ -89,7 +72,7 @@ export function FinancialYearToggle() {
           <DropdownMenuLabel>Select Financial Year</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuRadioGroup value={financialYear} onValueChange={handleYearSelect}>
-            {yearOptions.map(year => (
+            {sortedYearOptions.map(year => (
               <DropdownMenuRadioItem 
                 key={year} 
                 value={year}
