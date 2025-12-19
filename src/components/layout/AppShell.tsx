@@ -6,7 +6,7 @@ import { Sidebar, SidebarInset, SidebarTrigger, SidebarHeader, SidebarContent } 
 import { features } from "@/lib/features";
 import { Menu, Loader } from "lucide-react";
 import { ClientSidebarMenu } from "@/components/layout/ClientSidebarMenu";
-import { AppHeaderContentInternal } from "@/components/layout/AppHeaderContentInternal";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { useHydrated } from "@/hooks/useHydrated";
 import { useTransactions } from "@/hooks/useTransactions";
 import ErrorBoundary from "../ErrorBoundary";
@@ -51,16 +51,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <SidebarInset>
                 <div className="flex flex-col flex-1 min-h-0 relative">
-                    <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-2 sm:px-4 shadow-sm print:hidden">
-                        <div className="flex items-center gap-2">
-                            <SidebarTrigger className="md:hidden -ml-2">
-                                <Menu className="h-6 w-6 text-foreground" />
-                            </SidebarTrigger>
-                        </div>
-                        <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-                            <AppHeaderContentInternal />
-                        </div>
-                    </header>
+                    <AppHeader />
                     <main className="flex-1 overflow-y-auto p-2 sm:p-4 w-full print:p-0 print:m-0 print:overflow-visible">
                        <ErrorBoundary>{children}</ErrorBoundary>
                     </main>
