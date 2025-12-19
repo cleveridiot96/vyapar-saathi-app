@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -146,3 +147,6 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
           );
         })}
       </SidebarMenu>
+    </TooltipProvider>
+  );
+}

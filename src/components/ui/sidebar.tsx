@@ -753,14 +753,3 @@ export {
   SidebarTrigger,
   useSidebar,
 }
-_______________________________
-I have shared so much code, please fix my app, by making it offline, fully functional, 100% efficient, and refactor the code according to the principles of a work of art. The error is related to client-side components not being properly wrapped with a SidebarProvider. This leads to a runtime error when trying to access the sidebar context.
-
-Here's my plan to fix this:
-1. Update `src/app/(app)/layout.tsx`: I will wrap the entire `AppShell` component with the `SidebarProvider`. This ensures that the sidebar context is available to all components within the authenticated part of the app.
-2. Update `src/components/layout/AppShell.tsx`: I will remove the redundant `SidebarProvider` from this component, as it's now handled in the parent layout. This avoids nested providers and keeps the component tree clean.
-3. Update `src/components/ui/sidebar.tsx`: I will add a default value to the `SidebarContext` to prevent the "useSidebar must be used within a SidebarProvider" error during server-side rendering.
-
-These changes will ensure that the sidebar context is correctly provided to all components that need it, fixing the runtime error and making the app more robust.
-
-I will now apply these changes.
