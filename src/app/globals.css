@@ -4,83 +4,93 @@
 
 @layer base {
   :root {
-    --background: 0 0% 94%;
+    /* CHANGED: Background to a light green gradient start color for fallback */
+    --background: 140 30% 98%; 
     --foreground: 240 10% 3.9%;
+
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 217 91% 60%;
+
+    /* CHANGED: Default Primary is now Green (Emerald-600) */
+    --primary: 158 64% 52%; 
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 330 80% 56%;
-    --accent-foreground: 0 0% 98%;
+
+    --secondary: 150 20% 96%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 150 20% 96%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 150 20% 96%;
+    --accent-foreground: 240 5.9% 10%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 217 91% 60%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 142 76% 36%;
+    
     --radius: 0.75rem;
-    --sidebar-background: 224 71% 4%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217 91% 60%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 32.6% 17.5%;
-    --sidebar-ring: 217 91% 60%;
-  }
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 330 80% 56%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 217 91% 60%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 224 71% 4%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217 91% 60%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 32.6% 17.5%;
+
+    /* Sidebar variables */
+    --sidebar-background: 150 50% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 150 30% 94%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217 91% 60%;
   }
 
-  .theme-green { --primary: 139 51% 41%; --accent: 140 45% 50%; }
-  .theme-red { --primary: 354 70% 45%; --accent: 354 60% 55%; }
-  .theme-purple { --primary: 263 45% 42%; --accent: 263 40% 52%; }
-  .theme-blue { --primary: 217 91% 60%; --accent: 217 80% 70%; }
-  .theme-orange { --primary: 24 95% 53%; --accent: 27 90% 60%; }
-  .theme-pink { --primary: 340 82% 61%; --accent: 340 75% 70%; }
-  .theme-teal { --primary: 173 58% 39%; --accent: 173 50% 49%; }
-  .theme-gray { --primary: 220 9% 46%; --accent: 220 9% 56%; }
+  .dark {
+    --background: 20 14.3% 4.1%;
+    --foreground: 0 0% 95%;
+    
+    --card: 24 9.8% 10%;
+    --card-foreground: 0 0% 95%;
+    
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
+    
+    /* Dark mode Green */
+    --primary: 142 70% 50%;
+    --primary-foreground: 144 80% 10%;
+    
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 0 0% 15%;
+    --muted-foreground: 240 5% 64.9%;
+    
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 0 0% 98%;
+    
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 142 76% 36%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217 91% 60%;
+  }
+
+  /* Keep themes if you need them, but default is now green */
+  .theme-green { --primary: 142 76% 36%; }
+  .theme-red { --primary: 354 70% 45%; }
+  .theme-purple { --primary: 263 45% 42%; }
+  .theme-blue { --primary: 217 91% 60%; }
 }
 
 @layer base {
@@ -88,20 +98,31 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    /* ADDED: Green Gradient Background 
+       This overrides the solid background color 
+    */
+    background: linear-gradient(135deg, hsl(150 50% 98%), hsl(150 40% 94%));
+    min-height: 100vh;
   }
   
+  /* Dark mode gradient */
+  .dark body {
+    background: linear-gradient(135deg, hsl(150 50% 5%), hsl(150 50% 2%));
+  }
+
   [data-sidebar="sidebar"] {
-    background-color: hsl(var(--sidebar-background));
+    background-color: transparent; /* Make sidebar transparent to show gradient if desired, or keep variable */
+    @apply bg-background/50 backdrop-blur-md; /* Glassmorphism effect */
     color: hsl(var(--sidebar-foreground));
+    border-right: 1px solid hsl(var(--sidebar-border));
   }
-  
+
   [data-sidebar="sidebar"] [data-active="true"] {
      background-color: hsl(var(--primary));
      color: hsl(var(--primary-foreground));
   }
 }
-
 
 @layer components {
     [data-sidebar="menu-button"]:not([data-active="true"]):hover::before {
