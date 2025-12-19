@@ -6,7 +6,7 @@ import { Sidebar, SidebarInset, SidebarTrigger, SidebarHeader, SidebarContent } 
 import { features } from "@/lib/features";
 import { Menu, Loader } from "lucide-react";
 import { ClientSidebarMenu } from "@/components/layout/ClientSidebarMenu";
-import { AppHeaderContentInternal } from "@/components/layout/AppHeader";
+import { AppHeaderContentInternal } from "@/components/layout/AppHeaderContentInternal";
 import { useHydrated } from "@/hooks/useHydrated";
 import { useTransactions } from "@/hooks/useTransactions";
 import ErrorBoundary from "../ErrorBoundary";

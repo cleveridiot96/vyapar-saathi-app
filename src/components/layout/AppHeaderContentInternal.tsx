@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState } from "react";
 import Link from "next/link";
 import { Home, Settings as SettingsIcon, Landmark, CalculatorIcon, LogOut, Text } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import SearchBar from '@/components/shared/SearchBar';
 import { Calculator } from '@/components/shared/Calculator';
 import { useRouter } from 'next/navigation';
-import { SidebarTrigger } from '../ui/sidebar';
 import { Slider } from "../ui/slider";
 import { useSettings } from "@/contexts/SettingsContext";
 import { Label } from "../ui/label";
-import { CommandMenu } from '../command-menu';
-import { Sparkles } from 'lucide-react';
 import { LowStockThresholdSetting } from './LowStockThresholdSetting';
 import { FormatButton } from './FormatButton';
-import { useHydrated } from '@/hooks/useHydrated';
 import { FinancialYearToggle } from './FinancialYearToggle';
 
 
@@ -24,7 +20,6 @@ export function AppHeaderContentInternal() {
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const router = useRouter();
   const { fontSize, setFontSize } = useSettings();
-  const isHydrated = useHydrated();
 
   const handleLogout = () => {
     // In a real app, this would involve clearing tokens, etc.
@@ -83,4 +78,3 @@ export function AppHeaderContentInternal() {
     </>
   );
 }
-
