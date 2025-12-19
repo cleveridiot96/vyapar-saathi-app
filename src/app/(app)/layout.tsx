@@ -6,8 +6,7 @@ import { SidebarNav } from '@/components/sidebar-nav';
 import { AppHeaderContentInternal } from '@/components/layout/AppHeader';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { TransactionsProvider } from '@/hooks/useTransactions';
-import { MasterDataProvider } from '@/contexts/MasterDataContext';
-import { features, type Feature } from '@/lib/features';
+import { features } from '@/lib/features';
 import { cn } from '@/lib/utils';
 import React from 'react';
 
@@ -35,7 +34,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SettingsProvider>
       <TransactionsProvider>
-        <MasterDataProvider>
           <SidebarProvider>
             <Sidebar>
               <SidebarNav />
@@ -47,7 +45,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </main>
             </SidebarInset>
           </SidebarProvider>
-        </MasterDataProvider>
       </TransactionsProvider>
     </SettingsProvider>
   );

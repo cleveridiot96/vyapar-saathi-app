@@ -34,6 +34,7 @@ interface MasterDataComboboxProps {
   onAddNew?: () => void;
   onEdit?: (id: string) => void;
   disabled?: boolean;
+  className?: string;
 }
 
 export function MasterDataCombobox({
@@ -47,6 +48,7 @@ export function MasterDataCombobox({
   onAddNew,
   onEdit,
   disabled = false,
+  className,
 }: MasterDataComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -59,7 +61,7 @@ export function MasterDataCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          className={cn("w-full justify-between", className)}
           disabled={disabled}
           type="button"
           onClick={(e) => {
@@ -90,6 +92,7 @@ export function MasterDataCombobox({
                 variant="ghost"
                 size="sm"
                 className="w-full justify-start mt-2"
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -103,7 +106,7 @@ export function MasterDataCombobox({
             )}
           </CommandEmpty>
           <CommandGroup className="max-h-[200px] overflow-auto">
-            {options.map((option) => (
+            {(options || []).map((option) => (
               <CommandItem
                 key={option.value}
                 value={option.label}
@@ -124,6 +127,7 @@ export function MasterDataCombobox({
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 ml-2"
+                    type="button"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -143,6 +147,7 @@ export function MasterDataCombobox({
                 variant="ghost"
                 size="sm"
                 className="w-full justify-start"
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();

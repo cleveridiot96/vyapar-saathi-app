@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -84,7 +85,7 @@ export function MasterForm({
 
   const handleSubmit = (values: FormValues) => {
     const itemData: MasterItem = {
-      id: initialData?.id || `${itemType.toLowerCase()}-${Date.now()}`,
+      id: initialData?.id || `${values.type.toLowerCase()}-${Date.now()}`,
       type: values.type,
       name: values.name,
       details: {

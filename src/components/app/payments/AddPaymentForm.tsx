@@ -36,6 +36,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MasterForm } from "@/components/app/masters/MasterForm";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { useInventory } from "@/hooks/useInventory";
+import { useTransactions } from "@/hooks/useTransactions";
 import dynamic from 'next/dynamic';
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
@@ -194,7 +195,7 @@ const AddPaymentFormComponent: React.FC<AddPaymentFormProps> = ({
                     <FormItem>
                       <FormLabel>Party (Supplier/Agent/etc)</FormLabel>
                       <MasterDataCombobox value={field.value} onChange={field.onChange}
-                        options={parties.map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
+                        options={(parties || []).map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
                         placeholder="Select Party" searchPlaceholder="Search parties..." notFoundMessage="No party found."
                         addNewLabel="Add New Party"
                         onAddNew={() => handleOpenMasterForm()}
@@ -243,7 +244,7 @@ const AddPaymentFormComponent: React.FC<AddPaymentFormProps> = ({
                          <div key={item.id} className="grid grid-cols-5 gap-2 items-end">
                             <FormField control={control} name={`stockItems.${index}.lotNumber`} render={({field}) => (
                                 <FormItem className="col-span-2"><FormLabel>Vakkal/Lot</FormLabel>
-                                <MasterDataCombobox options={availableStock.map(s => ({label: `${s.lotNumber} (Avl: ${s.currentBags})`, value: s.lotNumber}))} {...field} placeholder="Select Stock" />
+                                <MasterDataCombobox options={(availableStock || []).map(s => ({label: `${s.lotNumber} (Avl: ${s.currentBags})`, value: s.lotNumber}))} {...field} placeholder="Select Stock" />
                                 <FormMessage />
                                 </FormItem>
                             )}/>

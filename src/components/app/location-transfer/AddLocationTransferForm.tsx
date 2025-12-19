@@ -29,7 +29,7 @@ import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { LocationTransfer, MasterItem, ExpenseItem } from "@/lib/types";
-import { useMasterData } from "@/hooks/useMasterData";
+import { useTransactions } from "@/hooks/useTransactions";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { useInventory } from "@/hooks/useInventory";
@@ -72,7 +72,7 @@ type LocationTransferFormValues = z.infer<typeof locationTransferSchema>;
 
 const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> = ({ isOpen, onClose, onSubmit, transferToEdit }) => {
   const { toast } = useToast();
-  const { Warehouse: warehouses, Transporter: transporters, Expense: expenseAccounts, addOrUpdateMaster, getAllMasters } = useMasterData();
+  const { warehouses, transporters, expenses: expenseAccounts, addOrUpdateMaster, getAllMasters } = useTransactions();
   const { availableStock } = useInventory(transferToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);

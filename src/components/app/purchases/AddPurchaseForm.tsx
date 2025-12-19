@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { purchaseSchema, type PurchaseFormValues } from "@/lib/schemas/purchaseSchema";
 import type { MasterItem, Purchase, MasterItemType, Agent, ExpenseItem } from "@/lib/types";
-import { useMasterData } from "@/contexts/MasterDataContext";
+import { useTransactions } from "@/hooks/useTransactions";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { useToast } from "@/hooks/use-toast";
 import { MasterForm } from "@/components/app/masters/MasterForm";
@@ -52,7 +52,7 @@ const AddPurchaseFormComponent: React.FC<AddPurchaseFormProps> = ({
   purchaseToEdit,
 }) => {
   const { toast } = useToast();
-  const { Supplier: suppliers, Agent: agents, Warehouse: warehouses, Transporter: transporters, Expense: expenses, addOrUpdateMaster, getAllMasters } = useMasterData();
+  const { suppliers, agents, warehouses, transporters, expenses, addOrUpdateMaster, getAllMasters } = useTransactions();
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);

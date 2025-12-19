@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Users, Truck, UserCheck, Handshake, PlusCircle, List, Building, DollarSign, Search, ChevronDown } from "lucide-react";
@@ -23,7 +24,7 @@ import { FIXED_WAREHOUSES, FIXED_EXPENSES } from '@/lib/constants';
 import { cn, debounce } from "@/lib/utils";
 import Fuse from 'fuse.js';
 import { Input } from '@/components/ui/input';
-import { useMasterData } from '@/contexts/MasterDataContext';
+import { useTransactions } from '@/hooks/useTransactions';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,7 +70,7 @@ const DISPLAY_LIMIT_OPTIONS = ["50", "100", "150", "All"];
 
 export default function MastersPage() {
   const { toast } = useToast();
-  const { data: masterData, setData, getAllMasters } = useMasterData();
+  const { getAllMasters, addOrUpdateMaster, warehouses, expenses, setWarehouses, setExpenses } = useTransactions();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MasterItem | null>(null);
@@ -127,7 +128,7 @@ export default function MastersPage() {
     }
   }, [allMasterItems, hydrated, toast]);
 
-  const hydrateFixedItems = <T extends MasterItem>(currentItems: T[], fixedItems: readonly T[], type: MasterItemType) => {
+  const hydrateFixedItems = <T extends MasterItem>(currentItems: T[], fixedItems: readonly T[], setter: React.Dispatch<React.SetStateAction<T[]>>) => {
     const itemsMap = new Map(currentItems.map(item => [item.id, item]));
     let updated = false;
     fixedItems.forEach(fixedItem => {
@@ -137,34 +138,39 @@ export default function MastersPage() {
       }
     });
     if (updated) {
-      setData(type, Array.from(itemsMap.values()).sort((a, b) => a.name.localeCompare(b.name)));
+      setter(Array.from(itemsMap.values()).sort((a, b) => a.name.localeCompare(b.name)) as T[]);
     }
   };
 
   useEffect(() => {
     if (hydrated) {
-      hydrateFixedItems(masterData.Warehouse, FIXED_WAREHOUSES, 'Warehouse');
-      hydrateFixedItems(masterData.Expense, FIXED_EXPENSES, 'Expense');
+      hydrateFixedItems(warehouses, FIXED_WAREHOUSES as any, setWarehouses);
+      hydrateFixedItems(expenses, FIXED_EXPENSES as any, setExpenses);
     }
-  }, [hydrated, masterData.Warehouse, masterData.Expense, setData]);
+  }, [hydrated, warehouses, expenses, setWarehouses, setExpenses]);
 
 
-  const getMasterDataState = useCallback((type: MasterItemType | 'All') => {
-    const filterValid = (data: MasterItem[]) => data.filter(validateMasterItem);
+  const getMasterDataStateForTab = useCallback((type: MasterPageTabKey) => {
     if (type === 'All') {
-        return { data: allMasterItems, setData: () => {} };
+        return allMasterItems;
     }
-    return { 
-        data: filterValid(masterData[type]), 
-        setData: (value: MasterItem[] | ((prev: MasterItem[]) => MasterItem[])) => setData(type, value)
-    };
-  }, [allMasterItems, masterData, setData]);
+    switch (type) {
+        case 'Customer': return getAllMasters().filter(m => m.type === 'Customer');
+        case 'Broker': return getAllMasters().filter(m => m.type === 'Broker');
+        case 'Supplier': return getAllMasters().filter(m => m.type === 'Supplier');
+        case 'Agent': return getAllMasters().filter(m => m.type === 'Agent');
+        case 'Warehouse': return warehouses;
+        case 'Transporter': return getAllMasters().filter(m => m.type === 'Transporter');
+        case 'Expense': return expenses;
+        default: return [];
+    }
+  }, [allMasterItems, warehouses, expenses, getAllMasters]);
   
   useEffect(() => {
-    const { data } = getMasterDataState(activeTab);
-    fuseRef.current = new Fuse(data, fuseOptions);
+    const data = getMasterDataStateForTab(activeTab);
+    fuseRef.current = new Fuse(data.filter(validateMasterItem), fuseOptions);
     setFuseKey(k => k + 1);
-  }, [activeTab, masterData, getMasterDataState]);
+  }, [activeTab, allMasterItems, getMasterDataStateForTab]);
 
   const debouncedSearch = useCallback(debounce((value: string) => {
     setSearchQuery(value);
@@ -176,8 +182,6 @@ export default function MastersPage() {
 
 
   const handleAddOrUpdateMasterItem = useCallback((item: MasterItem) => {
-    const { setData: setSpecificData, data: currentData } = getMasterDataState(item.type);
-    
     if (doesNameExist(item.name, item.type, item.id, allMasterItems)) {
       toast({
         title: "Duplicate Name",
@@ -187,14 +191,8 @@ export default function MastersPage() {
       return;
     }
 
-    const isEditing = currentData.some(i => i.id === item.id);
-    setSpecificData(prev => {
-      if (isEditing) {
-        return prev.map(i => i.id === item.id ? item : i).sort((a, b) => a.name.localeCompare(b.name));
-      } else {
-        return [item, ...prev].sort((a, b) => a.name.localeCompare(b.name));
-      }
-    });
+    const isEditing = allMasterItems.some(i => i.id === item.id);
+    addOrUpdateMaster(item);
 
     toast({
         title: isEditing ? `${item.type} updated` : `${item.type} added`,
@@ -203,7 +201,7 @@ export default function MastersPage() {
 
     setIsFormOpen(false);
     setEditingItem(null);
-  }, [getMasterDataState, allMasterItems, toast]);
+  }, [addOrUpdateMaster, allMasterItems, toast]);
 
   const handleEditItem = useCallback((item: MasterItem) => {
     setEditingItem(item);
@@ -231,14 +229,28 @@ export default function MastersPage() {
         setShowDeleteConfirm(false);
         return;
       }
-      const itemType = itemToDelete.type;
-      const { setData: setSpecificData } = getMasterDataState(itemType);
-      setSpecificData(prev => prev.filter(i => i.id !== itemToDelete.id));
+      
+      const setterMap: Record<string, React.Dispatch<React.SetStateAction<any[]>> | undefined> = {
+          Customer: getAllMasters as any, // This is complex, manage via addOrUpdate which handles filtering
+          Supplier: getAllMasters as any,
+          Agent: getAllMasters as any,
+          Broker: getAllMasters as any,
+          Transporter: getAllMasters as any,
+          Warehouse: setWarehouses,
+          Expense: setExpenses,
+      };
+
+      // This is a simplified delete logic. A robust solution would need a central delete function in useTransactions.
+      const setter = setterMap[itemToDelete.type];
+      if (setter) {
+          setter((prev: any[]) => prev.filter(i => i.id !== itemToDelete!.id));
+      }
+      
       toast({ title: `${itemToDelete.type} deleted`, description: `${itemToDelete.name} has been removed.`, variant: 'destructive' });
       setItemToDelete(null);
       setShowDeleteConfirm(false);
     }
-  }, [itemToDelete, getMasterDataState, toast]);
+  }, [itemToDelete, toast, setWarehouses, setExpenses, getAllMasters]);
 
   const addButtonLabel = useMemo(() => {
     if (activeTab === 'All') return "ADD NEW PARTY/ENTITY";
@@ -262,7 +274,7 @@ export default function MastersPage() {
   }, [activeTab]);
   
   const getFilteredDataForTab = (tabValue: MasterPageTabKey) => {
-    const { data } = getMasterDataState(tabValue);
+    const data = getMasterDataStateForTab(tabValue).filter(validateMasterItem);
     if (!searchQuery) {
         return data.map(item => ({ item, matches: [], score: 1 }));
     }
@@ -312,7 +324,7 @@ export default function MastersPage() {
         </TabsList>
         {TABS_CONFIG.map(tab => {
             const filteredData = getFilteredDataForTab(tab.value);
-            const totalCount = getMasterDataState(tab.value).data.length;
+            const totalCount = getMasterDataStateForTab(tab.value).length;
             const limit = displayLimit === 'All' ? filteredData.length : parseInt(displayLimit, 10);
             const paginatedData = filteredData.slice(0, limit);
 

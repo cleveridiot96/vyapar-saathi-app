@@ -41,7 +41,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useMasterData } from "@/contexts/MasterDataContext";
+import { useTransactions } from "@/hooks/useTransactions";
 import { useInventory } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
 
@@ -66,7 +66,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   onMasterDataUpdate,
 }) => {
   const { toast } = useToast();
-  const { Customer: customers, Transporter: transporters, Broker: brokers, Expense: expenses, Warehouse: warehouses, getAllMasters } = useMasterData();
+  const { customers, transporters, brokers, expenses, warehouses, getAllMasters } = useTransactions();
   const { availableStock } = useInventory(saleToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -269,7 +269,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   
   const stockOptionsForSale = React.useMemo(() => {
     const mumbaiWarehouseId = (warehouses || []).find(wh => wh.name.toUpperCase() === 'MUMBAI')?.id;
-    return availableStock
+    return (availableStock || [])
       .filter(s => s.locationId === mumbaiWarehouseId)
       .map(s => ({
         value: s.lotNumber,
@@ -498,7 +498,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                                     <SelectContent>
                                       <SelectItem value="Broker Commission">Broker Commission</SelectItem>
                                       <SelectItem value="Extra Brokerage">Extra Brokerage</SelectItem>
-                                      {(expenses || []).map((opt, i) => <SelectItem key={`${opt.id}-${i}`} value={opt.name}>{opt.name}</SelectItem>)}
+                                      {(expenses || []).map((opt, i) => <SelectItem key={`${opt.id}-${index}`} value={opt.name}>{opt.name}</SelectItem>)}
                                     </SelectContent>
                                   </Select><FormMessage />
                                 </FormItem>)} />
@@ -510,7 +510,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                               <FormField control={control} name={`expenses.${index}.partyId`} render={({ field: itemField }) => (
                                 <FormItem className="md:col-span-3"><FormLabel>Party (Opt.)</FormLabel>
                                   <MasterDataCombobox value={itemField.value} onChange={itemField.onChange}
-                                    options={getAllMasters().map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
+                                    options={(getAllMasters() || []).map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
                                     placeholder="Select Party" addNewLabel="Add New Party"
                                     onAddNew={() => handleOpenMasterForm("Customer")} onEdit={(id) => handleEditMasterItem("Customer", id)}
                                     disabled={isCommission}
