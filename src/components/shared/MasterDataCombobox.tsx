@@ -9,6 +9,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface Option {
   value: string;
@@ -43,38 +45,80 @@ export function MasterDataCombobox({
   className,
 }: MasterDataComboboxProps) {
   const [open, setOpen] = React.useState(false);
-  const [search, setSearch] = React.useState("");
+  const [searchTerm, setSearchTerm] = React.useState("");
 
+  // Find the selected option object to display its label
   const selectedOption = options.find((option) => option.value === value);
 
+  // Filter options based on search term
   const filteredOptions = React.useMemo(() => {
-    if (!search) return options;
+    if (!searchTerm.trim()) return options;
+    const term = searchTerm.toLowerCase();
     return options.filter((option) =>
-      option.label.toLowerCase().includes(search.toLowerCase())
+      option.label.toLowerCase().includes(term)
     );
-  }, [options, search]);
+  }, [options, searchTerm]);
 
-  const handleSelect = (optionValue: string) => {
-    onChange(optionValue === value ? undefined : optionValue);
-    setOpen(false);
-    setSearch("");
-  };
-
+  // Helper to handle clearing
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     onChange(undefined);
+    setOpen(false);
   };
 
+  // Handle option selection
+  const handleSelectOption = (optionValue: string) => {
+    onChange(optionValue === value ? undefined : optionValue);
+    setOpen(false);
+    setSearchTerm("");
+  };
+
+  // Handle clear from dropdown
+  const handleClearFromDropdown = () => {
+    onChange(undefined);
+    setOpen(false);
+    setSearchTerm("");
+  };
+
+  // Handle add new
+  const handleAddNew = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setOpen(false);
+    setSearchTerm("");
+    if (onAddNew) {
+      onAddNew(e);
+    }
+  };
+
+  // Handle edit
+  const handleEdit = (optionValue: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setOpen(false);
+    setSearchTerm("");
+    if (onEdit) {
+      onEdit(optionValue, e);
+    }
+  };
+
+  // Reset search when opening
+  React.useEffect(() => {
+    if (!open) {
+      setSearchTerm("");
+    }
+  }, [open]);
+
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={false}>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          type="button"
           variant="outline"
           role="combobox"
           aria-expanded={open}
           className={cn("w-full justify-between", className)}
           disabled={disabled}
+          type="button"
         >
           {selectedOption ? (
             <span className="truncate">{selectedOption.label}</span>
@@ -83,119 +127,110 @@ export function MasterDataCombobox({
           )}
           
           <div className="flex items-center gap-1">
-            {value && !disabled && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="mr-1 hover:bg-muted rounded-full p-0.5"
-              >
-                <X className="h-3 w-3 opacity-50 hover:opacity-100" />
-              </button>
-            )}
-            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+             {value && !disabled && (
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={handleClear}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className="mr-1 hover:bg-muted rounded-full p-0.5"
+                  aria-label="Clear selection"
+                >
+                  <X className="h-3 w-3 opacity-50 hover:opacity-100" />
+                </div>
+             )}
+             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </div>
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-[var(--radix-popover-trigger-width)] p-0 z-[100]" 
+        className="w-[var(--radix-popover-trigger-width)] p-0" 
         align="start"
         onOpenAutoFocus={(e) => e.preventDefault()}
-        style={{ pointerEvents: 'auto' }}
       >
         <div className="flex flex-col">
           {/* Search Input */}
-          <div className="flex items-center border-b px-3">
+          <div className="flex items-center border-b px-3 py-2">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-            <input
-              type="text"
+            <Input
               placeholder={searchPlaceholder}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
               autoFocus
             />
           </div>
 
           {/* Options List */}
-          <div className="max-h-[300px] overflow-y-auto overflow-x-hidden">
-            {/* Clear Selection */}
+          <ScrollArea className="max-h-[300px]">
+            {/* Clear Selection Option */}
             {value && (
-              <button
-                type="button"
-                className="w-full relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground text-muted-foreground border-b justify-center m-1"
-                onPointerDown={(e) => {
+              <div
+                className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted text-muted-foreground text-center font-medium border-b flex items-center justify-center"
+                onMouseDown={(e) => {
                   e.preventDefault();
-                  onChange(undefined);
-                  setOpen(false);
-                  setSearch("");
+                  handleClearFromDropdown();
                 }}
               >
                 <X className="mr-2 h-4 w-4" /> Clear Selection
-              </button>
-            )}
-
-            {/* No Results */}
-            {filteredOptions.length === 0 && (
-              <div className="py-6 text-center text-sm text-muted-foreground">
-                {notFoundMessage}
               </div>
             )}
 
-            {/* Options */}
-            <div className="p-1">
-              {filteredOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className="w-full relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground group text-left"
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    handleSelect(option.value);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4 flex-shrink-0",
-                      value === option.value ? "opacity-100" : "opacity-0"
+            {/* Filtered Options */}
+            {filteredOptions.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                {notFoundMessage}
+              </div>
+            ) : (
+              <div className="p-1">
+                {filteredOptions.map((option) => (
+                  <div
+                    key={option.value}
+                    className="flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer hover:bg-muted rounded-sm group"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelectOption(option.value);
+                    }}
+                  >
+                    <div className="flex items-center flex-1">
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          value === option.value ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <span>{option.label}</span>
+                    </div>
+                    
+                    {onEdit && (
+                      <button
+                        type="button"
+                        onMouseDown={(e) => handleEdit(option.value, e)}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-background rounded transition-opacity"
+                        aria-label="Edit item"
+                      >
+                        <Edit2 className="h-3 w-3 text-muted-foreground" />
+                      </button>
                     )}
-                  />
-                  <span className="flex-1">{option.label}</span>
-                  {onEdit && (
-                    <span
-                      onPointerDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setOpen(false);
-                        onEdit(option.value, e as any);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded flex-shrink-0"
-                    >
-                      <Edit2 className="h-3 w-3 text-muted-foreground" />
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
-            {/* Add New */}
+            {/* Add New Button */}
             {onAddNew && (
               <>
-                <div className="h-px bg-border my-1" />
-                <button
-                  type="button"
-                  className="w-full relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground text-primary font-medium m-1 text-left"
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    setOpen(false);
-                    onAddNew(e);
-                  }}
+                <div className="border-t my-1" />
+                <div
+                  className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted text-primary font-medium flex items-center mx-1 rounded-sm"
+                  onMouseDown={handleAddNew}
                 >
                   <PlusCircle className="mr-2 h-4 w-4" />
                   {addNewLabel}
-                </button>
+                </div>
               </>
             )}
-          </div>
+          </ScrollArea>
         </div>
       </PopoverContent>
     </Popover>
