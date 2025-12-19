@@ -45,7 +45,7 @@ interface AddPurchaseFormProps {
   purchaseToEdit?: Purchase | null;
 }
 
-const AddPurchaseFormComponent: React.FC<AddPurchaseFormProps> = ({
+export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   isOpen,
   onClose,
   onSubmit,
@@ -203,9 +203,9 @@ const AddPurchaseFormComponent: React.FC<AddPurchaseFormProps> = ({
       id: purchaseToEdit?.id || `purchase-${Date.now()}`,
       date: format(values.date, "yyyy-MM-dd"),
       locationId: values.locationId as string,
-      locationName: (warehouses || []).find(w => w.id === values.locationId)?.name || '',
+      locationName: (warehouses || []).find(w => w.id === values.locationId)?.name || 'Unknown Location',
       supplierId: values.supplierId as string,
-      supplierName: (suppliers || []).find(s => s.id === values.supplierId)?.name || '',
+      supplierName: (suppliers || []).find(s => s.id === values.supplierId)?.name || 'Unknown Supplier',
       agentId: values.agentId,
       agentName: (agents || []).find(a => a.id === values.agentId)?.name,
       transporterId: values.transporterId,
@@ -222,7 +222,7 @@ const AddPurchaseFormComponent: React.FC<AddPurchaseFormProps> = ({
       })),
       expenses: values.expenses?.map(exp => ({
         ...exp,
-        id: `exp-${Date.now()}-${Math.random()}`,
+        id: exp.id || `exp-${Date.now()}-${Math.random()}`,
         partyName: getAllMasters().find(p => p.id === exp.partyId)?.name || exp.partyName,
       })) as ExpenseItem[],
       totalGoodsValue: Math.round(summary.totalGoodsValue),
@@ -449,7 +449,7 @@ const AddPurchaseFormComponent: React.FC<AddPurchaseFormProps> = ({
                                   {summary.itemsWithLandedCost.map((item, index) => (
                                       <TableRow key={index}>
                                           <TableCell>{item.lotNumber || `ITEM ${index + 1}`}</TableCell>
-                                          <TableCell className="text-right font-medium">₹{(item.landedCostPerKg || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                          <TableCell className="text-right font-medium">₹{Math.round(item.landedCostPerKg || 0).toLocaleString('en-IN')}</TableCell>
                                       </TableRow>
                                   ))}
                                   </TableBody>
@@ -471,17 +471,15 @@ const AddPurchaseFormComponent: React.FC<AddPurchaseFormProps> = ({
         </DialogContent>
     </Dialog>
 
-      {isMasterFormOpen && masterFormItemType && (
+      {isMasterFormOpen && (
         <MasterForm
           isOpen={isMasterFormOpen}
           onClose={() => { setIsMasterFormOpen(false); setMasterItemToEdit(null); }}
           onSubmit={handleMasterFormSubmit}
           initialData={masterItemToEdit}
-          itemTypeFromButton={masterFormItemType}
+          itemTypeFromButton={masterFormItemType!}
         />
       )}
     </>
   );
 };
-
-export const AddPurchaseForm = React.memo(AddPurchaseFormComponent);
