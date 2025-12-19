@@ -187,35 +187,35 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     
     toast({ 
       title: "Success", 
-      description: `${newItem.type} "${newItem.name}" added/updated successfully!` 
+      description: `${'${newItem.type}'} "${'${newItem.name}'}" added/updated successfully!` 
     });
   }, [addOrUpdateMaster, setValue, toast]);
 
   const handleLotNumberChange = React.useCallback((index: number, lotNumber: string) => {
-    setValue(`items.${index}.lotNumber`, lotNumber, { shouldValidate: true });
+    setValue(`items.${'${index}'}.lotNumber`, lotNumber, { shouldValidate: true });
     
     const match = lotNumber.match(/[/\s\-.,;](\d+)$/);
     if (match && match[1]) {
       const bags = parseInt(match[1], 10);
       if (!isNaN(bags) && bags > 0) {
-        setValue(`items.${index}.quantity`, bags, { shouldValidate: true });
+        setValue(`items.${'${index}'}.quantity`, bags, { shouldValidate: true });
         if (!manualNetWeight[index]) {
-          setValue(`items.${index}.netWeight`, bags * 50, { shouldValidate: true });
+          setValue(`items.${'${index}'}.netWeight`, bags * 50, { shouldValidate: true });
         }
       }
     }
   }, [setValue, manualNetWeight]);
 
   const handleQuantityChange = React.useCallback((index: number, bags: number | undefined) => {
-    setValue(`items.${index}.quantity`, bags, { shouldValidate: true });
+    setValue(`items.${'${index}'}.quantity`, bags, { shouldValidate: true });
     if (!manualNetWeight[index] && bags) {
-      setValue(`items.${index}.netWeight`, bags * 50, { shouldValidate: true });
+      setValue(`items.${'${index}'}.netWeight`, bags * 50, { shouldValidate: true });
     }
   }, [setValue, manualNetWeight]);
 
   const handleNetWeightChange = React.useCallback((index: number, weight: number | undefined) => {
     setManualNetWeight(prev => ({ ...prev, [index]: true }));
-    setValue(`items.${index}.netWeight`, weight, { shouldValidate: true });
+    setValue(`items.${'${index}'}.netWeight`, weight, { shouldValidate: true });
   }, [setValue]);
 
   const processSubmit = React.useCallback((values: PurchaseFormValues) => {
@@ -226,7 +226,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
       const effectiveRate = summary.totalNetWeight > 0 ? totalAmount / summary.totalNetWeight : 0;
 
       const purchaseData: Purchase = {
-        id: purchaseToEdit?.id || `purchase-${Date.now()}`,
+        id: purchaseToEdit?.id || `purchase-${'${Date.now()}'}`,
         date: format(values.date, "yyyy-MM-dd"),
         locationId: values.locationId as string,
         locationName: warehouses.find(w => w.id === values.locationId)?.name || 'Unknown Location',
@@ -237,7 +237,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
         transporterId: values.transporterId,
         transporterName: transporters.find(t => t.id === values.transporterId)?.name,
         items: summary.itemsWithLandedCost.map(item => ({
-          id: `pitem-${Date.now()}-${Math.random()}`,
+          id: `pitem-${'${Date.now()}'}-${'${Math.random()}'}`,
           lotNumber: item.lotNumber,
           category: 'default',
           quantity: Math.round(item.quantity || 0),
@@ -248,7 +248,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
         })),
         expenses: values.expenses?.map(exp => ({
           ...exp,
-          id: exp.id || `exp-${Date.now()}-${Math.random()}`,
+          id: exp.id || `exp-${'${Date.now()}'}-${'${Math.random()}'}`,
           partyName: getAllMasters().find(p => p.id === exp.partyId)?.name || exp.partyName,
         })) as ExpenseItem[],
         totalGoodsValue: Math.round(summary.totalGoodsValue),
@@ -289,278 +289,51 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
             </DialogDescription>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 pr-4 -mr-2">
-            <FormProvider {...formMethods}>
-              <form onSubmit={formHandleSubmit(processSubmit)} className="space-y-4 p-1">
-                
-                <div className="p-4 border rounded-md shadow-sm">
-                  <h3 className="text-lg font-medium mb-3 text-primary">Basic Details & Parties</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    
-                    <FormField 
-                      control={control} 
-                      name="date" 
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Purchase Date</FormLabel>
-                          <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    "w-full pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? format(field.value, "dd/MM/yy") : <span>Pick a date</span>}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    field.onChange(date);
-                                    setIsDatePickerOpen(false);
-                                  }
-                                }}
-                                disabled={(date) => date > new Date()}
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField 
-                      control={control} 
-                      name="supplierId" 
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Supplier</FormLabel>
-                          <MasterDataCombobox
-                            value={field.value}
-                            onChange={field.onChange}
-                            options={suppliers.map(s => ({ value: s.id, label: s.name }))}
-                            placeholder="Select Supplier"
-                            searchPlaceholder="Search Suppliers..."
-                            notFoundMessage="No Supplier found."
-                            addNewLabel="Add New Supplier"
-                            onAddNew={(e) => handleOpenMasterForm("Supplier", e)}
-                            onEdit={(id, e) => handleEditMasterItem(id, e)}
-                          />
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField 
-                      control={control} 
-                      name="agentId" 
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Agent</FormLabel>
-                          <MasterDataCombobox
-                            value={field.value}
-                            onChange={field.onChange}
-                            options={agents.map(a => ({ value: a.id, label: a.name }))}
-                            placeholder="Select Agent"
-                            searchPlaceholder="Search Agents..."
-                            notFoundMessage="No Agent found."
-                            addNewLabel="Add New Agent"
-                            onAddNew={(e) => handleOpenMasterForm("Agent", e)}
-                            onEdit={(id, e) => handleEditMasterItem(id, e)}
-                          />
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField 
-                      control={control} 
-                      name="locationId" 
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location</FormLabel>
-                          <MasterDataCombobox
-                            value={field.value}
-                            onChange={field.onChange}
-                            options={warehouses.map(w => ({ value: w.id, label: w.name }))}
-                            placeholder="Select Location"
-                            searchPlaceholder="Search Locations..."
-                            notFoundMessage="No Location found."
-                            addNewLabel="Add New Location"
-                            onAddNew={(e) => handleOpenMasterForm("Warehouse", e)}
-                            onEdit={(id, e) => handleEditMasterItem(id, e)}
-                          />
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="p-4 border rounded-md shadow-sm">
-                  <h3 className="text-lg font-medium mb-3 text-primary">Items</h3>
-                  {fields.map((field, index) => (
-                    <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start p-3 border-b last:border-b-0">
-                      
-                      <FormField 
-                        control={control} 
-                        name={`items.${index}.lotNumber`} 
-                        render={({ field: itemField }) => (
-                          <FormItem className="md:col-span-3">
-                            <FormLabel>Vakkal/Lot No.</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="E.g., AB/6 or BU-5"
-                                {...itemField}
-                                onChange={(e) => handleLotNumberChange(index, e.target.value)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField 
-                        control={control} 
-                        name={`items.${index}.quantity`} 
-                        render={({ field: itemField }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel>Bags</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="1"
-                                placeholder="Bags"
-                                {...itemField}
-                                value={itemField.value ?? ''}
-                                onChange={e => {
-                                  const bags = e.target.value ? parseFloat(e.target.value) : undefined;
-                                  handleQuantityChange(index, bags);
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField 
-                        control={control} 
-                        name={`items.${index}.netWeight`} 
-                        render={({ field: itemField }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel>Net Wt.</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="Kg"
-                                {...itemField}
-                                value={itemField.value ?? ''}
-                                onChange={e => {
-                                  const weight = e.target.value ? parseFloat(e.target.value) : undefined;
-                                  handleNetWeightChange(index, weight);
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField 
-                        control={control} 
-                        name={`items.${index}.rate`} 
-                        render={({ field: itemField }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel>Rate</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="₹/Kg"
-                                {...itemField}
-                                value={itemField.value ?? ''}
-                                onChange={e => {
-                                  const rate = e.target.value ? parseFloat(e.target.value) : undefined;
-                                  itemField.onChange(rate);
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="md:col-span-2">
-                        <FormLabel>Goods Value (₹)</FormLabel>
-                        <div className="font-medium text-sm h-10 flex items-center px-3 border border-dashed rounded-md bg-muted/50 text-foreground/80">
-                          {Math.round(summary.itemsWithLandedCost[index]?.goodsValue || 0).toLocaleString('en-IN')}
-                        </div>
-                      </div>
-                      
-                      <div className="md:col-span-1 flex items-end justify-end">
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => fields.length > 1 && remove(index)}
-                          disabled={fields.length <= 1}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+          <div className="flex-1 overflow-hidden">
+            <ScrollArea className="h-full pr-6">
+              <FormProvider {...formMethods}>
+                <form onSubmit={formHandleSubmit(processSubmit)} className="space-y-4 p-1">
                   
-                  <div className="flex justify-start mt-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => append({ lotNumber: "", quantity: undefined, netWeight: undefined, rate: undefined })}
-                    >
-                      <PlusCircle className="mr-2 h-4 w-4" /> Add Item
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="p-4 border rounded-md shadow-sm">
-                  <h3 className="text-lg font-medium mb-3 text-primary">Expenses</h3>
-                  {expenseFields.map((field, index) => (
-                    <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end p-3 border-b last:border-b-0">
+                  <div className="p-4 border rounded-md shadow-sm">
+                    <h3 className="text-lg font-medium mb-3 text-primary">Basic Details & Parties</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                       
                       <FormField 
                         control={control} 
-                        name={`expenses.${index}.account`} 
-                        render={({ field: itemField }) => (
-                          <FormItem className="md:col-span-3">
-                            <FormLabel>Account</FormLabel>
-                            <Select 
-                              onValueChange={itemField.onChange} 
-                              value={itemField.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select Account" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {expenses.map(opt => (
-                                  <SelectItem key={opt.id} value={opt.name}>
-                                    {opt.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                        name="date" 
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Purchase Date</FormLabel>
+                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    className={cn(
+                                      "w-full pl-3 text-left font-normal",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    {field.value ? format(field.value, "dd/MM/yy") : <span>Pick a date</span>}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={(date) => {
+                                    if (date) {
+                                      field.onChange(date);
+                                      setIsDatePickerOpen(false);
+                                    }
+                                  }}
+                                  disabled={(date) => date > new Date()}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -568,43 +341,19 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                       
                       <FormField 
                         control={control} 
-                        name={`expenses.${index}.amount`} 
-                        render={({ field: itemField }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel>Amount (₹)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="Amount"
-                                {...itemField}
-                                value={itemField.value ?? ''}
-                                onChange={e => itemField.onChange(parseFloat(e.target.value) || undefined)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField 
-                        control={control} 
-                        name={`expenses.${index}.partyId`} 
-                        render={({ field: itemField }) => (
-                          <FormItem className="md:col-span-3">
-                            <FormLabel>Party</FormLabel>
+                        name="supplierId" 
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Supplier</FormLabel>
                             <MasterDataCombobox
-                              value={itemField.value}
-                              onChange={itemField.onChange}
-                              options={getAllMasters().map(p => ({ 
-                                value: p.id, 
-                                label: `${p.name} (${p.type})` 
-                              }))}
-                              placeholder="Select Party"
-                              searchPlaceholder="Search parties..."
-                              notFoundMessage="No party found."
-                              addNewLabel="Add New Party"
-                              onAddNew={(e) => handleOpenMasterForm("Transporter", e)}
+                              value={field.value}
+                              onChange={field.onChange}
+                              options={suppliers.map(s => ({ value: s.id, label: s.name }))}
+                              placeholder="Select Supplier"
+                              searchPlaceholder="Search Suppliers..."
+                              notFoundMessage="No Supplier found."
+                              addNewLabel="Add New Supplier"
+                              onAddNew={(e) => handleOpenMasterForm("Supplier", e)}
                               onEdit={(id, e) => handleEditMasterItem(id, e)}
                             />
                             <FormMessage />
@@ -614,110 +363,363 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                       
                       <FormField 
                         control={control} 
-                        name={`expenses.${index}.paymentMode`} 
-                        render={({ field: itemField }) => (
-                          <FormItem className="md:col-span-3">
-                            <FormLabel>Payment Mode</FormLabel>
-                            <Select 
-                              onValueChange={itemField.onChange} 
-                              value={itemField.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Mode" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="Cash">Cash</SelectItem>
-                                <SelectItem value="Bank">Bank</SelectItem>
-                                <SelectItem value="Pending">Pending</SelectItem>
-                              </SelectContent>
-                            </Select>
+                        name="agentId" 
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Agent</FormLabel>
+                            <MasterDataCombobox
+                              value={field.value}
+                              onChange={field.onChange}
+                              options={agents.map(a => ({ value: a.id, label: a.name }))}
+                              placeholder="Select Agent"
+                              searchPlaceholder="Search Agents..."
+                              notFoundMessage="No Agent found."
+                              addNewLabel="Add New Agent"
+                              onAddNew={(e) => handleOpenMasterForm("Agent", e)}
+                              onEdit={(id, e) => handleEditMasterItem(id, e)}
+                            />
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                       
-                      <div className="md:col-span-1 flex items-center justify-end">
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => removeExpense(index)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <FormField 
+                        control={control} 
+                        name="locationId" 
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Location</FormLabel>
+                            <MasterDataCombobox
+                              value={field.value}
+                              onChange={field.onChange}
+                              options={warehouses.map(w => ({ value: w.id, label: w.name }))}
+                              placeholder="Select Location"
+                              searchPlaceholder="Search Locations..."
+                              notFoundMessage="No Location found."
+                              addNewLabel="Add New Location"
+                              onAddNew={(e) => handleOpenMasterForm("Warehouse", e)}
+                              onEdit={(id, e) => handleEditMasterItem(id, e)}
+                            />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-4 border rounded-md shadow-sm">
+                    <h3 className="text-lg font-medium mb-3 text-primary">Items</h3>
+                    {fields.map((field, index) => (
+                      <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start p-3 border-b last:border-b-0">
+                        
+                        <FormField 
+                          control={control} 
+                          name={`items.${'${index}'}.lotNumber`} 
+                          render={({ field: itemField }) => (
+                            <FormItem className="md:col-span-3">
+                              <FormLabel>Vakkal/Lot No.</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="E.g., AB/6 or BU-5"
+                                  {...itemField}
+                                  onChange={(e) => handleLotNumberChange(index, e.target.value)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField 
+                          control={control} 
+                          name={`items.${'${index}'}.quantity`} 
+                          render={({ field: itemField }) => (
+                            <FormItem className="md:col-span-2">
+                              <FormLabel>Bags</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  placeholder="Bags"
+                                  {...itemField}
+                                  value={itemField.value ?? ''}
+                                  onChange={e => {
+                                    const bags = e.target.value ? parseFloat(e.target.value) : undefined;
+                                    handleQuantityChange(index, bags);
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField 
+                          control={control} 
+                          name={`items.${'${index}'}.netWeight`} 
+                          render={({ field: itemField }) => (
+                            <FormItem className="md:col-span-2">
+                              <FormLabel>Net Wt.</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="Kg"
+                                  {...itemField}
+                                  value={itemField.value ?? ''}
+                                  onChange={e => {
+                                    const weight = e.target.value ? parseFloat(e.target.value) : undefined;
+                                    handleNetWeightChange(index, weight);
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField 
+                          control={control} 
+                          name={`items.${'${index}'}.rate`} 
+                          render={({ field: itemField }) => (
+                            <FormItem className="md:col-span-2">
+                              <FormLabel>Rate</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="₹/Kg"
+                                  {...itemField}
+                                  value={itemField.value ?? ''}
+                                  onChange={e => {
+                                    const rate = e.target.value ? parseFloat(e.target.value) : undefined;
+                                    itemField.onChange(rate);
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="md:col-span-2">
+                          <FormLabel>Goods Value (₹)</FormLabel>
+                          <div className="font-medium text-sm h-10 flex items-center px-3 border border-dashed rounded-md bg-muted/50 text-foreground/80">
+                            {Math.round(summary.itemsWithLandedCost[index]?.goodsValue || 0).toLocaleString('en-IN')}
+                          </div>
+                        </div>
+                        
+                        <div className="md:col-span-1 flex items-end justify-end">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => fields.length > 1 && remove(index)}
+                            disabled={fields.length <= 1}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
+                    ))}
+                    
+                    <div className="flex justify-start mt-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => append({ lotNumber: "", quantity: undefined, netWeight: undefined, rate: undefined })}
+                      >
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Item
+                      </Button>
                     </div>
-                  ))}
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => appendExpense({ 
-                      id: `exp-${Date.now()}`, 
-                      account: '', 
-                      amount: 0, 
-                      paymentMode: "Cash" 
-                    })}
-                    className="mt-3"
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Expense Row
-                  </Button>
-                </div>
+                  </div>
 
-                <div className="p-4 border border-dashed rounded-md bg-muted/50 space-y-2">
-                  <div className="flex items-center justify-between text-md font-semibold">
-                    <span>Goods Value:</span>
-                    <p>₹{Math.round(summary.totalGoodsValue).toLocaleString('en-IN')}</p>
+                  <div className="p-4 border rounded-md shadow-sm">
+                    <h3 className="text-lg font-medium mb-3 text-primary">Expenses</h3>
+                    {expenseFields.map((field, index) => (
+                      <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end p-3 border-b last:border-b-0">
+                        
+                        <FormField 
+                          control={control} 
+                          name={`expenses.${'${index}'}.account`} 
+                          render={({ field: itemField }) => (
+                            <FormItem className="md:col-span-3">
+                              <FormLabel>Account</FormLabel>
+                              <Select 
+                                onValueChange={itemField.onChange} 
+                                value={itemField.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select Account" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {expenses.map(opt => (
+                                    <SelectItem key={opt.id} value={opt.name}>
+                                      {opt.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField 
+                          control={control} 
+                          name={`expenses.${'${index}'}.amount`} 
+                          render={({ field: itemField }) => (
+                            <FormItem className="md:col-span-2">
+                              <FormLabel>Amount (₹)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="Amount"
+                                  {...itemField}
+                                  value={itemField.value ?? ''}
+                                  onChange={e => itemField.onChange(parseFloat(e.target.value) || undefined)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField 
+                          control={control} 
+                          name={`expenses.${'${index}'}.partyId`} 
+                          render={({ field: itemField }) => (
+                            <FormItem className="md:col-span-3">
+                              <FormLabel>Party</FormLabel>
+                              <MasterDataCombobox
+                                value={itemField.value}
+                                onChange={itemField.onChange}
+                                options={getAllMasters().map(p => ({ 
+                                  value: p.id, 
+                                  label: `${'${p.name}'} (${'${p.type}'})` 
+                                }))}
+                                placeholder="Select Party"
+                                searchPlaceholder="Search parties..."
+                                notFoundMessage="No party found."
+                                addNewLabel="Add New Party"
+                                onAddNew={(e) => handleOpenMasterForm("Transporter", e)}
+                                onEdit={(id, e) => handleEditMasterItem(id, e)}
+                              />
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField 
+                          control={control} 
+                          name={`expenses.${'${index}'}.paymentMode`} 
+                          render={({ field: itemField }) => (
+                            <FormItem className="md:col-span-3">
+                              <FormLabel>Payment Mode</FormLabel>
+                              <Select 
+                                onValueChange={itemField.onChange} 
+                                value={itemField.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Mode" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="Cash">Cash</SelectItem>
+                                  <SelectItem value="Bank">Bank</SelectItem>
+                                  <SelectItem value="Pending">Pending</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="md:col-span-1 flex items-center justify-end">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => removeExpense(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => appendExpense({ 
+                        id: `exp-${'${Date.now()}'}`, 
+                        account: '', 
+                        amount: 0, 
+                        paymentMode: "Cash" 
+                      })}
+                      className="mt-3"
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" /> Add Expense Row
+                    </Button>
                   </div>
-                  <div className="flex items-center justify-between text-md font-semibold">
-                    <span>Total Expenses:</span>
-                    <p>₹{Math.round(summary.totalExpenses).toLocaleString('en-IN')}</p>
-                  </div>
-                  <div className="flex items-center justify-between border-t pt-2 mt-2">
-                    <div className="flex items-center text-lg font-semibold text-primary">
-                      <Info className="w-5 h-5 mr-2" />
-                      Total Purchase Value:
+
+                  <div className="p-4 border border-dashed rounded-md bg-muted/50 space-y-2">
+                    <div className="flex items-center justify-between text-md font-semibold">
+                      <span>Goods Value:</span>
+                      <p>₹{Math.round(summary.totalGoodsValue).toLocaleString('en-IN')}</p>
                     </div>
-                    <p className="text-xl font-bold text-primary">
-                      ₹{Math.round(summary.totalAmount).toLocaleString('en-IN')}
-                    </p>
-                  </div>
-                  
-                  {summary.totalNetWeight > 0 && summary.itemsWithLandedCost.length > 0 && (
-                    <div className="pt-4 border-t mt-4">
-                      <h4 className="font-semibold mb-2 text-muted-foreground">
-                        Per-Vakkal Landed Cost
-                      </h4>
-                      <ScrollArea className="h-24">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Vakkal</TableHead>
-                              <TableHead className="text-right">Landed Cost (₹/Kg)</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {summary.itemsWithLandedCost.map((item, index) => (
-                              <TableRow key={index}>
-                                <TableCell>{item.lotNumber || `Item ${index + 1}`}</TableCell>
-                                <TableCell className="text-right font-medium">
-                                  ₹{Math.round(item.landedCostPerKg || 0).toLocaleString('en-IN')}
-                                </TableCell>
+                    <div className="flex items-center justify-between text-md font-semibold">
+                      <span>Total Expenses:</span>
+                      <p>₹{Math.round(summary.totalExpenses).toLocaleString('en-IN')}</p>
+                    </div>
+                    <div className="flex items-center justify-between border-t pt-2 mt-2">
+                      <div className="flex items-center text-lg font-semibold text-primary">
+                        <Info className="w-5 h-5 mr-2" />
+                        Total Purchase Value:
+                      </div>
+                      <p className="text-xl font-bold text-primary">
+                        ₹{Math.round(summary.totalAmount).toLocaleString('en-IN')}
+                      </p>
+                    </div>
+                    
+                    {summary.totalNetWeight > 0 && summary.itemsWithLandedCost.length > 0 && (
+                      <div className="pt-4 border-t mt-4">
+                        <h4 className="font-semibold mb-2 text-muted-foreground">
+                          Per-Vakkal Landed Cost
+                        </h4>
+                        <ScrollArea className="h-24">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Vakkal</TableHead>
+                                <TableHead className="text-right">Landed Cost (₹/Kg)</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </ScrollArea>
-                    </div>
-                  )}
-                </div>
+                            </TableHeader>
+                            <TableBody>
+                              {summary.itemsWithLandedCost.map((item, index) => (
+                                <TableRow key={index}>
+                                  <TableCell>{item.lotNumber || `Item ${'${index + 1}'}`}</TableCell>
+                                  <TableCell className="text-right font-medium">
+                                    ₹{Math.round(item.landedCostPerKg || 0).toLocaleString('en-IN')}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </ScrollArea>
+                      </div>
+                    )}
+                  </div>
 
-              </form>
-            </FormProvider>
-          </ScrollArea>
+                </form>
+              </FormProvider>
+            </ScrollArea>
+          </div>
            <DialogFooter className="pt-4 border-t">
               <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
               <Button type="button" onClick={formHandleSubmit(processSubmit)} disabled={isSubmitting}>
