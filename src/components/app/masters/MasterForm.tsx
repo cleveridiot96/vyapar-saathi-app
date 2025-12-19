@@ -76,9 +76,9 @@ export function MasterForm({
     form.reset({
       name: initialData?.name || "",
       type: type,
-      commission: (initialData as Agent | Broker)?.details?.commission || undefined,
-      commissionType: (initialData as Broker)?.details?.commissionType || 'Percentage',
-      openingBalance: initialData?.details?.openingBalance || undefined,
+      commission: initialData?.details?.commission,
+      commissionType: initialData?.details?.commissionType || 'Percentage',
+      openingBalance: initialData?.details?.openingBalance,
       openingBalanceType: initialData?.details?.openingBalanceType || 'Dr',
     });
   }, [initialData, itemTypeFromButton, form]);
