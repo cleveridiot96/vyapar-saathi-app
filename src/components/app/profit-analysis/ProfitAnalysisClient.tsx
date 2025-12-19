@@ -417,7 +417,7 @@ export function ProfitAnalysisClient() {
               </Card>
             </TabsContent>
             
-            <TabsContent value="calculator" className="mt-4" ref={calculatorRef}>
+            <TabsContent value="calculator" className="mt-4">
                 <Card>
                     <CardHeader className="p-4 bg-primary/10 rounded-t-xl">
                         <CardTitle className="text-xl uppercase text-primary">PROFIT &amp; COST CALCULATOR</CardTitle>

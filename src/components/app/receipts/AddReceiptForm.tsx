@@ -241,6 +241,7 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
             </DialogDescription>
           </DialogHeader>
           <FormProvider {...methods}>
+            <Form {...methods}>
               <form onSubmit={methods.handleSubmit(processSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto p-1 pr-3">
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField control={control} name="date" render={({ field }) => (
@@ -256,7 +257,7 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
                           </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar mode="single" selected={field.value} onSelect={(date) => { if (date) field.onChange(date); setIsDatePickerOpen(false); }} disabled={(date) => date > new Date()} initialFocus />
+                          <Calendar mode="single" selected={field.value} onSelect={(date) => { if (date) { field.onChange(date); setIsDatePickerOpen(false); } }} disabled={(date) => date > new Date()} initialFocus />
                         </PopoverContent>
                       </Popover><FormMessage />
                     </FormItem>)}
@@ -400,8 +401,4 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
           itemTypeFromButton={masterFormItemType!} 
         />
       )}
-    </>
-  );
-};
-
-export const AddReceiptForm = React.memo(AddReceiptFormComponent);
+    </
