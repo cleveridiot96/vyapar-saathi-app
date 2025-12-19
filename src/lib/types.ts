@@ -4,6 +4,7 @@ export interface MasterItem {
   id: string;
   type: MasterItemType;
   name: string;
+  locked?: boolean;
   details?: {
     commission?: number;
     commissionType?: 'Percentage' | 'Fixed';

@@ -26,11 +26,13 @@ import type { MasterItem, MasterItemType } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MASTER_TYPES_CONFIG } from "@/lib/constants";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Lock, Unlock } from "lucide-react";
 
 interface MasterFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (item: MasterItem) => void;
+  onToggleLock?: (item: MasterItem) => void;
   itemTypeFromButton: MasterItemType;
   initialData?: MasterItem | null;
   fixedIds?: string[];
@@ -51,11 +53,14 @@ export function MasterForm({
   isOpen,
   onClose,
   onSubmit,
+  onToggleLock,
   itemTypeFromButton,
   initialData,
   fixedIds = [],
 }: MasterFormProps) {
   const isEditingFixed = initialData ? fixedIds.includes(initialData.id) : false;
+  const isLocked = initialData?.locked || isEditingFixed;
+
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -84,10 +89,12 @@ export function MasterForm({
   }, [initialData, itemTypeFromButton, form]);
 
   const handleSubmit = (values: FormValues) => {
+    if (isLocked) return;
     const itemData: MasterItem = {
       id: initialData?.id || `${values.type.toLowerCase()}-${Date.now()}`,
       type: values.type,
       name: values.name,
+      locked: initialData?.locked || false,
       details: {
         ...(values.type === 'Agent' || values.type === 'Broker' ? { commission: values.commission, commissionType: values.commissionType } : {}),
         openingBalance: values.openingBalance,
@@ -105,6 +112,13 @@ export function MasterForm({
   }
   const singularLabel = getSingularLabel(itemType);
 
+  const handleUnlock = () => {
+    if (initialData && onToggleLock) {
+      onToggleLock(initialData);
+      onClose();
+    }
+  }
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -113,9 +127,11 @@ export function MasterForm({
           <DialogTitle>
             {initialData ? `Edit ${singularLabel}` : `Add New ${singularLabel}`}
           </DialogTitle>
-          <DialogDescription>
-            Fill in the details for the master item.
-          </DialogDescription>
+          {isLocked && (
+            <DialogDescription className="text-yellow-600 flex items-center gap-2 pt-2">
+              <Lock className="h-4 w-4" /> This item is locked. Unlock to edit.
+            </DialogDescription>
+          )}
         </DialogHeader>
         <ScrollArea className="-mx-6 flex-1 px-6">
         <Form {...form}>
@@ -126,7 +142,7 @@ export function MasterForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isEditingFixed || !!initialData}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isLocked || !!initialData}>
                         <FormControl>
                             <SelectTrigger><SelectValue placeholder="Select an item type" /></SelectTrigger>
                         </FormControl>
@@ -148,7 +164,7 @@ export function MasterForm({
                 <FormItem>
                   <FormLabel>{singularLabel} Name</FormLabel>
                   <FormControl>
-                    <Input placeholder={`Enter ${singularLabel.toLowerCase()} name`} {...field} disabled={isEditingFixed} />
+                    <Input placeholder={`Enter ${singularLabel.toLowerCase()} name`} {...field} disabled={isLocked} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -164,7 +180,7 @@ export function MasterForm({
                       <FormItem>
                         <FormLabel>Commission</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="e.g., 1.5" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
+                          <Input type="number" placeholder="e.g., 1.5" {...field} disabled={isLocked} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -177,7 +193,7 @@ export function MasterForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Type</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value} disabled={isLocked}>
                              <FormControl><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger></FormControl>
                              <SelectContent>
                                 <SelectItem value="Percentage">Percentage (%)</SelectItem>
@@ -201,7 +217,7 @@ export function MasterForm({
                       <FormItem>
                         <FormLabel>Opening Balance (₹)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="0" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
+                          <Input type="number" placeholder="0" {...field} disabled={isLocked} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -213,7 +229,7 @@ export function MasterForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Balance Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLocked}>
                              <FormControl><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger></FormControl>
                              <SelectContent>
                                 <SelectItem value="Dr">Debit (Receivable)</SelectItem>
@@ -233,7 +249,14 @@ export function MasterForm({
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="button" onClick={form.handleSubmit(handleSubmit)}>Save</Button>
+           {isLocked && onToggleLock ? (
+            <Button type="button" variant="secondary" onClick={handleUnlock}>
+                <Unlock className="mr-2 h-4 w-4" />
+                Unlock & Close
+            </Button>
+          ) : (
+            <Button type="button" onClick={form.handleSubmit(handleSubmit)} disabled={isLocked}>Save</Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

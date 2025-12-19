@@ -1,7 +1,7 @@
 
 "use client";
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Users, Truck, UserCheck, Handshake, PlusCircle, List, Building, DollarSign, Search, ChevronDown } from "lucide-react";
+import { Users, Truck, UserCheck, Handshake, PlusCircle, List, Building, DollarSign, Search, ChevronDown, Lock, Unlock } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -165,10 +165,10 @@ export default function MastersPage() {
   }, []);
 
   const handleDeleteItemAttempt = useCallback((item: MasterItem) => {
-    if (ALL_FIXED_IDS.includes(item.id)) {
+    if (item.locked || ALL_FIXED_IDS.includes(item.id)) {
       toast({
         title: "Deletion Prohibited",
-        description: `${item.name} is a fixed item and cannot be deleted.`,
+        description: `${item.name} is a fixed or locked item and cannot be deleted.`,
         variant: "destructive",
       });
       return;
@@ -192,6 +192,14 @@ export default function MastersPage() {
       setShowDeleteConfirm(false);
     }
   }, [itemToDelete, toast, addOrUpdateMaster]);
+
+  const handleToggleLock = useCallback((item: MasterItem) => {
+    addOrUpdateMaster({ ...item, locked: !item.locked });
+    toast({
+      title: item.locked ? "Item Unlocked" : "Item Locked",
+      description: `${item.name} is now ${item.locked ? 'editable' : 'protected from edits'}.`
+    });
+  }, [addOrUpdateMaster, toast]);
 
 
   const addButtonLabel = useMemo(() => {
@@ -313,6 +321,7 @@ export default function MastersPage() {
                       isAllItemsTab={tab.value === "All"}
                       onEdit={handleEditItem}
                       onDelete={handleDeleteItemAttempt}
+                      onToggleLock={handleToggleLock}
                       fixedItemIds={ALL_FIXED_IDS}
                       searchActive={!!searchQuery}
                     />
@@ -333,6 +342,7 @@ export default function MastersPage() {
           isOpen={isFormOpen}
           onClose={() => { setIsFormOpen(false); setEditingItem(null); }}
           onSubmit={handleAddOrUpdateMasterItem}
+          onToggleLock={handleToggleLock}
           initialData={editingItem}
           itemTypeFromButton={editingItem ? editingItem.type : (activeTab !== 'All' ? activeTab as MasterItemType : 'Customer')}
           fixedIds={ALL_FIXED_IDS}

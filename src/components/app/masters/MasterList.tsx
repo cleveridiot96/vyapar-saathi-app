@@ -4,7 +4,7 @@ import * as React from 'react';
 import type { MasterItem, MasterItemType } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Lock, Unlock } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,11 +49,12 @@ interface MasterListProps {
   isAllItemsTab: boolean;
   onEdit: (item: MasterItem) => void;
   onDelete: (item: MasterItem) => void;
+  onToggleLock: (item: MasterItem) => void;
   fixedItemIds?: string[];
   searchActive: boolean;
 }
 
-export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, fixedItemIds = [], searchActive }: MasterListProps) {
+export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, onToggleLock, fixedItemIds = [], searchActive }: MasterListProps) {
   const { tableData, handleSort, sortConfig } = useSortableTable(data.map(d => d.item), { key: 'name', direction: 'ascending' });
 
   const getFuseResult = (item: MasterItem) => data.find(d => d.item.id === item.id);
@@ -88,9 +89,11 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, fi
           {tableData.map((item) => {
             const fuseResult = getFuseResult(item);
             const nameMatch = fuseResult?.matches?.find(m => m.key === 'name');
+            const isLocked = item.locked || fixedItemIds.includes(item.id);
             return (
-              <TableRow key={item.id} className="hover:bg-muted/50">
+              <TableRow key={item.id} className={cn("hover:bg-muted/50", isLocked && "bg-muted/30")}>
                 <TableCell className="font-medium">
+                  {isLocked && <Lock className="h-3 w-3 inline-block mr-2 text-muted-foreground" />}
                   <HighlightedText text={item.name} indices={nameMatch?.indices} />
                 </TableCell>
                 {isAllItemsTab && (
@@ -110,14 +113,18 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, fi
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEdit(item)}>
+                      <DropdownMenuItem onClick={() => onEdit(item)} disabled={isLocked}>
                         <Edit className="mr-2 h-4 w-4" /> Edit
+                      </DropdownMenuItem>
+                       <DropdownMenuItem onClick={() => onToggleLock(item)}>
+                        {isLocked ? <Unlock className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
+                        {isLocked ? 'Unlock' : 'Lock'}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => onDelete(item)}
-                        disabled={fixedItemIds.includes(item.id)}
-                        className={cn("text-destructive focus:text-destructive focus:bg-destructive/10", fixedItemIds.includes(item.id) && "cursor-not-allowed")}
+                        disabled={isLocked}
+                        className={cn("text-destructive focus:text-destructive focus:bg-destructive/10", isLocked && "cursor-not-allowed")}
                       >
                         <Trash2 className="mr-2 h-4 w-4" /> Delete
                       </DropdownMenuItem>
