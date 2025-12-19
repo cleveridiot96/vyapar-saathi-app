@@ -1,55 +1,62 @@
 "use client";
-import React from 'react';
-import type { AggregatedInventoryItem } from '@/hooks/useInventory';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTransactions } from '@/hooks/useTransactions';
 
-interface LeaderboardItem {
-  name: string;
-  value: number;
+import React from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { AggregatedInventoryItem } from '@/hooks/useInventory';
+
+interface PartyBrokerLeaderboardProps {
+  items: AggregatedInventoryItem[];
 }
 
-export const PartyBrokerLeaderboard = ({ items }: { items: AggregatedInventoryItem[] }) => {
-  const { sales } = useTransactions();
-
-  const supplierLeaderboard = React.useMemo(() => {
-    const supplierData: Record<string, number> = {};
-    items.forEach(item => {
-      supplierData[item.supplierName] = (supplierData[item.supplierName] || 0) + item.cogs;
-    });
-    return Object.entries(supplierData).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 5);
+export const PartyBrokerLeaderboard: React.FC<PartyBrokerLeaderboardProps> = ({ items }) => {
+  const stockListData = React.useMemo(() => {
+    // Filter for items with a positive bag count and sort them in descending order
+    return items
+      .filter(item => item.currentBags > 0)
+      .sort((a, b) => b.currentBags - a.currentBags);
   }, [items]);
-  
-  const customerLeaderboard = React.useMemo(() => {
-    const customerData: Record<string, number> = {};
-    sales.forEach(sale => {
-      if (sale.customerName) {
-        customerData[sale.customerName] = (customerData[sale.customerName] || 0) + sale.totalGoodsValue;
-      }
-    });
-    return Object.entries(customerData).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 5);
-  }, [sales]);
 
-  const Leaderboard = ({ title, data }: { title: string, data: LeaderboardItem[] }) => (
-    <Card>
-      <CardHeader><CardTitle>{title}</CardTitle></CardHeader>
-      <CardContent>
-        <ol className="space-y-2">
-          {data.map((item, index) => (
-            <li key={item.name} className="flex justify-between items-center text-sm">
-              <span>{index + 1}. {item.name}</span>
-              <span className="font-semibold">₹{Math.round(item.value).toLocaleString('en-IN')}</span>
-            </li>
-          ))}
-        </ol>
-      </CardContent>
-    </Card>
-  );
+  if (stockListData.length === 0) {
+      return (
+          <Card className="shadow-lg border-dashed border-2 border-muted-foreground/30 bg-muted/20 min-h-[200px] flex items-center justify-center">
+             <p className="text-muted-foreground">No active stock to list.</p>
+          </Card>
+      );
+  }
 
   return (
-    <div className="grid md:grid-cols-2 gap-4">
-      <Leaderboard title="Top Suppliers by Stock Value" data={supplierLeaderboard} />
-      <Leaderboard title="Top Customers by Sales Value" data={customerLeaderboard} />
-    </div>
+    <Card className="shadow-lg">
+      <CardHeader>
+        <CardTitle className="text-xl">Stock List (Sorted by Bag Count)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[250px] rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>RANK</TableHead>
+                <TableHead>VAKKAL/LOT</TableHead>
+                <TableHead>LOCATION</TableHead>
+                <TableHead className="text-right">CURRENT BAGS</TableHead>
+                <TableHead className="text-right">CURRENT WEIGHT (KG)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stockListData.map((item, index) => (
+                <TableRow key={item.key} className="uppercase">
+                  <TableCell className="font-bold">{index + 1}</TableCell>
+                  <TableCell className="font-medium">{item.lotNumber}</TableCell>
+                  <TableCell>{item.locationName}</TableCell>
+                  <TableCell className="text-right font-bold">{Math.round(item.currentBags).toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{item.currentWeight.toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 };
