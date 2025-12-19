@@ -79,6 +79,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   const [isMasterFormOpen, setIsMasterFormOpen] = React.useState(false);
+  const [masterFormItemType, setMasterFormItemType] = React.useState<MasterItemType | null>(null);
 
   const methods = useForm<LocationTransferFormValues>({
     resolver: zodResolver(locationTransferSchema),
@@ -110,6 +111,11 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   const { fields: expenseFields, append: appendExpense, remove: removeExpense } = useFieldArray({ control, name: "expenses" });
 
   const fromLocationId = watch('fromLocationId');
+
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType) => {
+    setMasterFormItemType(type);
+    setIsMasterFormOpen(true);
+  }, []);
 
   const processSubmit = (values: LocationTransferFormValues) => {
     setIsSubmitting(true);
@@ -170,13 +176,13 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
               )} />
               <FormField control={control} name="fromLocationId" render={({ field }) => (
                 <FormItem><FormLabel>From Warehouse</FormLabel>
-                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" onAddNew={() => setIsMasterFormOpen(true)} {...field} />
+                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" onAddNew={() => handleOpenMasterForm("Warehouse")} {...field} />
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={control} name="toLocationId" render={({ field }) => (
                 <FormItem><FormLabel>To Warehouse</FormLabel>
-                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" onAddNew={() => setIsMasterFormOpen(true)} {...field} />
+                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" onAddNew={() => handleOpenMasterForm("Warehouse")} {...field} />
                   <FormMessage />
                 </FormItem>
               )} />
@@ -276,7 +282,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
           onClose={() => setIsMasterFormOpen(false)}
           onSubmit={addOrUpdateMaster}
           initialData={null}
-          itemTypeFromButton={"Warehouse"}
+          itemTypeFromButton={masterFormItemType!}
         />
       )}
     </>

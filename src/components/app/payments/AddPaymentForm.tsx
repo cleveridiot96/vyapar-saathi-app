@@ -28,7 +28,8 @@ import { Select as ShadSelect, SelectContent, SelectItem, SelectTrigger, SelectV
 import { CalendarIcon, PlusCircle, Trash2, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
-import { paymentSchema, type PaymentFormValues } from "@/lib/schemas/paymentSchema";
+import { paymentSchema } from "@/lib/schemas/paymentSchema";
+import type { PaymentFormValues } from "@/lib/schemas/paymentSchema";
 import type { MasterItem, Payment, MasterItemType, Purchase, Sale } from "@/lib/types";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { useToast } from "@/hooks/use-toast";
@@ -140,11 +141,11 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
   }, [watchedStockItems]);
 
 
-  const handleOpenMasterForm = (type: MasterItemType = "Supplier") => {
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType = "Supplier") => {
     setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
-  };
+  }, []);
   
   const handleEditMasterItem = (id: string) => {
     const itemToEdit = parties.find(p => p.id === id) || null;
@@ -199,9 +200,9 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
       partyName: selectedParty.name,
       partyType: selectedParty.type as MasterItemType,
       amount: totalPaymentAmount,
-      paymentType: values.paymentType,
+      paymentType: values.paymentType as 'Cash' | 'Stock',
       paymentMethod: values.paymentType === 'Cash' ? values.paymentMethod : undefined,
-      transactionType: values.transactionType,
+      transactionType: values.transactionType as 'On Account' | 'Against Bill',
       againstBills: values.transactionType === 'Against Bill' ? values.againstBills : [],
       stockItems: values.paymentType === 'Stock' ? values.stockItems : [],
       source: values.source,
@@ -324,11 +325,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
                         options={parties.map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
                         placeholder="Select Party" searchPlaceholder="Search parties..." notFoundMessage="No party found." 
                         addNewLabel="Add New Party"
-                        onAddNew={() => {
-                            const currentPartyValue = getValues("partyId");
-                            const currentParty = parties.find(p => p.id === currentPartyValue);
-                            handleOpenMasterForm(currentParty?.type || 'Supplier');
-                        }}
+                        onAddNew={() => handleOpenMasterForm('Supplier')}
                         onEdit={handleEditMasterItem}
                       /> <FormMessage />
                     </FormItem>)}

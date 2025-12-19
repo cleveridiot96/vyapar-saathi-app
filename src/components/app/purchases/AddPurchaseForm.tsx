@@ -146,27 +146,19 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     };
   }, [watchedFormValues]);
 
-  const handleOpenMasterForm = React.useCallback((type: MasterItemType, e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType) => {
     setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
   }, []);
   
-  const handleEditMasterItem = React.useCallback((type: MasterItemType, id: string, e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleEditMasterItem = React.useCallback((id: string) => {
     const allMasters = getAllMasters();
     const itemToEdit = allMasters.find(i => i.id === id) || null;
 
     if (itemToEdit) {
       setMasterItemToEdit(itemToEdit);
-      setMasterFormItemType(type);
+      setMasterFormItemType(itemToEdit.type);
       setIsMasterFormOpen(true);
     }
   }, [getAllMasters]);
@@ -174,18 +166,23 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   const handleMasterFormSubmit = React.useCallback((newItem: MasterItem) => {
     addOrUpdateMaster(newItem);
     
-    if (newItem.type === 'Supplier') {
-      setValue('supplierId', newItem.id, { shouldValidate: true, shouldDirty: true });
-    } else if (newItem.type === 'Agent') {
-      setValue('agentId', newItem.id, { shouldValidate: true, shouldDirty: true });
-    } else if (newItem.type === 'Warehouse') {
-      setValue('locationId', newItem.id, { shouldValidate: true, shouldDirty: true });
-    } else if (newItem.type === 'Transporter') {
-      setValue('transporterId', newItem.id, { shouldValidate: true, shouldDirty: true });
+    const fieldMap: Record<MasterItemType, keyof PurchaseFormValues | undefined> = {
+        Supplier: 'supplierId',
+        Agent: 'agentId',
+        Warehouse: 'locationId',
+        Transporter: 'transporterId',
+        Customer: undefined,
+        Broker: undefined,
+        Expense: undefined,
+        Product: undefined,
+    };
+    const fieldToUpdate = fieldMap[newItem.type];
+
+    if (fieldToUpdate) {
+        setValue(fieldToUpdate as any, newItem.id, { shouldValidate: true, shouldDirty: true });
     }
     
     setIsMasterFormOpen(false);
-    setMasterFormItemType(null);
     setMasterItemToEdit(null);
     
     toast({ 
@@ -352,9 +349,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                           <FormLabel>SUPPLIER</FormLabel>
                           <MasterDataCombobox
                             value={field.value}
-                            onChange={(value) => {
-                              field.onChange(value);
-                            }}
+                            onChange={(value) => field.onChange(value)}
                             options={suppliers.map(s => ({ value: s.id, label: s.name }))}
                             placeholder="SELECT SUPPLIER"
                             searchPlaceholder="SEARCH SUPPLIERS..."
@@ -377,9 +372,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                           <FormLabel>AGENT (OPTIONAL)</FormLabel>
                           <MasterDataCombobox
                             value={field.value}
-                            onChange={(value) => {
-                              field.onChange(value);
-                            }}
+                            onChange={(value) => field.onChange(value)}
                             options={agents.map(a => ({ value: a.id, label: a.name }))}
                             placeholder="SELECT AGENT"
                             searchPlaceholder="SEARCH AGENTS..."
@@ -402,9 +395,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                           <FormLabel>LOCATION (WAREHOUSE)</FormLabel>
                           <MasterDataCombobox
                             value={field.value}
-                            onChange={(value) => {
-                              field.onChange(value);
-                            }}
+                            onChange={(value) => field.onChange(value)}
                             options={warehouses.map(w => ({ value: w.id, label: w.name }))}
                             placeholder="SELECT LOCATION"
                             searchPlaceholder="SEARCH LOCATIONS..."

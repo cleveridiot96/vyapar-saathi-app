@@ -10,6 +10,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command";
 import {
   Popover,
@@ -31,7 +32,7 @@ interface MasterDataComboboxProps {
   searchPlaceholder?: string;
   notFoundMessage?: string;
   addNewLabel?: string;
-  onAddNew?: () => void;
+  onAddNew?: (e: React.MouseEvent) => void;
   onEdit?: (id: string) => void;
   disabled?: boolean;
   className?: string;
@@ -53,18 +54,6 @@ export function MasterDataCombobox({
   const [open, setOpen] = React.useState(false);
 
   const selectedOption = options.find((opt) => opt.value === value);
-
-  const handleAddNewClick = (e: React.MouseEvent | React.KeyboardEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setOpen(false);
-    if (onAddNew) {
-      onAddNew();
-    } else {
-      window.dispatchEvent(new CustomEvent('open-master-form'));
-    }
-  };
-
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -92,79 +81,79 @@ export function MasterDataCombobox({
       >
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
-          <CommandEmpty>
-            {notFoundMessage}
-            {(onAddNew) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start mt-2"
-                type="button"
-                onMouseDown={handleAddNewClick}
-                onClick={handleAddNewClick}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                {addNewLabel}
-              </Button>
-            )}
-          </CommandEmpty>
-          <CommandGroup className="max-h-[200px] overflow-auto">
-            {(options || []).map((option) => (
-              <CommandItem
-                key={option.value}
-                value={option.label}
-                onSelect={() => {
-                  onChange(option.value === value ? undefined : option.value);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === option.value ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <span className="flex-1 truncate">{option.label}</span>
-                {onEdit && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 ml-2"
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setOpen(false);
-                      onEdit(option.value);
-                    }}
-                    onClick={(e) => {
+          <CommandList>
+            <CommandEmpty>
+              {notFoundMessage}
+              {(onAddNew) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start mt-2"
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onAddNew(e);
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {addNewLabel}
+                </Button>
+              )}
+            </CommandEmpty>
+            <CommandGroup>
+              {(options || []).map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.label}
+                  onSelect={() => {
+                    onChange(option.value === value ? undefined : option.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <span className="flex-1 truncate">{option.label}</span>
+                  {onEdit && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 ml-2"
+                      type="button"
+                      onMouseDown={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         setOpen(false);
                         onEdit(option.value);
-                    }}
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </Button>
-                )}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-          {(onAddNew) && options.length > 0 && (
-            <div className="border-t p-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start"
-                type="button"
-                onMouseDown={handleAddNewClick}
-                onClick={handleAddNewClick}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                {addNewLabel}
-              </Button>
-            </div>
-          )}
+                      }}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+             {(onAddNew) && options.length > 0 && (
+              <div className="border-t p-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start"
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onAddNew(e);
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {addNewLabel}
+                </Button>
+              </div>
+            )}
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>
