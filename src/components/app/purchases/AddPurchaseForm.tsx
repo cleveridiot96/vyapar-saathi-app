@@ -147,14 +147,20 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   }, [watchedFormValues]);
 
   const handleOpenMasterForm = React.useCallback((type: MasterItemType, e?: React.MouseEvent) => {
-    e?.preventDefault();
-    e?.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
   }, []);
   
-  const handleEditMasterItem = React.useCallback((type: MasterItemType, id: string) => {
+  const handleEditMasterItem = React.useCallback((type: MasterItemType, id: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const allMasters = getAllMasters();
     const itemToEdit = allMasters.find(i => i.id === id) || null;
 
@@ -354,7 +360,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             searchPlaceholder="SEARCH SUPPLIERS..."
                             notFoundMessage="NO SUPPLIER FOUND."
                             addNewLabel="ADD NEW SUPPLIER"
-                            onAddNew={(e) => handleOpenMasterForm("Supplier", e)}
+                            onAddNew={() => handleOpenMasterForm("Supplier")}
                             onEdit={(id) => handleEditMasterItem("Supplier", id)}
                           />
                           <FormMessage />
@@ -379,7 +385,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             searchPlaceholder="SEARCH AGENTS..."
                             notFoundMessage="NO AGENT FOUND."
                             addNewLabel="ADD NEW AGENT"
-                            onAddNew={(e) => handleOpenMasterForm("Agent", e)}
+                            onAddNew={() => handleOpenMasterForm("Agent")}
                             onEdit={(id) => handleEditMasterItem("Agent", id)}
                           />
                           <FormMessage />
@@ -404,7 +410,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             searchPlaceholder="SEARCH LOCATIONS..."
                             notFoundMessage="NO LOCATION FOUND."
                             addNewLabel="ADD NEW LOCATION"
-                            onAddNew={(e) => handleOpenMasterForm("Warehouse", e)}
+                            onAddNew={() => handleOpenMasterForm("Warehouse")}
                             onEdit={(id) => handleEditMasterItem("Warehouse", id)}
                           />
                           <FormMessage />
@@ -626,7 +632,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                               searchPlaceholder="Search parties..."
                               notFoundMessage="No party found."
                               addNewLabel="Add New Party"
-                              onAddNew={(e) => handleOpenMasterForm("Transporter", e)}
+                              onAddNew={() => handleOpenMasterForm("Transporter")}
                               onEdit={(id) => handleEditMasterItem("Transporter", id)}
                             />
                             <FormMessage />
