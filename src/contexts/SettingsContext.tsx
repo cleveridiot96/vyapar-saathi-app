@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, ReactNode, useCallback, useState } from 'react';
+import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 
 interface PrintSettings {
   showProfitOnSaleChitti: boolean;
@@ -24,24 +25,22 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  // PERMANENT FIX: Replaced useLocalStorageState with useState for stability in restricted environments.
-  const [financialYear, setFinancialYear] = useState('2023-2024');
-  const [availableFinancialYears, setAvailableFinancialYears] = useState<string[]>(['2023-2024']);
-  const [lowStockThreshold, setLowStockThreshold] = useState(10);
-  const [fontSize, setFontSize] = useState(16);
-  const [printSettings, setPrintSettings] = useState<PrintSettings>({ showProfitOnSaleChitti: false });
+  const [financialYear, setFinancialYear, isFinancialYearHydrating] = useLocalStorageState('financialYear', '2023-2024');
+  const [availableFinancialYears, setAvailableFinancialYears, isAvailableYearsHydrating] = useLocalStorageState<string[]>('availableFinancialYears', ['2023-2024']);
+  const [lowStockThreshold, setLowStockThreshold, isThresholdHydrating] = useLocalStorageState('lowStockThreshold', 10);
+  const [fontSize, setFontSize, isFontSizeHydrating] = useLocalStorageState('fontSize', 16);
+  const [printSettings, setPrintSettings, isPrintSettingsHydrating] = useLocalStorageState<PrintSettings>('printSettings', { showProfitOnSaleChitti: false });
   
-  // PERMANENT FIX: Since we are not loading from localStorage, hydration is considered immediate.
-  const [isAppHydrating, setIsAppHydrating] = useState(false);
+  const isAppHydrating = isFinancialYearHydrating || isAvailableYearsHydrating || isThresholdHydrating || isFontSizeHydrating || isPrintSettingsHydrating;
 
   React.useEffect(() => {
     document.documentElement.style.fontSize = `${fontSize}px`;
+    document.documentElement.style.setProperty('--font-size', `${fontSize}px`);
   }, [fontSize]);
 
   const handleSetFontSize = useCallback((size: number) => {
     setFontSize(size);
-    document.documentElement.style.fontSize = `${size}px`;
-  }, []);
+  }, [setFontSize]);
   
   const getFinancialYearParts = (fy: string) => {
     const parts = fy.split('-').map(Number);

@@ -1,9 +1,9 @@
-
 "use client";
 
 import React, { useState, useContext, createContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import type { Purchase, PurchaseReturn, Sale, SaleReturn, LocationTransfer, LedgerEntry, Payment, Receipt, MasterItem, MasterItemType, StockAdjustment, Customer, Supplier, Agent, Transporter, Warehouse, Broker, Expense } from '@/lib/types';
 import { FIXED_WAREHOUSES, FIXED_EXPENSES } from '@/lib/constants';
+import { useLocalStorageState } from './useLocalStorageState';
 
 interface TransactionsContextType {
   purchases: Purchase[];
@@ -60,28 +60,26 @@ interface TransactionsContextType {
 const TransactionsContext = createContext<TransactionsContextType | undefined>(undefined);
 
 export function TransactionsProvider({ children }: { children: ReactNode }) {
-  // PERMANENT FIX: Replaced useLocalStorageState with useState for stability in restricted environments.
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
-  const [purchaseReturns, setPurchaseReturns] = useState<PurchaseReturn[]>([]);
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [saleReturns, setSaleReturns] = useState<SaleReturn[]>([]);
-  const [locationTransfers, setLocationTransfers] = useState<LocationTransfer[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [receipts, setReceipts] = useState<Receipt[]>([]);
-  const [ledger, setLedger] = useState<LedgerEntry[]>([]);
-  const [adjustments, setAdjustments] = useState<StockAdjustment[]>([]);
+  const [purchases, setPurchases, pLoading] = useLocalStorageState<Purchase[]>('transactions_purchases', []);
+  const [purchaseReturns, setPurchaseReturns, prLoading] = useLocalStorageState<PurchaseReturn[]>('transactions_purchaseReturns', []);
+  const [sales, setSales, sLoading] = useLocalStorageState<Sale[]>('transactions_sales', []);
+  const [saleReturns, setSaleReturns, srLoading] = useLocalStorageState<SaleReturn[]>('transactions_saleReturns', []);
+  const [locationTransfers, setLocationTransfers, ltLoading] = useLocalStorageState<LocationTransfer[]>('transactions_locationTransfers', []);
+  const [payments, setPayments, payLoading] = useLocalStorageState<Payment[]>('transactions_payments', []);
+  const [receipts, setReceipts, recLoading] = useLocalStorageState<Receipt[]>('transactions_receipts', []);
+  const [ledger, setLedger, ldgLoading] = useLocalStorageState<LedgerEntry[]>('transactions_ledger', []);
+  const [adjustments, setAdjustments, adjLoading] = useLocalStorageState<StockAdjustment[]>('transactions_adjustments', []);
   
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [transporters, setTransporters] = useState<Transporter[]>([]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([...FIXED_WAREHOUSES] as Warehouse[]);
-  const [brokers, setBrokers] = useState<Broker[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([...FIXED_EXPENSES] as Expense[]);
+  const [customers, setCustomers, cLoading] = useLocalStorageState<Customer[]>('masters_customers', []);
+  const [suppliers, setSuppliers, supLoading] = useLocalStorageState<Supplier[]>('masters_suppliers', []);
+  const [agents, setAgents, aLoading] = useLocalStorageState<Agent[]>('masters_agents', []);
+  const [transporters, setTransporters, tLoading] = useLocalStorageState<Transporter[]>('masters_transporters', []);
+  const [warehouses, setWarehouses, wLoading] = useLocalStorageState<Warehouse[]>('masters_warehouses', [...FIXED_WAREHOUSES] as Warehouse[]);
+  const [brokers, setBrokers, bLoading] = useLocalStorageState<Broker[]>('masters_brokers', []);
+  const [expenses, setExpenses, eLoading] = useLocalStorageState<Expense[]>('masters_expenses', [...FIXED_EXPENSES] as Expense[]);
 
-  // PERMANENT FIX: Since we are not loading from localStorage, data is considered loaded immediately.
-  const [isTransactionsLoaded, setIsTransactionsLoaded] = useState(true);
-  const [isMasterDataLoaded, setIsMasterDataLoaded] = useState(true);
+  const isTransactionsLoaded = !pLoading && !prLoading && !sLoading && !srLoading && !ltLoading && !payLoading && !recLoading && !ldgLoading && !adjLoading;
+  const isMasterDataLoaded = !cLoading && !supLoading && !aLoading && !tLoading && !wLoading && !bLoading && !eLoading;
 
   const addOrUpdateMaster = useCallback((item: MasterItem) => {
     const setterMap: Record<MasterItemType, React.Dispatch<React.SetStateAction<any[]>>> = {
@@ -108,7 +106,7 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
             }
         });
     }
-  }, []);
+  }, [setCustomers, setSuppliers, setAgents, setTransporters, setWarehouses, setBrokers, setExpenses]);
 
 
   const addLedgerEntry = (entries: LedgerEntry | LedgerEntry[]) => {
@@ -169,7 +167,9 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
   }), [
     purchases, sales, purchaseReturns, saleReturns, locationTransfers, payments, receipts, ledger, adjustments,
     customers, suppliers, agents, transporters, warehouses, brokers, expenses,
-    isTransactionsLoaded, isMasterDataLoaded, getAllMasters, addOrUpdateMaster, masterData
+    isTransactionsLoaded, isMasterDataLoaded, getAllMasters, addOrUpdateMaster, masterData,
+    setPurchases, setPurchaseReturns, setSales, setSaleReturns, setLocationTransfers, setPayments, setReceipts, setLedger, setAdjustments,
+    setCustomers, setSuppliers, setAgents, setTransporters, setWarehouses, setBrokers, setExpenses
   ]);
 
   return (
