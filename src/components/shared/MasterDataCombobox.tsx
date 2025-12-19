@@ -61,6 +61,15 @@ export function MasterDataCombobox({
     setOpen(false);
   };
 
+  // Create a mapping of lowercased labels to values for CommandItem onSelect
+  const labelToValueMap = React.useMemo(() => {
+    const map = new Map<string, string>();
+    options.forEach((opt) => {
+      map.set(opt.label.toLowerCase(), opt.value);
+    });
+    return map;
+  }, [options]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -104,7 +113,7 @@ export function MasterDataCombobox({
             {value && (
                <CommandGroup>
                   <CommandItem
-                    value="clear-selection-option" // distinct value to avoid collisions
+                    value="__clear_selection__" // distinct value to avoid collisions
                     onSelect={() => handleClear()}
                     className="text-muted-foreground cursor-pointer justify-center text-center font-medium border-b"
                   >
@@ -118,9 +127,13 @@ export function MasterDataCombobox({
                 <CommandItem
                   key={option.value}
                   value={option.label} // Use label for search filtering
-                  onSelect={() => {
-                    // Toggle: if clicking the same item, clear it. Otherwise set it.
-                    onChange(option.value === value ? undefined : option.value);
+                  onSelect={(selectedLabel) => {
+                    // Convert the label back to value using our map
+                    const selectedValue = labelToValueMap.get(selectedLabel.toLowerCase());
+                    if (selectedValue) {
+                      // Toggle: if clicking the same item, clear it. Otherwise set it.
+                      onChange(selectedValue === value ? undefined : selectedValue);
+                    }
                     setOpen(false);
                   }}
                   className="flex items-center justify-between group cursor-pointer"
@@ -138,8 +151,10 @@ export function MasterDataCombobox({
                   {/* Edit Button (if provided) */}
                   {onEdit && (
                     <div
-                      onClick={(e) => {
+                      onMouseDown={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
+                        setOpen(false);
                         onEdit(option.value, e);
                       }}
                       className="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded cursor-pointer transition-opacity"
@@ -157,23 +172,18 @@ export function MasterDataCombobox({
                 <CommandSeparator />
                 <CommandGroup>
                   <CommandItem
-                    value={addNewLabel} 
-                    className="cursor-pointer"
-                    onSelect={() => {
-                         // We handle the click in the inner div to ensure event propagation logic is correct
+                    value={`__add_new_${addNewLabel}__`}
+                    className="cursor-pointer font-medium text-primary"
+                    onSelect={(e) => {
+                      setOpen(false);
+                      // Use setTimeout to ensure the popover closes before opening the dialog
+                      setTimeout(() => {
+                        onAddNew({} as React.MouseEvent);
+                      }, 0);
                     }}
                   >
-                     <div 
-                        className="flex items-center w-full font-medium text-primary"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            setOpen(false);
-                            onAddNew(e);
-                        }}
-                     >
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        {addNewLabel}
-                     </div>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    {addNewLabel}
                   </CommandItem>
                 </CommandGroup>
               </>
