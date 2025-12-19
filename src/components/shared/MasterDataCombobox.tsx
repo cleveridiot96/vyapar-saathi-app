@@ -13,10 +13,10 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
 
 interface Option {
@@ -59,8 +59,9 @@ export function MasterDataCombobox({
   const handleSelect = React.useCallback((currentValue: string) => {
     onChange(currentValue === value ? undefined : currentValue);
     setOpen(false);
+    setSearchValue("");
   }, [onChange, value]);
-
+  
   const filteredOptions = React.useMemo(() => {
     if (!searchValue) return options;
     return options.filter(option => 
@@ -69,8 +70,8 @@ export function MasterDataCombobox({
   }, [options, searchValue]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
@@ -84,13 +85,8 @@ export function MasterDataCombobox({
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent 
-        className="w-[var(--radix-popover-trigger-width)] p-0" 
-        align="start"
-        side="bottom"
-        sideOffset={4}
-      >
+      </DialogTrigger>
+      <DialogContent className="p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
         <Command shouldFilter={false}>
           <CommandInput
             placeholder={searchPlaceholder}
@@ -99,7 +95,7 @@ export function MasterDataCombobox({
           />
           <CommandList>
             <ScrollArea className="h-64">
-              {filteredOptions.length === 0 && (
+              {filteredOptions.length === 0 && !onAddNew && (
                 <CommandEmpty>
                   <div className="py-2 text-center text-sm">
                     {notFoundMessage}
@@ -112,7 +108,6 @@ export function MasterDataCombobox({
                     key={option.value}
                     value={option.label}
                     onSelect={() => handleSelect(option.value)}
-                    onMouseDown={(e) => e.preventDefault()}
                   >
                     <Check
                       className={cn(
@@ -127,13 +122,11 @@ export function MasterDataCombobox({
                         size="icon"
                         className="h-6 w-6 ml-2"
                         type="button"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (onEdit) {
-                            setOpen(false);
-                            onEdit(option.value, e);
-                          }
+                        onClick={(e) => {
+                           if(onEdit) {
+                               setOpen(false);
+                               onEdit(option.value, e);
+                           }
                         }}
                       >
                         <Pencil className="h-3 w-3" />
@@ -151,14 +144,6 @@ export function MasterDataCombobox({
                     onAddNew(e as any);
                   }
                 }}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (onAddNew) {
-                    setOpen(false);
-                    onAddNew(e);
-                  }
-                }}
                 className="cursor-pointer mt-1 border-t"
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -167,7 +152,7 @@ export function MasterDataCombobox({
             )}
           </CommandList>
         </Command>
-      </PopoverContent>
-    </Popover>
+      </DialogContent>
+    </Dialog>
   );
 }
