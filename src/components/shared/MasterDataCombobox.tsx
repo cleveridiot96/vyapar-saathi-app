@@ -151,7 +151,14 @@ export function MasterDataCombobox({
                     onAddNew(e as any);
                   }
                 }}
-                onMouseDown={(e) => e.preventDefault()}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (onAddNew) {
+                    setOpen(false);
+                    onAddNew(e);
+                  }
+                }}
                 className="cursor-pointer mt-1 border-t"
               >
                 <Plus className="mr-2 h-4 w-4" />
