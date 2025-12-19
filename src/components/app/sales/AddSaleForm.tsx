@@ -502,9 +502,9 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                                     </SelectContent>
                                   </Select><FormMessage />
                                 </FormItem>)} />
-                              <FormField control={control} name={`expenses.${index}.amount`} render={({ field: itemField }) => (
+                              <FormField control={control} name={`expenses.${index}.amount`} render={({ field: { onChange, ...itemField } }) => (
                                 <FormItem className="md:col-span-2"><FormLabel>Amount (₹)</FormLabel>
-                                  <FormControl><Input type="number" step="0.01" placeholder="Amount" {...field} readOnly={isCommission} value={itemField.value ?? ''} onChange={e => itemField.onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
+                                  <FormControl><Input type="number" step="0.01" placeholder="Amount" {...itemField} readOnly={isCommission} onChange={e => onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
                                   <FormMessage />
                                 </FormItem>)} />
                               <FormField control={control} name={`expenses.${index}.partyId`} render={({ field: itemField }) => (

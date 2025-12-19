@@ -28,7 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import type { LocationTransfer, MasterItem, ExpenseItem } from "@/lib/types";
+import type { LocationTransfer, MasterItem, ExpenseItem, MasterItemType } from "@/lib/types";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,7 +73,8 @@ type LocationTransferFormValues = z.infer<typeof locationTransferSchema>;
 
 const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> = ({ isOpen, onClose, onSubmit, transferToEdit }) => {
   const { toast } = useToast();
-  const { warehouses, transporters, expenses: expenseAccounts, addOrUpdateMaster, getAllMasters } = useTransactions();
+  const { masterData, addOrUpdateMaster, getAllMasters } = useTransactions();
+  const { warehouses, transporters, expenses: expenseAccounts } = masterData;
   const { availableStock } = useInventory(transferToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -241,9 +242,9 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                                 <SelectContent>{(expenseAccounts || []).map(opt => <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>)}</SelectContent>
                             </Select><FormMessage />
                             </FormItem>)} />
-                        <FormField control={control} name={`expenses.${index}.amount`} render={({ field: itemField }) => (
+                        <FormField control={control} name={`expenses.${index}.amount`} render={({ field: { onChange, ...itemField } }) => (
                             <FormItem className="md:col-span-3"><FormLabel>Amount (₹)</FormLabel>
-                            <FormControl><Input type="number" step="0.01" placeholder="Amount" {...itemField} value={itemField.value ?? ''} onChange={e => itemField.onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
+                            <FormControl><Input type="number" step="0.01" placeholder="Amount" {...itemField} value={itemField.value ?? ''} onChange={e => onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
                             <FormMessage /></FormItem>)} />
                         <FormField control={control} name={`expenses.${index}.paymentMode`} render={({ field: itemField }) => (
                             <FormItem className="md:col-span-4"><FormLabel>Pay Mode</FormLabel>

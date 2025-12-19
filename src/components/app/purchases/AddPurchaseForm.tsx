@@ -152,13 +152,13 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     setIsMasterFormOpen(true);
   }, []);
   
-  const handleEditMasterItem = React.useCallback((id: string) => {
+  const handleEditMasterItem = React.useCallback((type: MasterItemType, id: string) => {
     const allMasters = getAllMasters();
     const itemToEdit = allMasters.find(i => i.id === id) || null;
 
     if (itemToEdit) {
       setMasterItemToEdit(itemToEdit);
-      setMasterFormItemType(itemToEdit.type);
+      setMasterFormItemType(type);
       setIsMasterFormOpen(true);
     }
   }, [getAllMasters]);
@@ -166,23 +166,19 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   const handleMasterFormSubmit = React.useCallback((newItem: MasterItem) => {
     addOrUpdateMaster(newItem);
     
-    const fieldMap: Record<MasterItemType, keyof PurchaseFormValues | undefined> = {
-        Supplier: 'supplierId',
-        Agent: 'agentId',
-        Warehouse: 'locationId',
-        Transporter: 'transporterId',
-        Customer: undefined,
-        Broker: undefined,
-        Expense: undefined,
-        Product: undefined,
-    };
-    const fieldToUpdate = fieldMap[newItem.type];
-
-    if (fieldToUpdate) {
-        setValue(fieldToUpdate as any, newItem.id, { shouldValidate: true, shouldDirty: true });
+    // Set the value with proper validation
+    if (newItem.type === 'Supplier') {
+      setValue('supplierId', newItem.id, { shouldValidate: true, shouldDirty: true });
+    } else if (newItem.type === 'Agent') {
+      setValue('agentId', newItem.id, { shouldValidate: true, shouldDirty: true });
+    } else if (newItem.type === 'Warehouse') {
+      setValue('locationId', newItem.id, { shouldValidate: true, shouldDirty: true });
+    } else if (newItem.type === 'Transporter') {
+      setValue('transporterId', newItem.id, { shouldValidate: true, shouldDirty: true });
     }
     
     setIsMasterFormOpen(false);
+    setMasterFormItemType(null);
     setMasterItemToEdit(null);
     
     toast({ 
@@ -584,7 +580,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                       <FormField 
                         control={control} 
                         name={`expenses.${index}.amount`} 
-                        render={({ field: itemField }) => (
+                        render={({ field: { onChange, ...itemField } }) => (
                           <FormItem className="md:col-span-2">
                             <FormLabel>Amount (₹)</FormLabel>
                             <FormControl>
@@ -593,10 +589,9 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                                 step="0.01"
                                 placeholder="Amount"
                                 {...itemField}
-                                value={itemField.value ?? ''}
                                 onChange={e => {
                                   const amount = e.target.value ? parseFloat(e.target.value) : undefined;
-                                  itemField.onChange(amount);
+                                  onChange(amount);
                                 }}
                               />
                             </FormControl>
