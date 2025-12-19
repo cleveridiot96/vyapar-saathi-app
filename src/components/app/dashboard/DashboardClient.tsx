@@ -26,7 +26,7 @@ export function DashboardClient() {
     const isHydrated = useHydrated();
     
     const [orderedNavItems, setOrderedNavItems] = useState<PlainFeature[]>(
-        features.map(({ icon, ...rest }) => rest)
+        features.filter(f => f.href !== '/dashboard').map(({ icon, ...rest }) => rest)
     );
 
     const [isEditMode, setIsEditMode] = useState(false);
