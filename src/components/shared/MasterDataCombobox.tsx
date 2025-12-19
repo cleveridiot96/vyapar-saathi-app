@@ -110,7 +110,7 @@ export function MasterDataCombobox({
   }, [open]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -144,11 +144,11 @@ export function MasterDataCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-[var(--radix-popover-trigger-width)] p-0" 
+        className="w-[var(--radix-popover-trigger-width)] p-0 z-[100]" 
         align="start"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <div className="flex flex-col">
+        <div className="flex flex-col" style={{ pointerEvents: 'auto' }}>
           {/* Search Input */}
           <div className="flex items-center border-b px-3 py-2">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
@@ -165,15 +165,17 @@ export function MasterDataCombobox({
           <ScrollArea className="max-h-[300px]">
             {/* Clear Selection Option */}
             {value && (
-              <div
-                className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted text-muted-foreground text-center font-medium border-b flex items-center justify-center"
-                onMouseDown={(e) => {
+              <button
+                type="button"
+                className="w-full px-2 py-1.5 text-sm cursor-pointer hover:bg-muted text-muted-foreground text-center font-medium border-b flex items-center justify-center"
+                onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   handleClearFromDropdown();
                 }}
               >
                 <X className="mr-2 h-4 w-4" /> Clear Selection
-              </div>
+              </button>
             )}
 
             {/* Filtered Options */}
@@ -184,11 +186,13 @@ export function MasterDataCombobox({
             ) : (
               <div className="p-1">
                 {filteredOptions.map((option) => (
-                  <div
+                  <button
                     key={option.value}
-                    className="flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer hover:bg-muted rounded-sm group"
-                    onMouseDown={(e) => {
+                    type="button"
+                    className="w-full flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer hover:bg-muted rounded-sm group text-left"
+                    onClick={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       handleSelectOption(option.value);
                     }}
                   >
@@ -203,16 +207,19 @@ export function MasterDataCombobox({
                     </div>
                     
                     {onEdit && (
-                      <button
-                        type="button"
-                        onMouseDown={(e) => handleEdit(option.value, e)}
+                      <span
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleEdit(option.value, e);
+                        }}
                         className="opacity-0 group-hover:opacity-100 p-1 hover:bg-background rounded transition-opacity"
                         aria-label="Edit item"
                       >
                         <Edit2 className="h-3 w-3 text-muted-foreground" />
-                      </button>
+                      </span>
                     )}
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -221,13 +228,18 @@ export function MasterDataCombobox({
             {onAddNew && (
               <>
                 <div className="border-t my-1" />
-                <div
-                  className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted text-primary font-medium flex items-center mx-1 rounded-sm"
-                  onMouseDown={handleAddNew}
+                <button
+                  type="button"
+                  className="w-full px-2 py-1.5 text-sm cursor-pointer hover:bg-muted text-primary font-medium flex items-center mx-1 rounded-sm text-left"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAddNew(e);
+                  }}
                 >
                   <PlusCircle className="mr-2 h-4 w-4" />
                   {addNewLabel}
-                </div>
+                </button>
               </>
             )}
           </ScrollArea>
