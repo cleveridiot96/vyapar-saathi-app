@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, Plus, Pencil } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, Pencil, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
+import Fuse from 'fuse.js';
 
 interface Option {
   value: string;
@@ -57,18 +58,38 @@ export function MasterDataCombobox({
 
   const selectedOption = options.find((opt) => opt.value === value);
 
+  const fuse = React.useMemo(() => new Fuse(options, {
+    keys: ['label'],
+    includeScore: true,
+    threshold: 0.4,
+  }), [options]);
+
   const handleSelect = React.useCallback((currentValue: string) => {
     onChange(currentValue === value ? undefined : currentValue);
     setOpen(false);
     setSearchValue("");
   }, [onChange, value]);
   
-  const filteredOptions = React.useMemo(() => {
-    if (!searchValue) return options;
-    return options.filter(option => 
-      option.label.toLowerCase().includes(searchValue.toLowerCase())
-    );
-  }, [options, searchValue]);
+  const searchResults = React.useMemo(() => {
+    if (!searchValue) return { exactMatch: null, suggestions: options.map(o => ({ item: o })) };
+    const results = fuse.search(searchValue);
+    const exactMatch = options.find(opt => opt.label.toLowerCase() === searchValue.toLowerCase());
+    return {
+      exactMatch,
+      suggestions: results,
+    };
+  }, [options, searchValue, fuse]);
+
+  const bestSuggestion = React.useMemo(() => {
+    if (searchResults.exactMatch || searchResults.suggestions.length === 0) {
+      return null;
+    }
+    const best = searchResults.suggestions[0];
+    if (best && best.score && best.score < 0.2) { // Threshold for "Did you mean?"
+      return best.item;
+    }
+    return null;
+  }, [searchResults]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -87,13 +108,14 @@ export function MasterDataCombobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="p-0" onPointerDownOutside={(e) => e.preventDefault()} onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogTitle className="sr-only">{placeholder}</DialogTitle>
         <Command shouldFilter={false}>
           <CommandInput
             placeholder={searchPlaceholder}
             value={searchValue}
             onValueChange={setSearchValue}
+            autoFocus
           />
           <CommandList>
             <ScrollArea className="h-64">
@@ -103,22 +125,26 @@ export function MasterDataCombobox({
                 </div>
               </CommandEmpty>
               <CommandGroup>
-                {filteredOptions.map((option) => (
+                {bestSuggestion && (
                   <CommandItem
-                    key={option.value}
-                    value={option.label}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      handleSelect(option.value);
-                    }}
+                    key={`suggestion-${bestSuggestion.value}`}
+                    value={bestSuggestion.label}
+                    onMouseDown={(e) => { e.preventDefault(); handleSelect(bestSuggestion.value); }}
+                    className="bg-amber-100/80 text-amber-900 hover:!bg-amber-100/90 focus:!bg-amber-100/90"
                   >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value === option.value ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    <span className="flex-1 truncate">{option.label}</span>
+                    <Lightbulb className="mr-2 h-4 w-4" />
+                    Did you mean: <span className="font-semibold ml-1">{bestSuggestion.label}?</span>
+                  </CommandItem>
+                )}
+                {searchResults.suggestions.map(({ item }) => (
+                  <CommandItem
+                    key={item.value}
+                    value={item.label}
+                    onMouseDown={(e) => { e.preventDefault(); handleSelect(item.value); }}
+                    className="hover:bg-muted"
+                  >
+                    <Check className={cn("mr-2 h-4 w-4", value === item.value ? "opacity-100" : "opacity-0")} />
+                    <span className="flex-1 truncate">{item.label}</span>
                     {onEdit && (
                       <Button
                         variant="ghost"
@@ -128,10 +154,8 @@ export function MasterDataCombobox({
                         onMouseDown={(e) => {
                            e.preventDefault();
                            e.stopPropagation();
-                           if(onEdit) {
-                               setOpen(false);
-                               onEdit(option.value, e);
-                           }
+                           setOpen(false);
+                           onEdit(item.value, e);
                         }}
                       >
                         <Pencil className="h-3 w-3" />
@@ -145,12 +169,11 @@ export function MasterDataCombobox({
               <CommandItem
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  if (onAddNew) {
-                    setOpen(false);
-                    onAddNew(e as any);
-                  }
+                  e.stopPropagation();
+                  setOpen(false);
+                  onAddNew(e as any);
                 }}
-                className="cursor-pointer mt-1 border-t"
+                className="cursor-pointer mt-1 border-t hover:bg-muted"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 {addNewLabel}

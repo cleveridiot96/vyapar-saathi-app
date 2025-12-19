@@ -23,7 +23,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import type { MasterItem, MasterItemType, Agent, Broker } from "@/lib/types";
+import type { MasterItem, MasterItemType } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MASTER_TYPES_CONFIG } from "@/lib/constants";
 
@@ -99,7 +99,12 @@ export function MasterForm({
   };
   
   const allMasterTypes = Object.keys(MASTER_TYPES_CONFIG).filter(type => type !== 'Product') as MasterItemType[];
-  const singularLabel = itemType.endsWith('s') && itemType !== 'Expense' && itemType !== 'Masters' ? itemType.slice(0, -1) : itemType;
+  const getSingularLabel = (type: MasterItemType) => {
+    if (type === 'Expenses') return 'Expense';
+    if (type === 'Masters') return 'Master';
+    return type.endsWith('s') ? type.slice(0, -1) : type;
+  }
+  const singularLabel = getSingularLabel(itemType);
 
 
   return (
@@ -121,7 +126,7 @@ export function MasterForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isEditingFixed}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isEditingFixed || !!initialData}>
                         <FormControl>
                             <SelectTrigger><SelectValue placeholder="Select an item type" /></SelectTrigger>
                         </FormControl>
