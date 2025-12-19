@@ -1,29 +1,10 @@
-import {
-  LayoutDashboard,
-  ShoppingCart,
-  ShoppingBag,
-  Truck,
-  Boxes,
-  BookOpenCheck,
-  CircleDollarSign,
-  ClipboardList,
-  BookUser,
-  PackageSearch,
-  PieChart,
-  BarChartHorizontal,
-  ArrowRightLeft,
-  Receipt,
-  CalendarDays,
-  Users,
-  DatabaseBackup,
-  SlidersHorizontal,
-  type LucideIcon,
-} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 export type Feature = {
   title: string;
   href: string;
-  icon: LucideIcon;
+  iconName: string;
+  shortcut?: string;
   gradientFrom: string;
   gradientTo: string;
   textColor: 'white' | 'black';
@@ -31,10 +12,20 @@ export type Feature = {
 };
 
 export const features: Feature[] = [
+    {
+        title: 'Dashboard',
+        href: '/dashboard',
+        iconName: 'LayoutDashboard',
+        shortcut: 'D',
+        gradientFrom: '#fdc830',
+        gradientTo: '#f37335',
+        textColor: 'white',
+        shadow: '0 10px 25px -5px rgba(253, 200, 48, 0.4), 0 8px 10px -6px rgba(253, 200, 48, 0.4)',
+    },
   {
     title: 'Purchases',
     href: '/purchases',
-    icon: ShoppingCart,
+    iconName: 'ShoppingCart',
     gradientFrom: '#28a745',
     gradientTo: '#218838',
     textColor: 'white',
@@ -43,7 +34,7 @@ export const features: Feature[] = [
   {
     title: 'Sales',
     href: '/sales',
-    icon: ShoppingBag,
+    iconName: 'ShoppingBag',
     gradientFrom: '#dc3545',
     gradientTo: '#c82333',
     textColor: 'white',
@@ -52,7 +43,7 @@ export const features: Feature[] = [
   {
     title: 'Location Transfer',
     href: '/location-transfer',
-    icon: Truck,
+    iconName: 'Truck',
     gradientFrom: '#83a4d4',
     gradientTo: '#b6fbff',
     textColor: 'black',
@@ -61,7 +52,7 @@ export const features: Feature[] = [
   {
     title: 'Inventory',
     href: '/inventory',
-    icon: Boxes,
+    iconName: 'Boxes',
     gradientFrom: '#6f42c1',
     gradientTo: '#5a32a3',
     textColor: 'white',
@@ -70,7 +61,7 @@ export const features: Feature[] = [
   {
     title: 'Stock Adjustments',
     href: '/stock-adjustments',
-    icon: SlidersHorizontal,
+    iconName: 'SlidersHorizontal',
     gradientFrom: '#f09819',
     gradientTo: '#edde5d',
     textColor: 'black',
@@ -79,7 +70,7 @@ export const features: Feature[] = [
   {
     title: 'Cash Book',
     href: '/cash-book',
-    icon: BookOpenCheck,
+    iconName: 'BookOpenCheck',
     gradientFrom: '#37ecba',
     gradientTo: '#72afd3',
     textColor: 'white',
@@ -88,7 +79,7 @@ export const features: Feature[] = [
   {
     title: 'Outstanding',
     href: '/outstanding',
-    icon: CircleDollarSign,
+    iconName: 'CircleDollarSign',
     gradientFrom: '#f093fb',
     gradientTo: '#f5576c',
     textColor: 'white',
@@ -97,7 +88,7 @@ export const features: Feature[] = [
   {
     title: 'Stock Ledger',
     href: '/stock-ledger',
-    icon: ClipboardList,
+    iconName: 'ClipboardList',
     gradientFrom: '#9890e3',
     gradientTo: '#b1f4cf',
     textColor: 'black',
@@ -106,7 +97,7 @@ export const features: Feature[] = [
   {
     title: 'Accounts Ledger',
     href: '/accounts-ledger',
-    icon: BookUser,
+    iconName: 'BookUser',
     gradientFrom: '#c1dfc4',
     gradientTo: '#deecdd',
     textColor: 'black',
@@ -115,7 +106,7 @@ export const features: Feature[] = [
   {
     title: 'Lot Ledger',
     href: '/lot-ledger',
-    icon: PackageSearch,
+    iconName: 'PackageSearch',
     gradientFrom: '#505285',
     gradientTo: '#ebebfb',
     textColor: 'white',
@@ -124,7 +115,7 @@ export const features: Feature[] = [
   {
     title: 'Profit Analysis',
     href: '/profit-analysis',
-    icon: PieChart,
+    iconName: 'PieChart',
     gradientFrom: '#0ba360',
     gradientTo: '#3cba92',
     textColor: 'white',
@@ -133,7 +124,7 @@ export const features: Feature[] = [
   {
     title: 'Financial Summary',
     href: '/financial-summary',
-    icon: BarChartHorizontal,
+    iconName: 'BarChartHorizontal',
     gradientFrom: '#09203f',
     gradientTo: '#537895',
     textColor: 'white',
@@ -142,7 +133,7 @@ export const features: Feature[] = [
   {
     title: 'Payments',
     href: '/payments',
-    icon: ArrowRightLeft,
+    iconName: 'ArrowRightLeft',
     gradientFrom: '#007bff',
     gradientTo: '#0056b3',
     textColor: 'white',
@@ -151,7 +142,7 @@ export const features: Feature[] = [
   {
     title: 'Receipts',
     href: '/receipts',
-    icon: Receipt,
+    iconName: 'Receipt',
     gradientFrom: '#ffc107',
     gradientTo: '#e0a800',
     textColor: 'black',
@@ -160,7 +151,7 @@ export const features: Feature[] = [
   {
     title: 'Daybook',
     href: '/daybook',
-    icon: CalendarDays,
+    iconName: 'CalendarDays',
     gradientFrom: '#abb8c3',
     gradientTo: '#e2ebf0',
     textColor: 'black',
@@ -169,7 +160,7 @@ export const features: Feature[] = [
   {
     title: 'Masters',
     href: '/masters',
-    icon: Users,
+    iconName: 'Users',
     gradientFrom: '#d299c2',
     gradientTo: '#fef9d7',
     textColor: 'black',
@@ -178,7 +169,7 @@ export const features: Feature[] = [
   {
     title: 'Backup/Restore',
     href: '/backup-restore',
-    icon: DatabaseBackup,
+    iconName: 'DatabaseBackup',
     gradientFrom: '#6a11cb',
     gradientTo: '#2575fc',
     textColor: 'white',

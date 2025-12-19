@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Percent, Divide, History as HistoryIcon, Trash2, GripVertical } from 'lucide-react';
+import { X, Percent, Divide, History as HistoryIcon, Calculator as CalculatorIcon, Trash2, GripVertical } from 'lucide-react';
 import { AnimatePresence, motion } from "framer-motion";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '../ui/scroll-area';

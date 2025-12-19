@@ -1,5 +1,8 @@
+"use client";
+import React from 'react';
 import Link from 'next/link';
 import { features } from '@/lib/features';
+import { DashboardTile } from './DashboardTile';
 
 type FeatureCardProps = {
   featureTitle: string;
@@ -12,24 +15,16 @@ export function FeatureCard({ featureTitle }: FeatureCardProps) {
     return null; 
   }
   
-  const Icon = feature.icon;
-
   return (
-    <Link href={feature.href} className="group block h-full">
-      <div
-        className="relative flex h-full flex-col items-center justify-center rounded-xl p-4 text-center shadow-lg transition-all duration-300 ease-in-out group-hover:-translate-y-1 group-hover:shadow-2xl"
+    <DashboardTile
+        title={feature.title}
+        iconName={feature.iconName}
+        href={feature.href}
         style={{
-          backgroundImage: `linear-gradient(to bottom right, ${feature.gradientFrom}, ${feature.gradientTo})`,
-          boxShadow: feature.shadow,
-          color: feature.textColor === 'white' ? 'white' : 'black',
-        }}
-      >
-        <div className="absolute inset-0 rounded-xl bg-black/[.08] backdrop-blur-sm" />
-        <div className="relative z-10 flex flex-col items-center justify-center gap-3">
-          <Icon className="h-8 w-8" />
-          <h3 className="font-semibold">{feature.title}</h3>
-        </div>
-      </div>
-    </Link>
+            '--shadow-color': feature.shadow,
+            backgroundImage: `linear-gradient(to bottom right, ${feature.gradientFrom}, ${feature.gradientTo})`,
+            color: feature.textColor,
+        } as React.CSSProperties}
+    />
   );
 }

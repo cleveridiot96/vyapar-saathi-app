@@ -13,7 +13,7 @@ import { Edit, Save } from 'lucide-react';
 import { useHydrated } from '@/hooks/useHydrated';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SortableDashboardTile } from '@/components/app/dashboard/SortableDashboardTile';
-import { FeatureCard } from '@/components/feature-card';
+import { DashboardTile } from '@/components/DashboardTile';
 import { WarehouseSummary } from '@/components/app/dashboard/WarehouseSummary';
 import { OutstandingSummary } from '@/components/app/dashboard/OutstandingSummary';
 import { ProfitAnalysisClient } from '../profit-analysis/ProfitAnalysisClient';
@@ -71,11 +71,24 @@ export function DashboardClient() {
                         strategy={verticalListSortingStrategy}
                     >
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                            {orderedNavItems.map((plainFeature) => (
+                            {orderedNavItems.map((plainFeature) => {
+                                const feature = features.find(f => f.title === plainFeature.title);
+                                if (!feature) return null;
+                                return (
                                 <SortableDashboardTile key={plainFeature.title} id={plainFeature.title} isEditMode={isEditMode}>
-                                    <FeatureCard featureTitle={plainFeature.title} />
+                                    <DashboardTile 
+                                        title={feature.title} 
+                                        iconName={feature.iconName} 
+                                        href={feature.href} 
+                                        style={{
+                                            '--shadow-color': feature.shadow,
+                                            backgroundImage: `linear-gradient(to bottom right, ${feature.gradientFrom}, ${feature.gradientTo})`,
+                                            color: feature.textColor,
+                                        } as React.CSSProperties}
+                                    />
                                 </SortableDashboardTile>
-                            ))}
+                                )
+                            })}
                         </div>
                     </SortableContext>
                 </DndContext>

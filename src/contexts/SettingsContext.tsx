@@ -1,4 +1,3 @@
-
 "use client";
 import React, { createContext, useContext, ReactNode, useCallback, useState } from 'react';
 
@@ -15,7 +14,9 @@ interface SettingsContextType {
   fontSize: number;
   setFontSize: (size: number) => void;
   printSettings: PrintSettings;
-  setPrintSettings: (settings: PrintSettings) => void;
+  setPrintSettings: (settings: PrintSettings | ((prev: PrintSettings) => PrintSettings)) => void;
+  getPreviousFinancialYear: () => string;
+  getNextFinancialYear: () => string;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -38,6 +39,22 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setFontSize(size);
     document.documentElement.style.fontSize = `${size}px`;
   }, []);
+  
+  const getFinancialYearParts = (fy: string) => {
+    const parts = fy.split('-').map(Number);
+    return parts.length === 2 && !isNaN(parts[0]) ? { startYear: parts[0] } : { startYear: new Date().getFullYear() -1 };
+  }
+
+  const getPreviousFinancialYear = useCallback(() => {
+    const { startYear } = getFinancialYearParts(financialYear);
+    return `${startYear - 1}-${startYear}`;
+  }, [financialYear]);
+
+  const getNextFinancialYear = useCallback(() => {
+    const { startYear } = getFinancialYearParts(financialYear);
+    return `${startYear + 1}-${startYear + 2}`;
+  }, [financialYear]);
+
 
   const value = {
     financialYear,
@@ -48,7 +65,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     fontSize,
     setFontSize: handleSetFontSize,
     printSettings,
-    setPrintSettings
+    setPrintSettings,
+    getPreviousFinancialYear,
+    getNextFinancialYear
   };
 
   return (

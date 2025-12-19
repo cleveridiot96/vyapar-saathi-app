@@ -1,34 +1,14 @@
-
-'use client';
+"use client";
 
 import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import {
-  SidebarContent,
-  SidebarHeader,
-  SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarSeparator,
-} from '@/components/ui/sidebar';
 import { features } from '@/lib/features';
+import { ClientSidebarMenu } from '@/components/layout/ClientSidebarMenu';
+import { SidebarContent, SidebarHeader, SidebarFooter, SidebarSeparator } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut } from 'lucide-react';
 import { Button } from './ui/button';
-import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { useHydrated } from '@/hooks/useHydrated';
 
 export function SidebarNav() {
-  const pathname = usePathname();
-  const isHydrated = useHydrated();
 
   return (
     <>
@@ -44,35 +24,7 @@ export function SidebarNav() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu>
-          {features.map((feature) => {
-            const isActive = isHydrated && pathname.startsWith(feature.href);
-            return (
-              <SidebarMenuItem key={feature.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive}
-                    tooltip={feature.title}
-                    className={cn(
-                      "relative overflow-hidden",
-                      isActive && "shadow-lg"
-                    )}
-                    style={isActive ? {
-                      backgroundImage: `linear-gradient(to bottom right, ${feature.gradientFrom}, ${feature.gradientTo})`,
-                      color: feature.textColor,
-                      boxShadow: feature.shadow,
-                    } : {}}
-                  >
-                    <Link href={feature.href}>
-                      {isActive && <div className="absolute inset-0 rounded-md bg-black/[.08]" />}
-                      <feature.icon />
-                      <span>{feature.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-              </SidebarMenuItem>
-            )
-          })}
-        </SidebarMenu>
+        <ClientSidebarMenu navItems={features} />
       </SidebarContent>
       <SidebarSeparator />
       <SidebarFooter>

@@ -10,7 +10,6 @@ import { format, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import type { FuseResult } from 'fuse.js';
-import { useHydrated } from '@/hooks/useHydrated';
 
 const HighlightedText: React.FC<{ text: string; indices: readonly [number, number][] | undefined }> = ({ text, indices }) => {
   if (!indices || indices.length === 0) {
@@ -24,7 +23,7 @@ const HighlightedText: React.FC<{ text: string; indices: readonly [number, numbe
     if (start > lastIndex) {
       parts.push(text.substring(lastIndex, start));
     }
-    parts.push(<mark key={i} className="bg-primary/20 text-primary-foreground rounded-sm px-0.5">{text.substring(start, end + 1)}</mark>);
+    parts.push(<mark key={i} className="bg-yellow-300 text-black rounded-sm px-0.5">{text.substring(start, end + 1)}</mark>);
     lastIndex = end + 1;
   });
 
@@ -42,7 +41,6 @@ const SearchBar = () => {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const commandRef = useRef<HTMLDivElement>(null);
-  const isHydrated = useHydrated();
   
   const { purchases, sales, payments, receipts, getAllMasters, locationTransfers, isTransactionsLoaded, isMasterDataLoaded } = useTransactions();
   
@@ -109,25 +107,14 @@ const SearchBar = () => {
     }
   };
 
-  const getBestMatch = (item: FuseResult<SearchableItem>, key: 'title' | 'description'): { text: string; indices: readonly [number, number][] | undefined } => {
-      const match = item.matches?.find(m => m.key === key);
-      return {
-        text: item.item[key],
-        indices: match?.indices
-      };
+  const getBestMatch = (item: FuseResult<SearchableItem>): { text: string; indices: readonly [number, number][] | undefined } => {
+      const titleMatch = item.matches?.find(m => m.key === 'title');
+      if (titleMatch && titleMatch.value) {
+          return { text: titleMatch.value, indices: titleMatch.indices };
+      }
+      return { text: item.item.title, indices: undefined };
   };
 
-
-  if (!isHydrated) {
-    return (
-      <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md flex-shrink min-w-0">
-        <div className="relative rounded-md border border-input shadow-sm h-9 flex items-center px-3">
-           <SearchIcon className="h-5 w-5 text-muted-foreground" />
-           <span className="ml-2 text-muted-foreground text-sm">Search anything...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md flex-shrink min-w-0" ref={commandRef}>
@@ -139,7 +126,7 @@ const SearchBar = () => {
             onValueChange={setQuery}
             onFocus={() => setOpen(true)}
             onKeyDown={handleInputKeyDown}
-            placeholder="Search anything..."
+            placeholder="SEARCH ANYTHING..."
             className="w-full pl-10 pr-4 h-9 border-none focus:ring-0 bg-transparent"
           />
         </div>
@@ -150,8 +137,7 @@ const SearchBar = () => {
               {results.length > 0 ? (
                 results.map((result) => {
                     const { item } = result;
-                    const titleMatch = getBestMatch(result, 'title');
-                    const descriptionMatch = getBestMatch(result, 'description');
+                    const bestMatch = getBestMatch(result);
                     return (
                         <Link
                             key={item.id}
@@ -167,10 +153,10 @@ const SearchBar = () => {
                             >
                                 <div className="flex flex-col uppercase">
                                     <span className="font-medium">
-                                       <HighlightedText text={titleMatch.text} indices={titleMatch.indices} />
+                                       <HighlightedText text={bestMatch.text} indices={bestMatch.indices} />
                                     </span>
                                     <span className="text-xs text-muted-foreground uppercase">
-                                        <HighlightedText text={descriptionMatch.text} indices={descriptionMatch.indices} />
+                                        {item.type} {item.date ? `- ${format(parseISO(item.date), 'dd/MM/yy')}` : ''}
                                     </span>
                                 </div>
                             </a>

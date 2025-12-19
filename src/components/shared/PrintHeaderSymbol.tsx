@@ -1,18 +1,16 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { cn } from '@/lib/utils';
 
-export function PrintHeaderSymbol({ className }: { className?: string }) {
-    const [isMounted, setIsMounted] = useState(false);
-
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
-
-    if (!isMounted) {
-        return null;
-    }
-
-    return <div className={cn("hidden print:block", className)}>Print Header</div>
+interface PrintHeaderSymbolProps {
+  className?: string;
 }
+
+export const PrintHeaderSymbol: React.FC<PrintHeaderSymbolProps> = ({ className }) => {
+  return (
+    <div className={cn("text-center font-semibold text-foreground", className)}>
+      || 卐 SHREE 卐 ||
+    </div>
+  );
+};
