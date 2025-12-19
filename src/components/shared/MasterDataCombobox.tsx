@@ -1,16 +1,23 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, PlusCircle, X, Edit2, Search } from "lucide-react";
+import { Check, ChevronsUpDown, PlusCircle, X, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface Option {
   value: string;
@@ -43,69 +50,25 @@ export function MasterDataCombobox({
   disabled = false,
 }: MasterDataComboboxProps) {
   const [open, setOpen] = React.useState(false);
-  const [searchTerm, setSearchTerm] = React.useState("");
 
   // Find the selected option object to display its label
   const selectedOption = options.find((option) => option.value === value);
 
-  // Filter options based on search term
-  const filteredOptions = React.useMemo(() => {
-    if (!searchTerm.trim()) return options;
-    const term = searchTerm.toLowerCase();
-    return options.filter((option) =>
-      option.label.toLowerCase().includes(term)
-    );
-  }, [options, searchTerm]);
-
   // Helper to handle clearing
-  const handleClear = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleClear = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     onChange(undefined);
     setOpen(false);
   };
 
-  // Handle option selection
-  const handleSelectOption = (optionValue: string) => {
-    onChange(optionValue === value ? undefined : optionValue);
-    setOpen(false);
-    setSearchTerm("");
-  };
-
-  // Handle clear from dropdown
-  const handleClearFromDropdown = () => {
-    onChange(undefined);
-    setOpen(false);
-    setSearchTerm("");
-  };
-
-  // Handle add new
-  const handleAddNew = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setOpen(false);
-    setSearchTerm("");
-    if (onAddNew) {
-      onAddNew(e);
-    }
-  };
-
-  // Handle edit
-  const handleEdit = (optionValue: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setOpen(false);
-    setSearchTerm("");
-    if (onEdit) {
-      onEdit(optionValue, e);
-    }
-  };
-
-  // Reset search when opening
-  React.useEffect(() => {
-    if (!open) {
-      setSearchTerm("");
-    }
-  }, [open]);
+  // Create a mapping of lowercased labels to values for CommandItem onSelect
+  const labelToValueMap = React.useMemo(() => {
+    const map = new Map<string, string>();
+    options.forEach((opt) => {
+      map.set(opt.label.toLowerCase(), opt.value);
+    });
+    return map;
+  }, [options]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -116,7 +79,6 @@ export function MasterDataCombobox({
           aria-expanded={open}
           className="w-full justify-between"
           disabled={disabled}
-          type="button"
         >
           {selectedOption ? (
             <span className="truncate">{selectedOption.label}</span>
@@ -125,110 +87,110 @@ export function MasterDataCombobox({
           )}
           
           <div className="flex items-center gap-1">
+             {/* Quick Clear Icon on Trigger */}
              {value && !disabled && (
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={handleClear}
                   onMouseDown={(e) => e.stopPropagation()}
-                  className="mr-1 hover:bg-muted rounded-full p-0.5"
-                  aria-label="Clear selection"
+                  className="mr-1 hover:bg-muted rounded-full p-0.5 focus:outline-none"
+                  title="Clear selection"
                 >
                   <X className="h-3 w-3 opacity-50 hover:opacity-100" />
-                </button>
+                </div>
              )}
              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        className="w-[--radix-popover-trigger-width] p-0" 
-        align="start"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
-        <div className="flex flex-col">
-          {/* Search Input */}
-          <div className="flex items-center border-b px-3 py-2">
-            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-            <Input
-              placeholder={searchPlaceholder}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-              autoFocus
-            />
-          </div>
-
-          {/* Options List */}
-          <ScrollArea className="max-h-[300px]">
-            {/* Clear Selection Option */}
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command>
+          <CommandInput placeholder={searchPlaceholder} />
+          <CommandList>
+            <CommandEmpty>{notFoundMessage}</CommandEmpty>
+            
+            {/* Clear Selection Option inside Dropdown */}
             {value && (
-              <div
-                className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted text-muted-foreground text-center font-medium border-b flex items-center justify-center"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleClearFromDropdown();
-                }}
-              >
-                <X className="mr-2 h-4 w-4" /> Clear Selection
-              </div>
-            )}
-
-            {/* Filtered Options */}
-            {filteredOptions.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">
-                {notFoundMessage}
-              </div>
-            ) : (
-              <div className="p-1">
-                {filteredOptions.map((option) => (
-                  <div
-                    key={option.value}
-                    className="flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer hover:bg-muted rounded-sm group"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      handleSelectOption(option.value);
-                    }}
+               <CommandGroup>
+                  <CommandItem
+                    value="__clear_selection__" // distinct value to avoid collisions
+                    onSelect={() => handleClear()}
+                    className="text-muted-foreground cursor-pointer justify-center text-center font-medium border-b"
                   >
-                    <div className="flex items-center flex-1">
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === option.value ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <span>{option.label}</span>
-                    </div>
-                    
-                    {onEdit && (
-                      <button
-                        type="button"
-                        onMouseDown={(e) => handleEdit(option.value, e)}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-background rounded transition-opacity"
-                        aria-label="Edit item"
-                      >
-                        <Edit2 className="h-3 w-3 text-muted-foreground" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
+                    <X className="mr-2 h-4 w-4" /> Clear Selection
+                  </CommandItem>
+               </CommandGroup>
             )}
+            
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.label} // Use label for search filtering
+                  onSelect={(selectedLabel) => {
+                    // Convert the label back to value using our map
+                    const selectedValue = labelToValueMap.get(selectedLabel.toLowerCase());
+                    if (selectedValue) {
+                      // Toggle: if clicking the same item, clear it. Otherwise set it.
+                      onChange(selectedValue === value ? undefined : selectedValue);
+                    }
+                    setOpen(false);
+                  }}
+                  className="flex items-center justify-between group cursor-pointer"
+                >
+                  <div className="flex items-center">
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === option.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {option.label}
+                  </div>
+                  
+                  {/* Edit Button (if provided) */}
+                  {onEdit && (
+                    <div
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setOpen(false);
+                        onEdit(option.value, e);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded cursor-pointer transition-opacity"
+                      title="Edit Item"
+                    >
+                      <Edit2 className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                  )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
 
-            {/* Add New Button */}
             {onAddNew && (
               <>
-                <div className="border-t my-1" />
-                <div
-                  className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted text-primary font-medium flex items-center mx-1 rounded-sm"
-                  onMouseDown={handleAddNew}
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  {addNewLabel}
-                </div>
+                <CommandSeparator />
+                <CommandGroup>
+                  <CommandItem
+                    value={`__add_new_${addNewLabel}__`}
+                    className="cursor-pointer font-medium text-primary"
+                    onSelect={() => {
+                      setOpen(false);
+                      // Use setTimeout to ensure the popover closes before opening the dialog
+                      setTimeout(() => {
+                        onAddNew({} as React.MouseEvent);
+                      }, 0);
+                    }}
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    {addNewLabel}
+                  </CommandItem>
+                </CommandGroup>
               </>
             )}
-          </ScrollArea>
-        </div>
+          </CommandList>
+        </Command>
       </PopoverContent>
     </Popover>
   );
