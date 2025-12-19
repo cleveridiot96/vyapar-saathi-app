@@ -270,3 +270,17 @@ export interface SearchableItem {
   date?: string;
   href: string;
 }
+
+export interface DaybookEntry {
+  id: string;
+  date: string;
+  type: 'Purchase' | 'Sale' | 'Payment' | 'Receipt' | 'Transfer' | 'Expense';
+  voucherNo: string;
+  party: string;
+  debit: number;
+  credit: number;
+  narration: string;
+  href: string;
+  Icon: React.ElementType;
+  colorClass: string;
+}

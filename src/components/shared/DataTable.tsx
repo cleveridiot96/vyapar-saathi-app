@@ -12,6 +12,7 @@ import {
   type SortingState,
   type ColumnFiltersState,
   type VisibilityState,
+  type TableState,
 } from "@tanstack/react-table"
 
 import {
@@ -31,19 +32,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ScrollArea, ScrollBar } from "../ui/scroll-area"
+import { cn } from "@/lib/utils"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  getRowId?: (row: TData) => string
+  getRowId?: (originalRow: TData, index: number, parent?: any) => string;
+  onRowClick?: (row: TData) => void;
+  getRowClassName?: (row: TData) => string;
+  initialState?: Partial<TableState>;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   getRowId,
+  onRowClick,
+  getRowClassName,
+  initialState
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [sorting, setSorting] = React.useState<SortingState>(initialState?.sorting ?? [])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
@@ -60,13 +68,14 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    getRowId: getRowId,
+    getRowId,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
     },
+    initialState,
   })
 
   return (
@@ -135,6 +144,8 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={() => onRowClick && onRowClick(row.original)}
+                  className={cn(onRowClick && 'cursor-pointer', getRowClassName && getRowClassName(row.original))}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
