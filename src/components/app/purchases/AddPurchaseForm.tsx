@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -110,7 +109,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   const watchedFormValues = watch();
   
   const summary = React.useMemo(() => {
-    const { items, expenses: formExpenses } = watchedFormValues;
+    const { items, expenses: formExpenses = [] } = watchedFormValues;
 
     let totalGoodsValue = 0;
     let totalNetWeight = 0;
@@ -127,7 +126,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
       return { ...item, goodsValue };
     });
 
-    const totalExpenses = (formExpenses || []).reduce((sum, exp) => sum + (exp.amount || 0), 0);
+    const totalExpenses = (formExpenses).reduce((sum, exp) => sum + (exp.amount || 0), 0);
     const totalAmount = totalGoodsValue + totalExpenses;
     const expensesPerKg = totalNetWeight > 0 ? totalExpenses / totalNetWeight : 0;
     
@@ -147,7 +146,9 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     };
   }, [watchedFormValues]);
 
-  const handleOpenMasterForm = React.useCallback((type: MasterItemType) => {
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType, e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
@@ -345,13 +346,15 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                           <FormLabel>SUPPLIER</FormLabel>
                           <MasterDataCombobox
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(value) => {
+                              field.onChange(value);
+                            }}
                             options={suppliers.map(s => ({ value: s.id, label: s.name }))}
                             placeholder="SELECT SUPPLIER"
                             searchPlaceholder="SEARCH SUPPLIERS..."
                             notFoundMessage="NO SUPPLIER FOUND."
                             addNewLabel="ADD NEW SUPPLIER"
-                            onAddNew={() => handleOpenMasterForm("Supplier")}
+                            onAddNew={(e) => handleOpenMasterForm("Supplier", e)}
                             onEdit={(id) => handleEditMasterItem("Supplier", id)}
                           />
                           <FormMessage />
@@ -368,13 +371,15 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                           <FormLabel>AGENT (OPTIONAL)</FormLabel>
                           <MasterDataCombobox
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(value) => {
+                              field.onChange(value);
+                            }}
                             options={agents.map(a => ({ value: a.id, label: a.name }))}
                             placeholder="SELECT AGENT"
                             searchPlaceholder="SEARCH AGENTS..."
                             notFoundMessage="NO AGENT FOUND."
                             addNewLabel="ADD NEW AGENT"
-                            onAddNew={() => handleOpenMasterForm("Agent")}
+                            onAddNew={(e) => handleOpenMasterForm("Agent", e)}
                             onEdit={(id) => handleEditMasterItem("Agent", id)}
                           />
                           <FormMessage />
@@ -391,13 +396,15 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                           <FormLabel>LOCATION (WAREHOUSE)</FormLabel>
                           <MasterDataCombobox
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(value) => {
+                              field.onChange(value);
+                            }}
                             options={warehouses.map(w => ({ value: w.id, label: w.name }))}
                             placeholder="SELECT LOCATION"
                             searchPlaceholder="SEARCH LOCATIONS..."
                             notFoundMessage="NO LOCATION FOUND."
                             addNewLabel="ADD NEW LOCATION"
-                            onAddNew={() => handleOpenMasterForm("Warehouse")}
+                            onAddNew={(e) => handleOpenMasterForm("Warehouse", e)}
                             onEdit={(id) => handleEditMasterItem("Warehouse", id)}
                           />
                           <FormMessage />
@@ -610,7 +617,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             <FormLabel>Party (Optional)</FormLabel>
                             <MasterDataCombobox
                               value={itemField.value}
-                              onChange={itemField.onChange}
+                              onChange={(value) => itemField.onChange(value)}
                               options={getAllMasters().map(p => ({ 
                                 value: p.id, 
                                 label: `${p.name} (${p.type})` 
@@ -619,7 +626,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                               searchPlaceholder="Search parties..."
                               notFoundMessage="No party found."
                               addNewLabel="Add New Party"
-                              onAddNew={() => handleOpenMasterForm("Transporter")}
+                              onAddNew={(e) => handleOpenMasterForm("Transporter", e)}
                               onEdit={(id) => handleEditMasterItem("Transporter", id)}
                             />
                             <FormMessage />
@@ -718,46 +725,53 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                          {summary.itemsWithLandedCost.map((item, index) => (
+                            {summary.itemsWithLandedCost.map((item, index) => (
                               <TableRow key={index}>
-                                  <TableCell>{item.lotNumber || `ITEM ${index + 1}`}</TableCell>
-                                  <TableCell className="text-right font-medium">₹{Math.round(item.landedCostPerKg || 0).toLocaleString('en-IN')}</TableCell>
+                                <TableCell>{item.lotNumber || `ITEM ${index + 1}`}</TableCell>
+                                <TableCell className="text-right font-medium">
+                                  ₹{Math.round(item.landedCostPerKg || 0).toLocaleString('en-IN')}
+                                </TableCell>
                               </TableRow>
-                          ))}
+                            ))}
                           </TableBody>
                         </Table>
                       </ScrollArea>
                     </div>
                   )}
                 </div>
+
+                {/* Form Actions */}
+                <DialogFooter className="pt-4">
+                  <DialogClose asChild>
+                    <Button type="button" variant="outline" onClick={onClose}>
+                      CANCEL
+                    </Button>
+                  </DialogClose>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting 
+                      ? (purchaseToEdit ? "SAVING..." : "ADDING...") 
+                      : (purchaseToEdit ? "SAVE CHANGES" : "ADD PURCHASE")
+                    }
+                  </Button>
+                </DialogFooter>
               </form>
             </FormProvider>
           </ScrollArea>
-          
-          <DialogFooter className="pt-4 flex-shrink-0">
-            <DialogClose asChild>
-              <Button type="button" variant="outline" onClick={onClose}>
-                CANCEL
-              </Button>
-            </DialogClose>
-            <Button
-              type="button"
-              onClick={formHandleSubmit(processSubmit)}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (purchaseToEdit ? "SAVING..." : "ADDING...") : (purchaseToEdit ? "SAVE CHANGES" : "ADD PURCHASE")}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {isMasterFormOpen && (
+      {/* Master Form Modal */}
+      {isMasterFormOpen && masterFormItemType && (
         <MasterForm
           isOpen={isMasterFormOpen}
-          onClose={() => { setIsMasterFormOpen(false); setMasterItemToEdit(null); }}
+          onClose={() => {
+            setIsMasterFormOpen(false);
+            setMasterItemToEdit(null);
+            setMasterFormItemType(null);
+          }}
           onSubmit={handleMasterFormSubmit}
           initialData={masterItemToEdit}
-          itemTypeFromButton={masterFormItemType!}
+          itemTypeFromButton={masterFormItemType}
         />
       )}
     </>
