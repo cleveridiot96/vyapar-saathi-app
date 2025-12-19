@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -14,11 +13,10 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ScrollArea } from "../ui/scroll-area";
 import Fuse from 'fuse.js';
 import { debounce } from '@/lib/utils';
@@ -78,7 +76,6 @@ export function MasterDataCombobox({
     debouncedSearch(searchValue);
   }, [searchValue, debouncedSearch]);
 
-  // FIX: Create a map to convert labels back to values
   const labelToValueMap = React.useMemo(() => {
     const map = new Map<string, string>();
     options.forEach(opt => {
@@ -87,9 +84,8 @@ export function MasterDataCombobox({
     return map;
   }, [options]);
 
-  const handleSelect = React.useCallback((selectedLabel: string) => {
-    // Convert label back to value
-    const selectedValue = labelToValueMap.get(selectedLabel.toLowerCase());
+  const handleSelect = React.useCallback((currentValue: string) => {
+    const selectedValue = labelToValueMap.get(currentValue.toLowerCase());
     
     if (selectedValue) {
       onChange(selectedValue === value ? undefined : selectedValue);
@@ -120,8 +116,8 @@ export function MasterDataCombobox({
   }, [searchResults]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
@@ -135,9 +131,8 @@ export function MasterDataCombobox({
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
-      </DialogTrigger>
-      <DialogContent className="p-0" onPointerDownOutside={(e) => e.preventDefault()} onOpenAutoFocus={(e) => e.preventDefault()}>
-        <DialogTitle className="sr-only">{placeholder}</DialogTitle>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
         <Command shouldFilter={false}>
           <CommandInput
             placeholder={searchPlaceholder}
@@ -206,7 +201,7 @@ export function MasterDataCombobox({
             )}
           </CommandList>
         </Command>
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
   );
 }
