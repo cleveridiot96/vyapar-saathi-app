@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useSettings } from '@/contexts/SettingsContext';
+import { useFinancialYear } from '@/contexts/SettingsContext';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
-import { CalendarPlus, Check } from 'lucide-react';
+import { CalendarPlus } from 'lucide-react';
 
 export function FinancialYearToggle() {
   const { 
@@ -23,7 +23,7 @@ export function FinancialYearToggle() {
     availableFinancialYears,
     setAvailableFinancialYears,
     getNextFinancialYear 
-  } = useSettings();
+  } = useFinancialYear();
   const { toast } = useToast();
 
   const [buttonText, setButtonText] = useState(`FY ${financialYear}`);

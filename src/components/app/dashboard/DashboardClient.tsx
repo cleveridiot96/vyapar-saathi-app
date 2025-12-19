@@ -7,7 +7,7 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-ki
 import { useToast } from "@/hooks/use-toast";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { features, type Feature } from '@/lib/features';
-import { useSettings } from '@/contexts/SettingsContext';
+import { useFinancialYear } from '@/contexts/SettingsContext';
 import { Button } from '@/components/ui/button';
 import { Edit, Save } from 'lucide-react';
 import { useHydrated } from '@/hooks/useHydrated';
@@ -22,7 +22,7 @@ import { ProfitAnalysisClient } from '../profit-analysis/ProfitAnalysisClient';
 type PlainFeature = Omit<Feature, 'icon'>;
 
 export function DashboardClient() {
-    const { financialYear } = useSettings();
+    const { financialYear } = useFinancialYear();
     const isHydrated = useHydrated();
     
     const [orderedNavItems, setOrderedNavItems] = useState<PlainFeature[]>(

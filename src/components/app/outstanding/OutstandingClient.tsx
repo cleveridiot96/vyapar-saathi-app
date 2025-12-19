@@ -25,7 +25,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
-import { useSettings } from '@/contexts/SettingsContext';
 import { useTransactions } from '@/hooks/useTransactions';
 import dynamic from 'next/dynamic';
 
@@ -53,7 +52,6 @@ interface OutstandingBill {
 
 const AgingReport = ({ data }: { data: OutstandingParty[] }) => {
   const [openBucket, setOpenBucket] = useState<string | null>(null);
-  const { isAppHydrating } = useSettings();
 
   const agingBuckets = useMemo(() => {
     const buckets = {
@@ -62,8 +60,6 @@ const AgingReport = ({ data }: { data: OutstandingParty[] }) => {
       '61-90': { label: '61-90 Days', total: 0, count: 0, bills: [] as OutstandingBill[] },
       '90+': { label: '90+ Days', total: 0, count: 0, bills: [] as OutstandingBill[] },
     };
-
-    if (isAppHydrating) return buckets;
 
     data.forEach(party => {
       party.bills.forEach(bill => {
@@ -90,7 +86,7 @@ const AgingReport = ({ data }: { data: OutstandingParty[] }) => {
       });
     });
     return buckets;
-  }, [data, isAppHydrating]);
+  }, [data]);
 
   return (
     <Card>
@@ -170,7 +166,6 @@ const AgingReport = ({ data }: { data: OutstandingParty[] }) => {
 export function OutstandingClient() {
   const [selectedPartyId, setSelectedPartyId] = useState<string | undefined>();
   const router = useRouter();
-  const { isAppHydrating } = useSettings();
   const { sales, receipts } = useTransactions();
   
   const { receivableParties, payableParties, isBalancesLoading } = useOutstandingBalances();
@@ -226,7 +221,7 @@ export function OutstandingClient() {
   const totalPayable = useMemo(() => filteredData.filter(p => p.balance < 0).reduce((sum, p) => sum + p.balance, 0), [filteredData]);
 
 
-  if(isAppHydrating || isBalancesLoading) return <div className="flex justify-center items-center h-full"><Card><CardHeader><CardTitle>Loading Outstanding Balances...</CardTitle></CardHeader><CardContent><div className="space-y-2"><div className="h-4 bg-muted rounded w-3/4"></div><div className="h-4 bg-muted rounded w-1/2"></div></div></CardContent></Card></div>;
+  if(isBalancesLoading) return <div className="flex justify-center items-center h-full"><Card><CardHeader><CardTitle>Loading Outstanding Balances...</CardTitle></CardHeader><CardContent><div className="space-y-2"><div className="h-4 bg-muted rounded w-3/4"></div><div className="h-4 bg-muted rounded w-1/2"></div></div></CardContent></Card></div>;
 
   return (
     <div className="space-y-4 print-area p-4 flex flex-col h-full">
@@ -306,5 +301,3 @@ export function OutstandingClient() {
     </div>
   )
 }
-
-    

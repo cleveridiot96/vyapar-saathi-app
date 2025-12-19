@@ -4,26 +4,26 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { useSettings } from "@/contexts/SettingsContext";
+import { useFinancialYear } from "@/contexts/SettingsContext";
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
 export const OutstandingSummary = () => {
-  const { financialYear: currentFinancialYearString, isAppHydrating } = useSettings();
+  const { financialYear: currentFinancialYearString } = useFinancialYear();
   const { receivableParties, payableParties, isBalancesLoading } = useOutstandingBalances();
 
   const { totalReceivable, totalPayable } = useMemo(() => {
-    if (isBalancesLoading || isAppHydrating) return { totalReceivable: 0, totalPayable: 0 };
+    if (isBalancesLoading) return { totalReceivable: 0, totalPayable: 0 };
     
     const totalReceivable = receivableParties.reduce((sum, p) => sum + (p.balance || 0), 0);
     const totalPayable = payableParties.reduce((sum, p) => sum + Math.abs(p.balance || 0), 0);
     
     return { totalReceivable, totalPayable };
 
-  }, [isAppHydrating, isBalancesLoading, receivableParties, payableParties]);
+  }, [isBalancesLoading, receivableParties, payableParties]);
   
-  if(isAppHydrating || isBalancesLoading) {
+  if(isBalancesLoading) {
     return (
       <Card className="col-span-1">
         <CardHeader>

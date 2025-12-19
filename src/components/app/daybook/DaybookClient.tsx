@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useSettings } from "@/contexts/SettingsContext";
+import { useFinancialYear } from "@/contexts/SettingsContext";
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
 import { DataTableColumnHeader } from '@/components/shared/DataTableColumnHeader';
@@ -47,7 +47,7 @@ const typeToRowClassMap: Record<DaybookEntry['type'], string> = {
 
 
 export function DaybookClient() {
-  const { isAppHydrating } = useSettings();
+  const { financialYear } = useFinancialYear();
   const isHydrated = useHydrated();
   const router = useRouter();
 
@@ -66,7 +66,7 @@ export function DaybookClient() {
   }, [dateRange]);
 
   const allDaybookEntries = useMemo((): DaybookEntry[] => {
-    if (isAppHydrating || !isTransactionsLoaded) return [];
+    if (!isTransactionsLoaded) return [];
     
     const entries: DaybookEntry[] = [];
 
@@ -122,7 +122,7 @@ export function DaybookClient() {
     });
 
     return entries.sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [isAppHydrating, isTransactionsLoaded, purchases, sales, payments, receipts, locationTransfers, ledgerData]);
+  }, [isTransactionsLoaded, purchases, sales, payments, receipts, locationTransfers, ledgerData]);
 
   const filteredEntries = useMemo(() => {
     let filtered = allDaybookEntries;
@@ -207,7 +207,7 @@ export function DaybookClient() {
     }
   ], []);
 
-  if (isAppHydrating || !isTransactionsLoaded) {
+  if (!isTransactionsLoaded) {
       return <div>Loading Daybook...</div>;
   }
 

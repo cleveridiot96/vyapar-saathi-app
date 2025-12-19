@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useSettings } from "@/contexts/SettingsContext";
+import { useFinancialYear } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
@@ -26,7 +26,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 
 export function ReceiptsClient() {
   const { toast } = useToast();
-  const { financialYear, isAppHydrating } = useSettings();
+  const { financialYear } = useFinancialYear();
   const { receipts, sales, setReceipts, isTransactionsLoaded, addOrUpdateMaster } = useTransactions();
   
   const { receivableParties } = useOutstandingBalances();
@@ -38,9 +38,9 @@ export function ReceiptsClient() {
   const [receiptToDeleteId, setReceiptToDeleteId] = React.useState<string | null>(null);
 
   const filteredReceipts = React.useMemo(() => {
-    if (isAppHydrating || !isTransactionsLoaded) return [];
+    if (!isTransactionsLoaded) return [];
     return receipts.filter(receipt => receipt && receipt.date && isDateInFinancialYear(receipt.date, financialYear));
-  }, [receipts, financialYear, isAppHydrating, isTransactionsLoaded]);
+  }, [receipts, financialYear, isTransactionsLoaded]);
 
   const handleAddOrUpdateReceipt = React.useCallback((receipt: Receipt) => {
     const isEditing = receipts.some(r => r.id === receipt.id);
@@ -88,7 +88,7 @@ export function ReceiptsClient() {
     setReceiptToEdit(null);
   }, []);
 
-  if (isAppHydrating || !isTransactionsLoaded) {
+  if (!isTransactionsLoaded) {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
             <p className="text-lg text-muted-foreground">Loading receipts data...</p>

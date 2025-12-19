@@ -1,21 +1,20 @@
-
 "use client";
 
 import { useMemo } from 'react';
 import { useTransactions } from './useTransactions';
 import type { MasterItem } from '@/lib/types';
-import { useSettings } from '@/contexts/SettingsContext';
+import { useFinancialYear } from '@/contexts/SettingsContext';
 import { isDateInFinancialYear, isDateBeforeFinancialYear } from '@/lib/utils';
 import { parseISO } from 'date-fns';
 
 export function useOutstandingBalances() {
     const { purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger, getAllMasters, isTransactionsLoaded } = useTransactions();
-    const { financialYear, isAppHydrating } = useSettings();
+    const { financialYear } = useFinancialYear();
 
     const allMasters = useMemo(() => getAllMasters(), [getAllMasters]);
 
     const balances = useMemo(() => {
-        if (isAppHydrating || !isTransactionsLoaded) {
+        if (!isTransactionsLoaded) {
             return new Map<string, number>();
         }
 
@@ -87,7 +86,7 @@ export function useOutstandingBalances() {
 
 
         return balancesMap;
-    }, [isAppHydrating, allMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger, isTransactionsLoaded]);
+    }, [allMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger, isTransactionsLoaded]);
 
     const { receivableParties, payableParties } = useMemo(() => {
         const receivableParties: MasterItem[] = [];
@@ -121,6 +120,6 @@ export function useOutstandingBalances() {
         payableParties,
         getPartyName,
         balances,
-        isBalancesLoading: isAppHydrating || !isTransactionsLoaded
+        isBalancesLoading: !isTransactionsLoaded
     };
 };
