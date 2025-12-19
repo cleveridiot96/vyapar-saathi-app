@@ -151,7 +151,7 @@ export {
   CommandList,
   CommandEmpty,
   CommandGroup,
+  CommandSeparator,
   CommandItem,
   CommandShortcut,
-  CommandSeparator,
 }

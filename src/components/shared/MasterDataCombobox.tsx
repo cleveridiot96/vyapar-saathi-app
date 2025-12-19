@@ -52,8 +52,50 @@ export function MasterDataCombobox({
   className,
 }: MasterDataComboboxProps) {
   const [open, setOpen] = React.useState(false);
+  const [searchValue, setSearchValue] = React.useState("");
 
   const selectedOption = options.find((opt) => opt.value === value);
+
+  const handleSelect = React.useCallback((selectedValue: string) => {
+    // Find the option by its label (which is what cmdk uses for the value)
+    const option = options.find(opt => 
+      opt.label.toLowerCase() === selectedValue.toLowerCase()
+    );
+    if (option) {
+      onChange(option.value === value ? undefined : option.value);
+      setOpen(false);
+      setSearchValue("");
+    }
+  }, [options, value, onChange]);
+
+  const handleAddNew = React.useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onAddNew) {
+      setOpen(false);
+      setSearchValue("");
+      setTimeout(() => {
+        onAddNew(e);
+      }, 100);
+    }
+  }, [onAddNew]);
+
+  const handleEdit = React.useCallback((id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onEdit) {
+      setOpen(false);
+      setSearchValue("");
+      setTimeout(() => {
+        onEdit(id, e);
+      }, 100);
+    }
+  }, [onEdit]);
+
+  const filteredOptions = React.useMemo(() => {
+      if (!searchValue) return options;
+      return options.filter(option => option.label.toLowerCase().includes(searchValue.toLowerCase()));
+  }, [options, searchValue]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -78,77 +120,69 @@ export function MasterDataCombobox({
         side="bottom"
         sideOffset={4}
       >
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+        <Command shouldFilter={false}>
+          <CommandInput 
+            placeholder={searchPlaceholder}
+            value={searchValue}
+            onValueChange={setSearchValue}
+          />
           <CommandList>
-            <CommandEmpty>
-              {notFoundMessage}
-              {(onAddNew) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start mt-2"
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    onAddNew(e);
-                    setOpen(false);
-                  }}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  {addNewLabel}
-                </Button>
-              )}
-            </CommandEmpty>
+            {filteredOptions.length === 0 && (
+              <CommandEmpty>
+                <div className="py-2 text-center text-sm">
+                  {notFoundMessage}
+                </div>
+                {onAddNew && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start"
+                    type="button"
+                    onMouseDown={handleAddNew}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    {addNewLabel}
+                  </Button>
+                )}
+              </CommandEmpty>
+            )}
             <CommandGroup>
-              {(options || []).map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.label}
-                  onSelect={() => {
-                    onChange(option.value === value ? undefined : option.value);
-                    setOpen(false);
-                  }}
-                  onMouseDown={(e) => e.preventDefault()}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
+              {filteredOptions.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.label}
+                    onSelect={handleSelect}
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === option.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <span className="flex-1 truncate">{option.label}</span>
+                    {onEdit && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 ml-2"
+                        type="button"
+                        onMouseDown={(e) => handleEdit(option.value, e)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
                     )}
-                  />
-                  <span className="flex-1 truncate">{option.label}</span>
-                  {onEdit && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 ml-2"
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onEdit(option.value, e);
-                        setOpen(false);
-                      }}
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                  )}
-                </CommandItem>
-              ))}
+                  </CommandItem>
+                ))}
             </CommandGroup>
-             {(onAddNew) && options.length > 0 && (
+            {onAddNew && filteredOptions.length > 0 && (
               <div className="border-t p-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="w-full justify-start"
                   type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    onAddNew(e);
-                    setOpen(false);
-                  }}
+                  onMouseDown={handleAddNew}
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   {addNewLabel}

@@ -146,15 +146,13 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     };
   }, [watchedFormValues]);
 
-  const handleOpenMasterForm = React.useCallback((type: MasterItemType, e?: React.MouseEvent) => {
-    if(e) e.preventDefault();
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType) => {
     setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
   }, []);
   
-  const handleEditMasterItem = React.useCallback((type: MasterItemType, id: string, e?: React.MouseEvent) => {
-    if(e) e.preventDefault();
+  const handleEditMasterItem = React.useCallback((type: MasterItemType, id: string) => {
     const allMasters = getAllMasters();
     const itemToEdit = allMasters.find(i => i.id === id) || null;
 
@@ -352,8 +350,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             searchPlaceholder="SEARCH SUPPLIERS..."
                             notFoundMessage="NO SUPPLIER FOUND."
                             addNewLabel="ADD NEW SUPPLIER"
-                            onAddNew={(e) => handleOpenMasterForm("Supplier", e)}
-                            onEdit={(id, e) => handleEditMasterItem("Supplier", id, e)}
+                            onAddNew={(e) => handleOpenMasterForm("Supplier")}
+                            onEdit={(id) => handleEditMasterItem("Supplier", id)}
                           />
                           <FormMessage />
                         </FormItem>
@@ -375,8 +373,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             searchPlaceholder="SEARCH AGENTS..."
                             notFoundMessage="NO AGENT FOUND."
                             addNewLabel="ADD NEW AGENT"
-                            onAddNew={(e) => handleOpenMasterForm("Agent", e)}
-                            onEdit={(id, e) => handleEditMasterItem("Agent", id, e)}
+                            onAddNew={() => handleOpenMasterForm("Agent")}
+                            onEdit={(id) => handleEditMasterItem("Agent", id)}
                           />
                           <FormMessage />
                         </FormItem>
@@ -398,8 +396,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             searchPlaceholder="SEARCH LOCATIONS..."
                             notFoundMessage="NO LOCATION FOUND."
                             addNewLabel="ADD NEW LOCATION"
-                            onAddNew={(e) => handleOpenMasterForm("Warehouse", e)}
-                            onEdit={(id, e) => handleEditMasterItem("Warehouse", id, e)}
+                            onAddNew={() => handleOpenMasterForm("Warehouse")}
+                            onEdit={(id) => handleEditMasterItem("Warehouse", id)}
                           />
                           <FormMessage />
                         </FormItem>
@@ -617,8 +615,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                               searchPlaceholder="Search parties..."
                               notFoundMessage="No party found."
                               addNewLabel="Add New Party"
-                              onAddNew={(e) => handleOpenMasterForm("Transporter", e)}
-                              onEdit={(id, e) => handleEditMasterItem("Transporter", id, e)}
+                              onAddNew={() => handleOpenMasterForm("Transporter")}
+                              onEdit={(id) => handleEditMasterItem("Transporter", id)}
                             />
                             <FormMessage />
                           </FormItem>
@@ -629,7 +627,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                       <FormField 
                         control={control} 
                         name={`expenses.${index}.paymentMode`} 
-                        render={({ field: { value, onChange, ...itemField } }) => (
+                        render={({ field: { value, onChange } }) => (
                           <FormItem className="md:col-span-3">
                             <FormLabel>Payment Mode</FormLabel>
                             <Select 
