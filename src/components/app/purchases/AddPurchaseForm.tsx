@@ -146,23 +146,19 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     };
   }, [watchedFormValues]);
 
-  const handleOpenMasterForm = React.useCallback((type: MasterItemType, e?: React.MouseEvent) => {
-    if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType) => {
     setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
   }, []);
   
-  const handleEditMasterItem = React.useCallback((type: MasterItemType, id: string) => {
+  const handleEditMasterItem = React.useCallback((id: string) => {
     const allMasters = getAllMasters();
     const itemToEdit = allMasters.find(i => i.id === id) || null;
 
     if (itemToEdit) {
       setMasterItemToEdit(itemToEdit);
-      setMasterFormItemType(type);
+      setMasterFormItemType(itemToEdit.type);
       setIsMasterFormOpen(true);
     }
   }, [getAllMasters]);
@@ -354,8 +350,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             searchPlaceholder="SEARCH SUPPLIERS..."
                             notFoundMessage="NO SUPPLIER FOUND."
                             addNewLabel="ADD NEW SUPPLIER"
-                            onAddNew={(e) => handleOpenMasterForm("Supplier", e)}
-                            onEdit={(id) => handleEditMasterItem("Supplier", id)}
+                            onAddNew={() => handleOpenMasterForm("Supplier")}
+                            onEdit={handleEditMasterItem}
                           />
                           <FormMessage />
                         </FormItem>
@@ -377,8 +373,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             searchPlaceholder="SEARCH AGENTS..."
                             notFoundMessage="NO AGENT FOUND."
                             addNewLabel="ADD NEW AGENT"
-                            onAddNew={(e) => handleOpenMasterForm("Agent", e)}
-                            onEdit={(id) => handleEditMasterItem("Agent", id)}
+                            onAddNew={() => handleOpenMasterForm("Agent")}
+                            onEdit={handleEditMasterItem}
                           />
                           <FormMessage />
                         </FormItem>
@@ -400,8 +396,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             searchPlaceholder="SEARCH LOCATIONS..."
                             notFoundMessage="NO LOCATION FOUND."
                             addNewLabel="ADD NEW LOCATION"
-                            onAddNew={(e) => handleOpenMasterForm("Warehouse", e)}
-                            onEdit={(id) => handleEditMasterItem("Warehouse", id)}
+                            onAddNew={() => handleOpenMasterForm("Warehouse")}
+                            onEdit={handleEditMasterItem}
                           />
                           <FormMessage />
                         </FormItem>
@@ -619,8 +615,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                               searchPlaceholder="Search parties..."
                               notFoundMessage="No party found."
                               addNewLabel="Add New Party"
-                              onAddNew={(e) => handleOpenMasterForm("Transporter", e)}
-                              onEdit={(id) => handleEditMasterItem("Transporter", id)}
+                              onAddNew={() => handleOpenMasterForm("Transporter")}
+                              onEdit={handleEditMasterItem}
                             />
                             <FormMessage />
                           </FormItem>
@@ -756,7 +752,6 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
           onClose={() => {
             setIsMasterFormOpen(false);
             setMasterItemToEdit(null);
-            setMasterFormItemType(null);
           }}
           onSubmit={handleMasterFormSubmit}
           initialData={masterItemToEdit}
