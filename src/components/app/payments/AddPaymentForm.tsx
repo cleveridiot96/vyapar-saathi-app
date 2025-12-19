@@ -28,10 +28,8 @@ import { Select as ShadSelect, SelectContent, SelectItem, SelectTrigger, SelectV
 import { CalendarIcon, PlusCircle, Trash2, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
-import { paymentSchema } from "@/lib/schemas/paymentSchema";
-import type { PaymentFormValues } from "@/lib/schemas/paymentSchema";
+import { paymentSchema, type PaymentFormValues } from "@/lib/schemas/paymentSchema";
 import type { MasterItem, Payment, MasterItemType, Purchase, Sale } from "@/lib/types";
-import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { MasterForm } from "@/components/app/masters/MasterForm";
@@ -39,6 +37,9 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@/components/ui/command";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useInventory } from "@/hooks/useInventory";
+import dynamic from 'next/dynamic';
+
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
 
 interface AddPaymentFormProps {

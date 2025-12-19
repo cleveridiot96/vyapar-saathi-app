@@ -140,12 +140,12 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
             </div>
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="bags" render={({ field }) => (
-                <FormItem><FormLabel>Bags {watchedType !== 'Correction' ? '(Qty to Remove)' : '(+/-)'}</FormLabel>
+                <FormItem><FormLabel>Bags {watchedType !== 'Correction' && watchedType !== 'Initial Stock' ? '(Qty to Remove)' : '(+/-)'}</FormLabel>
                   <FormControl><Input type="number" step="1" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>)} />
               <FormField control={form.control} name="weight" render={({ field }) => (
-                <FormItem><FormLabel>Weight (kg) {watchedType !== 'Correction' ? '(Qty to Remove)' : '(+/-)'}</FormLabel>
+                <FormItem><FormLabel>Weight (kg) {watchedType !== 'Correction' && watchedType !== 'Initial Stock' ? '(Qty to Remove)' : '(+/-)'}</FormLabel>
                   <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>)} />

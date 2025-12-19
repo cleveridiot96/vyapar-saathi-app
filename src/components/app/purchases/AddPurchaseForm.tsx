@@ -350,7 +350,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             searchPlaceholder="SEARCH SUPPLIERS..."
                             notFoundMessage="NO SUPPLIER FOUND."
                             addNewLabel="ADD NEW SUPPLIER"
-                            onAddNew={(e) => handleOpenMasterForm("Supplier")}
+                            onAddNew={() => handleOpenMasterForm("Supplier")}
                             onEdit={(id) => handleEditMasterItem("Supplier", id)}
                           />
                           <FormMessage />
@@ -579,7 +579,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                       <FormField 
                         control={control} 
                         name={`expenses.${index}.amount`} 
-                        render={({ field: { onChange, ...itemField } }) => (
+                        render={({ field: itemField }) => (
                           <FormItem className="md:col-span-2">
                             <FormLabel>Amount (₹)</FormLabel>
                             <FormControl>
@@ -589,7 +589,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                                 placeholder="Amount"
                                 {...itemField}
                                 value={itemField.value ?? ''}
-                                onChange={e => onChange(parseFloat(e.target.value) || undefined)}
+                                onChange={e => itemField.onChange(parseFloat(e.target.value) || undefined)}
                               />
                             </FormControl>
                             <FormMessage />
@@ -632,7 +632,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             <FormLabel>Payment Mode</FormLabel>
                             <Select 
                               onValueChange={onChange} 
-                              defaultValue={value}
+                              value={value}
                             >
                               <FormControl>
                                 <SelectTrigger>

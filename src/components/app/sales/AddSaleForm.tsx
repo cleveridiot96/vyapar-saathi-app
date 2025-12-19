@@ -502,7 +502,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                                     </SelectContent>
                                   </Select><FormMessage />
                                 </FormItem>)} />
-                              <FormField control={control} name={`expenses.${index}.amount`} render={({ field: { value, onChange, ...itemField } }) => (
+                              <FormField control={control} name={`expenses.${index}.amount`} render={({ field: { onChange, ...itemField } }) => (
                                 <FormItem className="md:col-span-2"><FormLabel>Amount (₹)</FormLabel>
                                   <FormControl><Input type="number" step="0.01" placeholder="Amount" {...itemField} readOnly={isCommission} value={value ?? ''} onChange={e => onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
                                   <FormMessage />
@@ -510,15 +510,15 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                               <FormField control={control} name={`expenses.${index}.partyId`} render={({ field: itemField }) => (
                                 <FormItem className="md:col-span-3"><FormLabel>Party (Opt.)</FormLabel>
                                   <MasterDataCombobox value={itemField.value} onChange={itemField.onChange}
-                                    options={(getAllMasters() || []).map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
+                                    options={((brokers || []).concat(customers || [])).map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
                                     placeholder="Select Party" addNewLabel="Add New Party"
-                                    onAddNew={() => handleOpenMasterForm("Customer")} onEdit={(id) => handleEditMasterItem("Customer", id)}
+                                    onAddNew={() => handleOpenMasterForm("Broker")} onEdit={(id) => handleEditMasterItem("Broker", id)}
                                     disabled={isCommission}
                                   /> <FormMessage />
                                 </FormItem>)} />
-                              <FormField control={control} name={`expenses.${index}.paymentMode`} render={({ field: { value, onChange } }) => (
+                              <FormField control={control} name={`expenses.${index}.paymentMode`} render={({ field: itemField }) => (
                                 <FormItem className="md:col-span-3"><FormLabel>Pay Mode</FormLabel>
-                                  <Select onValueChange={onChange} value={value} disabled={isCommission}>
+                                  <Select onValueChange={itemField.onChange} value={itemField.value} disabled={isCommission}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Mode" /></SelectTrigger></FormControl>
                                     <SelectContent>
                                         <SelectItem value="Auto-adjusted">Auto-adjusted</SelectItem>

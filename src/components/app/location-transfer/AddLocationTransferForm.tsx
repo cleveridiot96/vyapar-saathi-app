@@ -248,13 +248,13 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                                 <SelectContent>{(expenseAccounts || []).map(opt => <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>)}</SelectContent>
                             </Select><FormMessage />
                             </FormItem>)} />
-                        <FormField control={control} name={`expenses.${index}.amount`} render={({ field: { onChange, ...itemField } }) => (
+                        <FormField control={control} name={`expenses.${index}.amount`} render={({ field: itemField }) => (
                             <FormItem className="md:col-span-3"><FormLabel>Amount (₹)</FormLabel>
-                            <FormControl><Input type="number" step="0.01" placeholder="Amount" {...itemField} value={itemField.value ?? ''} onChange={e => onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
+                            <FormControl><Input type="number" step="0.01" placeholder="Amount" {...itemField} value={itemField.value ?? ''} onChange={e => itemField.onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
                             <FormMessage /></FormItem>)} />
                         <FormField control={control} name={`expenses.${index}.paymentMode`} render={({ field: itemField }) => (
                             <FormItem className="md:col-span-4"><FormLabel>Pay Mode</FormLabel>
-                             <Select onValueChange={itemField.onChange} defaultValue={itemField.value}>
+                             <Select onValueChange={itemField.onChange} value={itemField.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Mode" /></SelectTrigger></FormControl>
                                 <SelectContent>
                                   <SelectItem value="Cash">Cash</SelectItem>

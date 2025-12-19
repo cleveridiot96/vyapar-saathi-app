@@ -63,9 +63,9 @@ export function MasterDataCombobox({
     );
     if (option) {
       onChange(option.value === value ? undefined : option.value);
-      setOpen(false);
-      setSearchValue("");
     }
+    setOpen(false);
+    setSearchValue("");
   }, [options, value, onChange]);
 
   const handleAddNew = React.useCallback((e: React.MouseEvent) => {
@@ -152,7 +152,10 @@ export function MasterDataCombobox({
                     key={option.value}
                     value={option.label}
                     onSelect={handleSelect}
-                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
                   >
                     <Check
                       className={cn(

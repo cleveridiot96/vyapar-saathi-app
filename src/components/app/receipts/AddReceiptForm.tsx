@@ -241,7 +241,7 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
             </DialogDescription>
           </DialogHeader>
           <FormProvider {...methods}>
-            <Form {...methods}>
+            <Form {...methods}> 
               <form onSubmit={methods.handleSubmit(processSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto p-1 pr-3">
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField control={control} name="date" render={({ field }) => (
@@ -269,7 +269,7 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
                         options={parties.map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
                         placeholder="Select Party" searchPlaceholder="Search customers/brokers..." notFoundMessage="No party found."
                         addNewLabel="Add New Party"
-                        onAddNew={() => handleOpenMasterForm('Customer')}
+                        onAddNew={() => handleOpenMasterForm("Customer")}
                         onEdit={handleEditMasterItem}
                       /> <FormMessage />
                     </FormItem>)}
