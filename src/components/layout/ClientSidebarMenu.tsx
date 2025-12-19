@@ -63,12 +63,6 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
   return (
     <TooltipProvider>
       <SidebarMenu className="p-2 space-y-0.5">
-        <SidebarTrigger className="group-data-[collapsible=icon]:hidden w-full justify-start px-2.5 py-2 mb-2">
-            <div className={cn("flex items-center justify-center h-8 w-8 rounded-full shrink-0 transition-colors bg-transparent text-sidebar-foreground group-hover:text-sidebar-accent-foreground")}>
-                <Menu className="h-5 w-5" />
-            </div>
-            <span className="font-semibold text-sm">Collapse Menu</span>
-        </SidebarTrigger>
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href)) || (pathname === "/" && item.href === "/dashboard");
 
