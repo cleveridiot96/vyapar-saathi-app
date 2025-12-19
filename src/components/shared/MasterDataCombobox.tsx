@@ -21,7 +21,6 @@ import {
 interface Option {
   value: string;
   label: string;
-  tooltipContent?: React.ReactNode;
 }
 
 interface MasterDataComboboxProps {
@@ -63,18 +62,22 @@ export function MasterDataCombobox({
   }, [onChange, value]);
   
   const handleAddNew = React.useCallback((e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     if (onAddNew) {
-        setOpen(false);
-        setSearchValue("");
-        onAddNew(e);
+      setOpen(false);
+      setSearchValue("");
+      setTimeout(() => onAddNew(e), 100);
     }
   }, [onAddNew]);
 
   const handleEdit = React.useCallback((id: string, e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     if (onEdit) {
         setOpen(false);
         setSearchValue("");
-        onEdit(id, e);
+        setTimeout(() => onEdit(id, e), 100);
     }
   }, [onEdit]);
 
@@ -113,24 +116,22 @@ export function MasterDataCombobox({
             onValueChange={setSearchValue}
           />
           <CommandList>
-            {filteredOptions.length === 0 && (
+            {filteredOptions.length === 0 && !onAddNew && (
+                <CommandEmpty>{notFoundMessage}</CommandEmpty>
+            )}
+             {(filteredOptions.length === 0 && onAddNew) && (
               <CommandEmpty>
                 <div className="py-2 text-center text-sm">
                   {notFoundMessage}
                 </div>
-                {onAddNew && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start"
-                    type="button"
-                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    onClick={handleAddNew}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    {addNewLabel}
-                  </Button>
-                )}
+                <CommandItem
+                  onSelect={handleAddNew}
+                  onMouseDown={(e) => e.preventDefault()}
+                  className="cursor-pointer"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {addNewLabel}
+                </CommandItem>
               </CommandEmpty>
             )}
             <CommandGroup>
@@ -154,11 +155,11 @@ export function MasterDataCombobox({
                       size="icon"
                       className="h-6 w-6 ml-2"
                       type="button"
-                      onClick={(e) => {
+                      onMouseDown={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           handleEdit(option.value, e);
                       }}
-                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     >
                       <Pencil className="h-3 w-3" />
                     </Button>
@@ -167,19 +168,14 @@ export function MasterDataCombobox({
               ))}
             </CommandGroup>
             {onAddNew && filteredOptions.length > 0 && (
-              <div className="border-t p-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start"
-                  type="button"
-                  onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                  onClick={handleAddNew}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  {addNewLabel}
-                </Button>
-              </div>
+              <CommandItem
+                onSelect={handleAddNew}
+                onMouseDown={(e) => e.preventDefault()}
+                className="cursor-pointer mt-1 border-t"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {addNewLabel}
+              </CommandItem>
             )}
           </CommandList>
         </Command>

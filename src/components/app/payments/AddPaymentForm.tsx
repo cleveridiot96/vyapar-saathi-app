@@ -143,13 +143,16 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
 
 
   const handleOpenMasterForm = React.useCallback((type: MasterItemType = "Supplier", e?: React.MouseEvent) => {
-    if (e) e.preventDefault();
+    e?.preventDefault();
+    e?.stopPropagation();
     setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
   }, []);
   
-  const handleEditMasterItem = React.useCallback((id: string) => {
+  const handleEditMasterItem = React.useCallback((id: string, e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     const itemToEdit = parties.find(p => p.id === id) || null;
     if (itemToEdit) {
       setMasterItemToEdit(itemToEdit);
@@ -328,7 +331,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
                         placeholder="Select Party" searchPlaceholder="Search parties..." notFoundMessage="No party found." 
                         addNewLabel="Add New Party"
                         onAddNew={(e) => handleOpenMasterForm("Supplier", e)}
-                        onEdit={handleEditMasterItem}
+                        onEdit={(id, e) => handleEditMasterItem(id, e)}
                       /> <FormMessage />
                     </FormItem>)}
                   />

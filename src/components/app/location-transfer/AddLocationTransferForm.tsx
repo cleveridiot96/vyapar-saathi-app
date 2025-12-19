@@ -74,7 +74,7 @@ type LocationTransferFormValues = z.infer<typeof locationTransferSchema>;
 const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> = ({ isOpen, onClose, onSubmit, transferToEdit }) => {
   const { toast } = useToast();
   const { masterData, addOrUpdateMaster, getAllMasters } = useTransactions();
-  const { warehouses, transporters, expenses: expenseAccounts } = masterData;
+  const { warehouses = [], transporters = [], expenses: expenseAccounts = [] } = masterData;
   const { availableStock } = useInventory(transferToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -113,7 +113,9 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
 
   const fromLocationId = watch('fromLocationId');
 
-  const handleOpenMasterForm = React.useCallback((type: MasterItemType) => {
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType, e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
   }, []);
@@ -183,13 +185,13 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
               )} />
               <FormField control={control} name="fromLocationId" render={({ field }) => (
                 <FormItem><FormLabel>From Warehouse</FormLabel>
-                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" onAddNew={() => handleOpenMasterForm("Warehouse")} {...field} />
+                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" onAddNew={(e) => handleOpenMasterForm("Warehouse", e)} {...field} />
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={control} name="toLocationId" render={({ field }) => (
                 <FormItem><FormLabel>To Warehouse</FormLabel>
-                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" onAddNew={() => handleOpenMasterForm("Warehouse")} {...field} />
+                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" onAddNew={(e) => handleOpenMasterForm("Warehouse", e)} {...field} />
                   <FormMessage />
                 </FormItem>
               )} />

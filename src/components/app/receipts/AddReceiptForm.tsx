@@ -128,13 +128,16 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
   }, [watchedAllocatedBills]);
 
   const handleOpenMasterForm = React.useCallback((type: MasterItemType = "Customer", e?: React.MouseEvent) => {
-    if (e) e.preventDefault();
+    e?.preventDefault();
+    e?.stopPropagation();
     setMasterItemToEdit(null);
     setMasterFormItemType(type); 
     setIsMasterFormOpen(true);
   }, []);
   
-  const handleEditMasterItem = React.useCallback((id: string) => {
+  const handleEditMasterItem = React.useCallback((id: string, e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     const itemToEdit = parties.find(p => p.id === id) || null;
     if (itemToEdit) {
       setMasterItemToEdit(itemToEdit);
@@ -271,7 +274,7 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
                         placeholder="Select Party" searchPlaceholder="Search customers/brokers..." notFoundMessage="No party found."
                         addNewLabel="Add New Party"
                         onAddNew={(e) => handleOpenMasterForm("Customer", e)}
-                        onEdit={handleEditMasterItem}
+                        onEdit={(id, e) => handleEditMasterItem(id, e)}
                       /> <FormMessage />
                     </FormItem>)}
                   />
