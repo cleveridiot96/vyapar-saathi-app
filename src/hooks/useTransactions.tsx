@@ -167,10 +167,10 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
   }), [
     purchases, sales, purchaseReturns, saleReturns, locationTransfers, payments, receipts, ledger, adjustments,
     customers, suppliers, agents, transporters, warehouses, brokers, expenses,
-    isTransactionsLoaded, isMasterDataLoaded, getAllMasters, addOrUpdateMaster, masterData,
+    isTransactionsLoaded, isMasterDataLoaded,
     setPurchases, setPurchaseReturns, setSales, setSaleReturns, setLocationTransfers, setPayments, setReceipts, setLedger, setAdjustments,
     setCustomers, setSuppliers, setAgents, setTransporters, setWarehouses, setBrokers, setExpenses,
-    addLedgerEntry, removeLedgerEntries
+    addLedgerEntry, removeLedgerEntries, addOrUpdateMaster, getAllMasters, masterData
   ]);
 
   return (

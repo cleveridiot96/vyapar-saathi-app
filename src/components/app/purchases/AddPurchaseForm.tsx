@@ -60,7 +60,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   const [masterItemToEdit, setMasterItemToEdit] = React.useState<MasterItem | null>(null);
   const [manualNetWeight, setManualNetWeight] = React.useState<Record<number, boolean>>({});
   
-  const getDefaultValues = React.useCallback((editData?: Purchase | null) => {
+  const getDefaultValues = React.useCallback((editData?: Purchase | null): PurchaseFormValues => {
     if (editData) {
       return {
         date: new Date(editData.date),
@@ -126,7 +126,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
       return { ...item, goodsValue };
     });
 
-    const totalExpenses = (formExpenses).reduce((sum, exp) => sum + (exp.amount || 0), 0);
+    const totalExpenses = formExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
     const totalAmount = totalGoodsValue + totalExpenses;
     const expensesPerKg = totalNetWeight > 0 ? totalExpenses / totalNetWeight : 0;
     
@@ -166,7 +166,6 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   const handleMasterFormSubmit = React.useCallback((newItem: MasterItem) => {
     addOrUpdateMaster(newItem);
     
-    // Set the value with proper validation
     if (newItem.type === 'Supplier') {
       setValue('supplierId', newItem.id, { shouldValidate: true, shouldDirty: true });
     } else if (newItem.type === 'Agent') {
@@ -345,7 +344,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                           <FormLabel>SUPPLIER</FormLabel>
                           <MasterDataCombobox
                             value={field.value}
-                            onChange={(value) => field.onChange(value)}
+                            onChange={field.onChange}
                             options={suppliers.map(s => ({ value: s.id, label: s.name }))}
                             placeholder="SELECT SUPPLIER"
                             searchPlaceholder="SEARCH SUPPLIERS..."
@@ -368,7 +367,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                           <FormLabel>AGENT (OPTIONAL)</FormLabel>
                           <MasterDataCombobox
                             value={field.value}
-                            onChange={(value) => field.onChange(value)}
+                            onChange={field.onChange}
                             options={agents.map(a => ({ value: a.id, label: a.name }))}
                             placeholder="SELECT AGENT"
                             searchPlaceholder="SEARCH AGENTS..."
@@ -391,7 +390,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                           <FormLabel>LOCATION (WAREHOUSE)</FormLabel>
                           <MasterDataCombobox
                             value={field.value}
-                            onChange={(value) => field.onChange(value)}
+                            onChange={field.onChange}
                             options={warehouses.map(w => ({ value: w.id, label: w.name }))}
                             placeholder="SELECT LOCATION"
                             searchPlaceholder="SEARCH LOCATIONS..."
@@ -580,7 +579,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                       <FormField 
                         control={control} 
                         name={`expenses.${index}.amount`} 
-                        render={({ field: { onChange, ...itemField } }) => (
+                        render={({ field: { value, onChange, ...itemField } }) => (
                           <FormItem className="md:col-span-2">
                             <FormLabel>Amount (₹)</FormLabel>
                             <FormControl>
@@ -589,6 +588,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                                 step="0.01"
                                 placeholder="Amount"
                                 {...itemField}
+                                value={value ?? ''}
                                 onChange={e => {
                                   const amount = e.target.value ? parseFloat(e.target.value) : undefined;
                                   onChange(amount);
@@ -609,7 +609,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             <FormLabel>Party (Optional)</FormLabel>
                             <MasterDataCombobox
                               value={itemField.value}
-                              onChange={(value) => itemField.onChange(value)}
+                              onChange={itemField.onChange}
                               options={getAllMasters().map(p => ({ 
                                 value: p.id, 
                                 label: `${p.name} (${p.type})` 
@@ -630,12 +630,12 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                       <FormField 
                         control={control} 
                         name={`expenses.${index}.paymentMode`} 
-                        render={({ field: itemField }) => (
+                        render={({ field: { value, onChange, ...itemField } }) => (
                           <FormItem className="md:col-span-3">
                             <FormLabel>Payment Mode</FormLabel>
                             <Select 
-                              onValueChange={itemField.onChange} 
-                              value={itemField.value}
+                              onValueChange={onChange} 
+                              value={value}
                             >
                               <FormControl>
                                 <SelectTrigger>

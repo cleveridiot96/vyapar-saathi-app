@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -128,22 +127,22 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
     return (watchedAllocatedBills || []).reduce((sum, bill) => sum + (bill.amount || 0), 0);
   }, [watchedAllocatedBills]);
 
-  const handleOpenMasterForm = (type: MasterItemType = "Customer") => {
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType = "Customer") => {
     setMasterItemToEdit(null);
     setMasterFormItemType(type); 
     setIsMasterFormOpen(true);
-  };
+  }, []);
   
-  const handleEditMasterItem = (id: string) => {
+  const handleEditMasterItem = React.useCallback((id: string) => {
     const itemToEdit = parties.find(p => p.id === id) || null;
     if (itemToEdit) {
       setMasterItemToEdit(itemToEdit);
       setMasterFormItemType(itemToEdit.type);
       setIsMasterFormOpen(true);
     }
-  }
+  }, [parties]);
 
-  const handleMasterFormSubmit = (newItem: MasterItem) => {
+  const handleMasterFormSubmit = React.useCallback((newItem: MasterItem) => {
     onMasterDataUpdate(newItem);
     if (newItem.type === "Customer" || newItem.type === "Broker") { 
         methods.setValue('partyId', newItem.id, { shouldValidate: true });
@@ -151,7 +150,7 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
     setIsMasterFormOpen(false);
     setMasterItemToEdit(null);
     toast({ title: `${newItem.type} "${newItem.name}" added/updated successfully!` });
-  };
+  }, [onMasterDataUpdate, methods, toast]);
 
   const processSubmit = React.useCallback((values: ReceiptFormValues) => {
     if (!values.partyId || !values.amount || values.amount <= 0) {
@@ -186,7 +185,7 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
     onClose();
   }, [receiptToEdit, parties, onSubmit, onClose, toast]);
 
-  const addBillToAllocate = (bill: Sale & { due: number }) => {
+  const addBillToAllocate = React.useCallback((bill: Sale & { due: number }) => {
     append({
         billId: bill.id,
         amount: 0,
@@ -194,9 +193,9 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
         billTotal: bill.billedAmount,
         billVakkal: bill.items.map(i => i.lotNumber).join(', ')
     });
-  };
+  }, [append]);
 
-  const autoAllocate = () => {
+  const autoAllocate = React.useCallback(() => {
     const totalReceiptAmount = (getValues('amount') || 0) + (getValues('cashDiscount') || 0);
     if (totalReceiptAmount <= 0) {
         toast({ title: "Enter Amount", description: "Please enter a receipt amount before auto-allocating." });
@@ -226,7 +225,7 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
 
     setValue('againstBills', newAllocations, { shouldValidate: true });
     toast({ title: "Auto-allocated", description: `Receipt allocated to oldest bills first.` });
-  };
+  }, [getValues, pendingBills, totalAllocated, setValue, toast, watchedAllocatedBills]);
 
 
   if (!isOpen) return null;
@@ -270,11 +269,7 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
                         options={parties.map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
                         placeholder="Select Party" searchPlaceholder="Search customers/brokers..." notFoundMessage="No party found."
                         addNewLabel="Add New Party"
-                        onAddNew={() => {
-                            const currentPartyValue = getValues("partyId");
-                            const currentParty = parties.find(p => p.id === currentPartyValue);
-                            handleOpenMasterForm(currentParty?.type || 'Customer');
-                        }}
+                        onAddNew={() => handleOpenMasterForm('Customer')}
                         onEdit={handleEditMasterItem}
                       /> <FormMessage />
                     </FormItem>)}

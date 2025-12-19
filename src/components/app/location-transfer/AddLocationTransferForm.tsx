@@ -118,6 +118,12 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
     setIsMasterFormOpen(true);
   }, []);
 
+  const handleMasterFormSubmit = React.useCallback((newItem: MasterItem) => {
+      addOrUpdateMaster(newItem);
+      toast({ title: "Success", description: `${newItem.type} added/updated.` });
+      setIsMasterFormOpen(false);
+  }, [addOrUpdateMaster, toast]);
+
   const processSubmit = (values: LocationTransferFormValues) => {
     setIsSubmitting(true);
 
@@ -248,10 +254,15 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                             <FormMessage /></FormItem>)} />
                         <FormField control={control} name={`expenses.${index}.paymentMode`} render={({ field: itemField }) => (
                             <FormItem className="md:col-span-4"><FormLabel>Pay Mode</FormLabel>
-                            <Select onValueChange={itemField.onChange} defaultValue={itemField.value}>
+                             <Select onValueChange={itemField.onChange} defaultValue={itemField.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Mode" /></SelectTrigger></FormControl>
-                                <SelectContent><SelectItem value="Cash">Cash</SelectItem><SelectItem value="Bank">Bank</SelectItem><SelectItem value="Pending">Pending</SelectItem></SelectContent>
-                            </Select><FormMessage /></FormItem>)} />
+                                <SelectContent>
+                                  <SelectItem value="Cash">Cash</SelectItem>
+                                  <SelectItem value="Bank">Bank</SelectItem>
+                                  <SelectItem value="Pending">Pending</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            <FormMessage /></FormItem>)} />
                         <div className="md:col-span-1 flex items-center justify-end">
                             <Button type="button" variant="destructive" size="icon" onClick={() => removeExpense(index)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
@@ -281,7 +292,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
         <MasterForm
           isOpen={isMasterFormOpen}
           onClose={() => setIsMasterFormOpen(false)}
-          onSubmit={addOrUpdateMaster}
+          onSubmit={handleMasterFormSubmit}
           initialData={null}
           itemTypeFromButton={masterFormItemType!}
         />

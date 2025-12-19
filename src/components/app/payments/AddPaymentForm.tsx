@@ -120,7 +120,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
     const paymentsForParty = allPayments.filter(p => p.partyId === watchedPartyId && p.id !== paymentToEdit?.id);
     const allocatedAmounts = new Map<string, number>();
     paymentsForParty.forEach(p => {
-        p.againstBills?.forEach(ab => {
+        (p.againstBills || []).forEach(ab => {
             allocatedAmounts.set(ab.billId, (allocatedAmounts.get(ab.billId) || 0) + ab.amount);
         });
     });
@@ -147,24 +147,24 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
     setIsMasterFormOpen(true);
   }, []);
   
-  const handleEditMasterItem = (id: string) => {
+  const handleEditMasterItem = React.useCallback((id: string) => {
     const itemToEdit = parties.find(p => p.id === id) || null;
     if (itemToEdit) {
       setMasterItemToEdit(itemToEdit);
       setMasterFormItemType(itemToEdit.type);
       setIsMasterFormOpen(true);
     }
-  }
+  }, [parties]);
 
-  const handleMasterFormSubmit = (newItem: MasterItem) => {
+  const handleMasterFormSubmit = React.useCallback((newItem: MasterItem) => {
     onMasterDataUpdate(newItem);
     methods.setValue('partyId', newItem.id, { shouldValidate: true });
     setIsMasterFormOpen(false);
     setMasterItemToEdit(null);
     toast({ title: `${newItem.type} "${newItem.name}" added/updated successfully.` });
-  };
+  }, [onMasterDataUpdate, methods, toast]);
   
-  const processSubmit = (values: PaymentFormValues) => {
+  const processSubmit = React.useCallback((values: PaymentFormValues) => {
     if (!values.partyId) {
         toast({ title: "Missing Party", description: "Please select a party.", variant: "destructive" });
         return;
@@ -211,9 +211,9 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
     onSubmit(paymentData);
     setIsSubmitting(false);
     onClose();
-  };
+  }, [onSubmit, onClose, parties, paymentToEdit, toast]);
 
-  const addBillToAllocate = (bill: Purchase & { due: number }) => {
+  const addBillToAllocate = React.useCallback((bill: Purchase & { due: number }) => {
     appendBill({
         billId: bill.id,
         amount: 0,
@@ -221,9 +221,9 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
         billTotal: bill.totalAmount,
         billVakkal: bill.items.map(i => i.lotNumber).join(', ')
     });
-  };
+  }, [appendBill]);
 
-  const autoAllocate = () => {
+  const autoAllocate = React.useCallback(() => {
     const totalPayableAmount = getValues('paymentType') === 'Cash' ? (getValues('amount') || 0) : stockPaymentTotal;
     if (totalPayableAmount <= 0) {
         toast({ title: "Enter Amount", description: "Please enter a payment amount before auto-allocating." });
@@ -253,7 +253,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
 
     setValue('againstBills', newAllocations, { shouldValidate: true });
     toast({ title: "Auto-allocated", description: `Payment allocated to oldest bills first.` });
-  };
+  }, [getValues, stockPaymentTotal, pendingBills, totalAllocated, setValue, toast, watchedAllocatedBills]);
 
 
   if (!isOpen) return null;

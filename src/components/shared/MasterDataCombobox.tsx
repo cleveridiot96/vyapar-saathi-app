@@ -32,7 +32,7 @@ interface MasterDataComboboxProps {
   searchPlaceholder?: string;
   notFoundMessage?: string;
   addNewLabel?: string;
-  onAddNew?: (e: React.MouseEvent) => void;
+  onAddNew?: () => void;
   onEdit?: (id: string) => void;
   disabled?: boolean;
   className?: string;
@@ -92,7 +92,8 @@ export function MasterDataCombobox({
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    onAddNew(e);
+                    onAddNew();
+                    setOpen(false);
                   }}
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -126,8 +127,8 @@ export function MasterDataCombobox({
                       onMouseDown={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setOpen(false);
                         onEdit(option.value);
+                        setOpen(false);
                       }}
                     >
                       <Pencil className="h-3 w-3" />
@@ -145,7 +146,8 @@ export function MasterDataCombobox({
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    onAddNew(e);
+                    onAddNew();
+                    setOpen(false);
                   }}
                 >
                   <Plus className="mr-2 h-4 w-4" />

@@ -241,13 +241,13 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   }, [brokerId, brokers, summary.totalGoodsValue, appendExpense, removeExpense, setValue, watch]);
 
 
-  const handleOpenMasterForm = (type: MasterItemType) => {
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType) => {
     setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
-  };
+  }, []);
   
-  const handleEditMasterItem = (type: MasterItemType, id: string) => {
+  const handleEditMasterItem = React.useCallback((type: MasterItemType, id: string) => {
     const allMasters = getAllMasters();
     const itemToEdit = allMasters.find(i => i.id === id) || null;
 
@@ -256,16 +256,16 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
         setMasterFormItemType(type);
         setIsMasterFormOpen(true);
     }
-  };
+  }, [getAllMasters]);
 
-  const handleMasterFormSubmit = (newItem: MasterItem) => {
+  const handleMasterFormSubmit = React.useCallback((newItem: MasterItem) => {
     onMasterDataUpdate(newItem);
     if (newItem.type === 'Customer') setValue('customerId', newItem.id, { shouldValidate: true });
     if (newItem.type === 'Broker') setValue('brokerId', newItem.id, { shouldValidate: true });
     if (newItem.type === 'Transporter') setValue('transporterId', newItem.id, { shouldValidate: true });
     setIsMasterFormOpen(false); setMasterItemToEdit(null);
     toast({ title: `${newItem.type} added/updated successfully.` });
-  };
+  }, [onMasterDataUpdate, setValue, toast]);
   
   const stockOptionsForSale = React.useMemo(() => {
     const mumbaiWarehouseId = (warehouses || []).find(wh => wh.name.toUpperCase() === 'MUMBAI')?.id;
@@ -284,7 +284,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   }, [availableStock, warehouses]);
 
 
-  const processSubmit = (values: SaleFormValues) => {
+  const processSubmit = React.useCallback((values: SaleFormValues) => {
     setIsSubmitting(true);
     const selectedCustomer = (customers || []).find(c => c.id === values.customerId);
     const selectedBroker = (brokers || []).find(b => b.id === values.brokerId);
@@ -345,7 +345,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
     onSubmit(saleData);
     setIsSubmitting(false);
     onClose();
-  };
+  }, [customers, brokers, transporters, availableStock, summary, saleToEdit, onSubmit, onClose]);
 
   if (!isOpen) return null;
 
@@ -502,9 +502,9 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                                     </SelectContent>
                                   </Select><FormMessage />
                                 </FormItem>)} />
-                              <FormField control={control} name={`expenses.${index}.amount`} render={({ field: { onChange, ...itemField } }) => (
+                              <FormField control={control} name={`expenses.${index}.amount`} render={({ field: { value, onChange, ...itemField } }) => (
                                 <FormItem className="md:col-span-2"><FormLabel>Amount (₹)</FormLabel>
-                                  <FormControl><Input type="number" step="0.01" placeholder="Amount" {...itemField} readOnly={isCommission} onChange={e => onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
+                                  <FormControl><Input type="number" step="0.01" placeholder="Amount" {...itemField} readOnly={isCommission} value={value ?? ''} onChange={e => onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
                                   <FormMessage />
                                 </FormItem>)} />
                               <FormField control={control} name={`expenses.${index}.partyId`} render={({ field: itemField }) => (
@@ -516,9 +516,9 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                                     disabled={isCommission}
                                   /> <FormMessage />
                                 </FormItem>)} />
-                              <FormField control={control} name={`expenses.${index}.paymentMode`} render={({ field: itemField }) => (
+                              <FormField control={control} name={`expenses.${index}.paymentMode`} render={({ field: { value, onChange } }) => (
                                 <FormItem className="md:col-span-3"><FormLabel>Pay Mode</FormLabel>
-                                  <Select onValueChange={itemField.onChange} defaultValue={itemField.value} disabled={isCommission}>
+                                  <Select onValueChange={onChange} value={value} disabled={isCommission}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Mode" /></SelectTrigger></FormControl>
                                     <SelectContent>
                                         <SelectItem value="Auto-adjusted">Auto-adjusted</SelectItem>
