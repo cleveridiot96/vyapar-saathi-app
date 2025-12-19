@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -84,24 +85,31 @@ export function CashbookClient() {
     
     let calculatedOpeningBalance = baseOpeningBalance;
 
-    const combinedTransactions = [
-        ...receipts.map(r => ({ ...r, txType: 'Receipt' as const })),
-        ...payments.map(p => ({ ...p, txType: 'Payment' as const }))
-    ].filter(tx => tx.paymentMethod === "Cash").sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime());
-    
-    combinedTransactions.forEach(tx => {
-        if (parseISO(tx.date) < startOfDay(dateRange.from!)) {
-            const amount = tx.txType === 'Receipt' ? tx.amount : -tx.amount;
-            calculatedOpeningBalance += amount;
-        }
-    });
+    const cashReceipts = receipts.filter(r => r.paymentMethod === 'Cash');
+    const cashPayments = payments.filter(p => p.paymentMethod === 'Cash');
 
-    const periodTransactions = combinedTransactions.filter(tx => 
-        isWithinInterval(parseISO(tx.date), { start: startOfDay(dateRange.from!), end: endOfDay(dateRange.to || dateRange.from!) })
-    );
+    cashReceipts.forEach(tx => {
+      if (parseISO(tx.date) < startOfDay(dateRange.from!)) {
+        calculatedOpeningBalance += tx.amount;
+      }
+    });
+    cashPayments.forEach(tx => {
+      if (parseISO(tx.date) < startOfDay(dateRange.from!)) {
+        calculatedOpeningBalance -= tx.amount;
+      }
+    });
+    
+    const periodReceipts = cashReceipts.filter(tx => isWithinInterval(parseISO(tx.date), { start: startOfDay(dateRange.from!), end: endOfDay(dateRange.to || dateRange.from!) }));
+    const periodPayments = cashPayments.filter(tx => isWithinInterval(parseISO(tx.date), { start: startOfDay(dateRange.from!), end: endOfDay(dateRange.to || dateRange.from!) }));
+
+    const combined = [
+      ...periodReceipts.map(r => ({ ...r, txType: 'Receipt' as const })),
+      ...periodPayments.map(p => ({ ...p, txType: 'Payment' as const }))
+    ].sort((a,b) => parseISO(a.date).getTime() - parseISO(b.date).getTime());
+
 
     let runningBalance = calculatedOpeningBalance;
-    const entries: CashLedgerTransaction[] = periodTransactions.map(tx => {
+    const entries: CashLedgerTransaction[] = combined.map(tx => {
         const debit = tx.txType === 'Receipt' ? tx.amount : 0;
         const credit = tx.txType === 'Payment' ? tx.amount : 0;
         runningBalance = runningBalance + debit - credit;
@@ -292,5 +300,3 @@ export function CashbookClient() {
     </div>
   );
 }
-
-    

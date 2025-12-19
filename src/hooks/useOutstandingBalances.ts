@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from 'react';
@@ -18,108 +19,75 @@ export function useOutstandingBalances() {
             return new Map<string, number>();
         }
 
-        const balances = new Map<string, number>();
+        const balancesMap = new Map<string, number>();
 
         // 1. Set opening balances from master data
         allMasters.forEach(m => {
             if (m.type !== 'Warehouse' && m.type !== 'Expense' && m.type !== 'Product') {
-                balances.set(m.id, m.details?.openingBalanceType === 'Cr' ? -(m.details?.openingBalance || 0) : (m.details?.openingBalance || 0));
+                balancesMap.set(m.id, m.details?.openingBalanceType === 'Cr' ? -(m.details?.openingBalance || 0) : (m.details?.openingBalance || 0));
             }
         });
         
-        // 2. Process all transactions before the current financial year to adjust opening balances
-        const preFyTransactions = [
+        const allTransactions = [
             ...purchases, ...sales, ...receipts, ...payments, ...purchaseReturns, ...saleReturns, ...ledger
-        ].filter(tx => tx && tx.date && isDateBeforeFinancialYear(tx.date, financialYear))
-         .sort((a,b) => parseISO(a.date).getTime() - parseISO(b.date).getTime());
-
-        preFyTransactions.forEach(tx => {
-            if ('billedAmount' in tx) { // Sale
-                const s = tx as typeof sales[0];
-                const primaryDebtorId = s.brokerId || s.customerId;
-                balances.set(primaryDebtorId, (balances.get(primaryDebtorId) || 0) + (s.billedAmount || 0));
-            } else if ('totalAmount' in tx) { // Purchase
-                const p = tx as typeof purchases[0];
-                const primaryCreditorId = p.agentId || p.supplierId;
-                balances.set(primaryCreditorId, (balances.get(primaryCreditorId) || 0) - (p.totalAmount || 0));
-            } else if ('paymentMethod' in tx && 'amount' in tx) { // Receipt or Payment
-                 if('transactionType' in tx) { // Receipt
-                    const r = tx as typeof receipts[0];
-                    balances.set(r.partyId, (balances.get(r.partyId) || 0) - (r.amount + (r.cashDiscount || 0)));
-                } else { // Payment
-                    const p = tx as typeof payments[0];
-                    balances.set(p.partyId, (balances.get(p.partyId) || 0) + (p.amount || 0));
-                }
-            } else if ('originalPurchaseId' in tx) { // Purchase Return
-                 const pr = tx as typeof purchaseReturns[0];
-                 const p = purchases.find(p => p.id === pr.originalPurchaseId);
-                 if (p) {
-                    const primaryCreditorId = p.agentId || p.supplierId;
-                    balances.set(primaryCreditorId, (balances.get(primaryCreditorId) || 0) + (pr.returnAmount || 0));
-                }
-            } else if ('originalSaleId' in tx) { // Sale Return
-                const sr = tx as typeof saleReturns[0];
-                const s = sales.find(s => s.id === sr.originalSaleId);
-                if (s) {
-                    const primaryDebtorId = s.brokerId || s.customerId;
-                    balances.set(primaryDebtorId, (balances.get(primaryDebtorId) || 0) - (sr.returnAmount || 0));
-                }
-            } else if ('relatedVoucher' in tx && tx.type === 'Expense' && tx.partyId && tx.paymentMode === 'Pending') { // Ledger Entry
-                 balances.set(tx.partyId, (balances.get(tx.partyId) || 0) + (tx.debit - tx.credit));
-            }
-        });
-
-        // 3. Process transactions within the financial year
-        const fyTransactions = [
-            ...purchases, ...sales, ...receipts, ...payments, ...purchaseReturns, ...saleReturns, ...ledger
-        ].filter(tx => tx && tx.date && isDateInFinancialYear(tx.date, financialYear))
-         .sort((a,b) => parseISO(a.date).getTime() - parseISO(b.date).getTime());
+        ].filter(tx => tx && tx.date);
         
-        fyTransactions.forEach(tx => {
-             if ('billedAmount' in tx) { // Sale
+        // 2. Process all transactions to establish final balances
+        allTransactions.forEach(tx => {
+            // Sales increase receivables
+            if ('billedAmount' in tx && tx.type !== 'Purchase' && tx.type !== 'Payment' && tx.type !== 'Receipt' && tx.type !== 'Purchase Return' && tx.type !== 'Sale Return' && tx.type !== 'Expense' && tx.type !== 'Transfer') { // Simple check for Sale
                 const s = tx as typeof sales[0];
                 const primaryDebtorId = s.brokerId || s.customerId;
-                balances.set(primaryDebtorId, (balances.get(primaryDebtorId) || 0) + (s.billedAmount || 0));
+                balancesMap.set(primaryDebtorId, (balancesMap.get(primaryDebtorId) || 0) + (s.billedAmount || 0));
 
                 const brokerCommission = (s.expenses || []).find(e => e.account === 'Broker Commission')?.amount || 0;
                 if (s.brokerId && brokerCommission > 0) {
-                    balances.set(s.brokerId, (balances.get(s.brokerId) || 0) - brokerCommission);
+                    balancesMap.set(s.brokerId, (balancesMap.get(s.brokerId) || 0) - brokerCommission);
                 }
-                
-            } else if ('totalAmount' in tx) { // Purchase
+            } 
+            // Purchases increase payables
+            else if ('totalAmount' in tx) { // Simple check for Purchase
                 const p = tx as typeof purchases[0];
                 const primaryCreditorId = p.agentId || p.supplierId;
-                balances.set(primaryCreditorId, (balances.get(primaryCreditorId) || 0) - (p.totalAmount || 0));
-            } else if ('paymentMethod' in tx && 'amount' in tx) { // Receipt or Payment
-                 if('transactionType' in tx) { // Receipt
-                    const r = tx as typeof receipts[0];
-                    balances.set(r.partyId, (balances.get(r.partyId) || 0) - (r.amount + (r.cashDiscount || 0)));
-                } else { // Payment
-                    const p = tx as typeof payments[0];
-                    balances.set(p.partyId, (balances.get(p.partyId) || 0) + (p.amount || 0));
-                }
-            } else if ('originalPurchaseId' in tx) { // Purchase Return
+                balancesMap.set(primaryCreditorId, (balancesMap.get(primaryCreditorId) || 0) - (p.totalAmount || 0));
+            }
+            // Receipts decrease receivables
+            else if ('paymentMethod' in tx && 'transactionType' in tx) { // Receipt
+                const r = tx as typeof receipts[0];
+                balancesMap.set(r.partyId, (balancesMap.get(r.partyId) || 0) - (r.amount + (r.cashDiscount || 0)));
+            }
+            // Payments decrease payables
+            else if ('paymentMethod' in tx) { // Payment
+                const p = tx as typeof payments[0];
+                balancesMap.set(p.partyId, (balancesMap.get(p.partyId) || 0) + (p.amount || 0));
+            }
+            // Purchase Returns decrease payables
+            else if ('originalPurchaseId' in tx) { // Purchase Return
                  const pr = tx as typeof purchaseReturns[0];
                  const p = purchases.find(p => p.id === pr.originalPurchaseId);
                  if (p) {
                     const primaryCreditorId = p.agentId || p.supplierId;
-                    balances.set(primaryCreditorId, (balances.get(primaryCreditorId) || 0) + (pr.returnAmount || 0));
+                    balancesMap.set(primaryCreditorId, (balancesMap.get(primaryCreditorId) || 0) + (pr.returnAmount || 0));
                 }
-            } else if ('originalSaleId' in tx) { // Sale Return
+            } 
+            // Sale Returns decrease receivables
+            else if ('originalSaleId' in tx) { // Sale Return
                 const sr = tx as typeof saleReturns[0];
                 const s = sales.find(s => s.id === sr.originalSaleId);
                 if (s) {
                     const primaryDebtorId = s.brokerId || s.customerId;
-                    balances.set(primaryDebtorId, (balances.get(primaryDebtorId) || 0) - (sr.returnAmount || 0));
+                    balancesMap.set(primaryDebtorId, (balancesMap.get(primaryDebtorId) || 0) - (sr.returnAmount || 0));
                 }
-            } else if ('relatedVoucher' in tx && tx.type === 'Expense' && tx.partyId && tx.paymentMode === 'Pending') { // Ledger Entry
-                 balances.set(tx.partyId, (balances.get(tx.partyId) || 0) + (tx.debit - tx.credit));
+            }
+            // Pending expenses increase payables
+            else if ('relatedVoucher' in tx && tx.type === 'Expense' && tx.partyId && tx.paymentMode === 'Pending') { // Ledger Entry
+                 balancesMap.set(tx.partyId, (balancesMap.get(tx.partyId) || 0) - (tx.debit - tx.credit)); // Expense is a debit, so it's payable
             }
         });
 
 
-        return balances;
-    }, [isAppHydrating, financialYear, allMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger, isTransactionsLoaded]);
+        return balancesMap;
+    }, [isAppHydrating, allMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger, isTransactionsLoaded]);
 
     const { receivableParties, payableParties } = useMemo(() => {
         const receivableParties: MasterItem[] = [];

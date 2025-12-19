@@ -7,60 +7,24 @@ import { SidebarMenu, SidebarMenuItem, useSidebar, SidebarTrigger } from "@/comp
 import type { Feature as NavItem } from "@/lib/features";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { HelpCircle as FallbackIcon, Menu } from 'lucide-react';
+import React from "react";
+import {
+  LayoutDashboard, ShoppingCart, ShoppingBag, Truck, Boxes, BookOpenCheck,
+  CircleDollarSign, ClipboardList, BookUser, PackageSearch, PieChart,
+  BarChartHorizontal, ArrowRightLeft, Receipt, CalendarDays, Users,
+  DatabaseBackup, SlidersHorizontal, Landmark, Search, HelpCircle as FallbackIcon, Menu
+} from 'lucide-react';
 import type { LucideProps } from 'lucide-react';
-import React, { ComponentType, useEffect, useState } from "react";
 
-const iconMap: Record<string, () => Promise<{ default: ComponentType<LucideProps> }>> = {
-  LayoutDashboard: () => import('lucide-react').then(mod => ({ default: mod.LayoutDashboard })),
-  ShoppingCart: () => import('lucide-react').then(mod => ({ default: mod.ShoppingCart })),
-  ShoppingBag: () => import('lucide-react').then(mod => ({ default: mod.ShoppingBag })),
-  Truck: () => import('lucide-react').then(mod => ({ default: mod.Truck })),
-  Boxes: () => import('lucide-react').then(mod => ({ default: mod.Boxes })),
-  BookOpenCheck: () => import('lucide-react').then(mod => ({ default: mod.BookOpenCheck })),
-  CircleDollarSign: () => import('lucide-react').then(mod => ({ default: mod.CircleDollarSign })),
-  ClipboardList: () => import('lucide-react').then(mod => ({ default: mod.ClipboardList })),
-  BookUser: () => import('lucide-react').then(mod => ({ default: mod.BookUser })),
-  PackageSearch: () => import('lucide-react').then(mod => ({ default: mod.PackageSearch })),
-  PieChart: () => import('lucide-react').then(mod => ({ default: mod.PieChart })),
-  BarChartHorizontal: () => import('lucide-react').then(mod => ({ default: mod.BarChartHorizontal })),
-  ArrowRightLeft: () => import('lucide-react').then(mod => ({ default: mod.ArrowRightLeft })),
-  Receipt: () => import('lucide-react').then(mod => ({ default: mod.Receipt })),
-  CalendarDays: () => import('lucide-react').then(mod => ({ default: mod.CalendarDays })),
-  Users: () => import('lucide-react').then(mod => ({ default: mod.Users })),
-  DatabaseBackup: () => import('lucide-react').then(mod => ({ default: mod.DatabaseBackup })),
-  SlidersHorizontal: () => import('lucide-react').then(mod => ({ default: mod.SlidersHorizontal })),
-  Landmark: () => import('lucide-react').then(mod => ({ default: mod.Landmark })),
-  Search: () => import('lucide-react').then(mod => ({ default: mod.Search })),
+const iconMap: Record<string, React.ComponentType<LucideProps>> = {
+  LayoutDashboard, ShoppingCart, ShoppingBag, Truck, Boxes, BookOpenCheck,
+  CircleDollarSign, ClipboardList, BookUser, PackageSearch, PieChart,
+  BarChartHorizontal, ArrowRightLeft, Receipt, CalendarDays, Users,
+  DatabaseBackup, SlidersHorizontal, Landmark, Search,
 };
 
-
 const LazyIcon = ({ name }: { name: string }) => {
-    const [Icon, setIcon] = useState<ComponentType<LucideProps> | null>(null);
-
-    useEffect(() => {
-        const loadIcon = async () => {
-            const iconLoader = iconMap[name];
-            if (iconLoader) {
-                try {
-                    const { default: IconComponent } = await iconLoader();
-                    setIcon(() => IconComponent);
-                } catch (error) {
-                    console.error(`Failed to load icon: ${name}`, error);
-                    setIcon(() => FallbackIcon);
-                }
-            } else {
-                setIcon(() => FallbackIcon);
-            }
-        };
-
-        loadIcon();
-    }, [name]);
-
-    if (!Icon) {
-        return <div className="h-5 w-5 bg-muted rounded-full animate-pulse" />;
-    }
-
+    const Icon = iconMap[name] || FallbackIcon;
     return <Icon className="h-5 w-5" />;
 };
 
