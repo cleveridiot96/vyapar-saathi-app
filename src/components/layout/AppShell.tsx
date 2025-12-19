@@ -4,6 +4,7 @@ import { features } from "@/lib/features";
 import { Menu } from "lucide-react";
 import { ClientSidebarMenu } from "@/components/layout/ClientSidebarMenu";
 import ErrorBoundary from "../ErrorBoundary";
+import { cn } from "@/lib/utils";
 
 export function AppShell({ 
     header,
@@ -14,14 +15,22 @@ export function AppShell({
 }) {
     return (
         <div className="flex h-screen w-screen overflow-hidden">
-            <Sidebar className="border-r border-sidebar-border shadow-lg print:hidden" collapsible="icon">
+            <Sidebar 
+                className={cn(
+                    "border-r border-sidebar-border shadow-lg print:hidden",
+                    "bg-gradient-to-br from-green-900 via-green-800 to-green-900",
+                    "bg-[length:200%_200%] animate-gradient"
+                )} 
+                style={{ animation: 'animate-gradient 15s ease infinite' }}
+                collapsible="icon"
+            >
                 <SidebarHeader className="flex h-14 items-center justify-center p-2 border-b border-sidebar-border">
                     <div className="flex items-center gap-2">
                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-sidebar-foreground"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
                         <h2 className="text-lg font-semibold tracking-tight text-sidebar-foreground">Vyapar Saathi</h2>
                     </div>
                 </SidebarHeader>
-                <SidebarContent className="py-2">
+                <SidebarContent className="py-2 overflow-y-auto">
                     <ClientSidebarMenu navItems={features.filter(f => f.href !== '/dashboard')} />
                 </SidebarContent>
             </Sidebar>
