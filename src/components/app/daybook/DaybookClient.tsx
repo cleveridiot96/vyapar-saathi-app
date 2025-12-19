@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import type { DaybookEntry } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useFinancialYear } from "@/contexts/SettingsContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
 import { DataTableColumnHeader } from '@/components/shared/DataTableColumnHeader';
@@ -47,7 +47,7 @@ const typeToRowClassMap: Record<DaybookEntry['type'], string> = {
 
 
 export function DaybookClient() {
-  const { financialYear } = useFinancialYear();
+  const { financialYear } = useSettings();
   const isHydrated = useHydrated();
   const router = useRouter();
 
@@ -136,7 +136,7 @@ export function DaybookClient() {
 
   }, [allDaybookEntries, dateRange]);
   
-  const setDateQuickFilter = (preset: 'today' | 'yesterday' | 'dayBeforeYesterday') => {
+  const setDateQuickFilter = useCallback((preset: 'today' | 'yesterday' | 'dayBeforeYesterday') => {
     const today = new Date();
     let from, to;
 
@@ -155,7 +155,7 @@ export function DaybookClient() {
         break;
     }
     setDateRange({ from, to });
-  };
+  }, []);
   
   const columns: ColumnDef<DaybookEntry>[] = useMemo(() => [
     {
@@ -167,7 +167,7 @@ export function DaybookClient() {
         accessorKey: 'type',
         header: ({ column }) => <DataTableColumnHeader column={column} title="TYPE" />,
         cell: ({ row }) => (
-            <Badge variant="outline" className={cn("uppercase border-current", row.original.colorClass)}>
+            <Badge variant="outline" className={cn("border-current", row.original.colorClass)}>
                 <row.original.Icon className={cn("mr-1.5 h-3.5 w-3.5", row.original.colorClass)}/>
                 {row.original.type}
             </Badge>
@@ -207,7 +207,7 @@ export function DaybookClient() {
     }
   ], []);
 
-  if (!isTransactionsLoaded) {
+  if (!isTransactionsLoaded || !isHydrated) {
       return <div>Loading Daybook...</div>;
   }
 

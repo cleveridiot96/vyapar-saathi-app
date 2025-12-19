@@ -12,11 +12,8 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Option {
   value: string;
@@ -31,8 +28,8 @@ interface MasterDataComboboxProps {
   searchPlaceholder?: string;
   notFoundMessage?: string;
   addNewLabel?: string;
-  onAddNew?: (e?: React.MouseEvent) => void;
-  onEdit?: (id: string, e?: React.MouseEvent) => void;
+  onAddNew?: () => void;
+  onEdit?: (id: string) => void;
   disabled?: boolean;
   className?: string;
 }
@@ -67,7 +64,7 @@ export function MasterDataCombobox({
     if (onAddNew) {
       setOpen(false);
       setSearchValue("");
-      setTimeout(() => onAddNew(e), 100);
+      setTimeout(() => onAddNew(), 100);
     }
   }, [onAddNew]);
 
@@ -77,7 +74,7 @@ export function MasterDataCombobox({
     if (onEdit) {
         setOpen(false);
         setSearchValue("");
-        setTimeout(() => onEdit(id, e), 100);
+        setTimeout(() => onEdit(id), 100);
     }
   }, [onEdit]);
 
@@ -87,99 +84,90 @@ export function MasterDataCombobox({
   }, [options, searchValue]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn("w-full justify-between", className)}
-          disabled={disabled}
-          type="button"
-        >
-          <span className="truncate">
-            {selectedOption ? selectedOption.label : placeholder}
-          </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent 
-        className="w-[var(--radix-popover-trigger-width)] p-0" 
-        align="start"
-        side="bottom"
-        sideOffset={4}
+    <>
+      <Button
+        variant="outline"
+        role="combobox"
+        aria-expanded={open}
+        className={cn("w-full justify-between", className)}
+        disabled={disabled}
+        type="button"
+        onClick={() => setOpen(true)}
       >
-        <Command shouldFilter={false}>
-          <CommandInput 
-            placeholder={searchPlaceholder}
-            value={searchValue}
-            onValueChange={setSearchValue}
-          />
-          <CommandList>
-            {filteredOptions.length === 0 && !onAddNew && (
-                <CommandEmpty>{notFoundMessage}</CommandEmpty>
-            )}
-             {(filteredOptions.length === 0 && onAddNew) && (
-              <CommandEmpty>
-                <div className="py-2 text-center text-sm">
-                  {notFoundMessage}
-                </div>
-                <CommandItem
-                  onSelect={handleAddNew}
-                  onMouseDown={(e) => e.preventDefault()}
-                  className="cursor-pointer"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  {addNewLabel}
-                </CommandItem>
-              </CommandEmpty>
-            )}
-            <CommandGroup>
-              {filteredOptions.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.label}
-                  onSelect={() => handleSelect(option.value)}
-                  onMouseDown={(e) => e.preventDefault()}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  <span className="flex-1 truncate">{option.label}</span>
-                  {onEdit && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 ml-2"
-                      type="button"
-                      onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleEdit(option.value, e);
-                      }}
+        <span className="truncate">
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="p-0 gap-0" onMouseDown={(e) => e.stopPropagation()}>
+            <DialogHeader className="p-4 border-b">
+                <DialogTitle>{placeholder}</DialogTitle>
+                <DialogDescription>{searchPlaceholder}</DialogDescription>
+            </DialogHeader>
+            <Command shouldFilter={false} className="p-2">
+            <CommandInput 
+                placeholder={searchPlaceholder}
+                value={searchValue}
+                onValueChange={setSearchValue}
+            />
+            <CommandList>
+                <ScrollArea className="h-64">
+                {filteredOptions.length === 0 && (
+                    <CommandEmpty>
+                        <div className="py-2 text-center text-sm">
+                        {notFoundMessage}
+                        </div>
+                    </CommandEmpty>
+                )}
+                <CommandGroup>
+                {filteredOptions.map((option) => (
+                    <CommandItem
+                        key={option.value}
+                        value={option.label}
+                        onSelect={() => handleSelect(option.value)}
+                        onMouseDown={(e) => e.preventDefault()}
                     >
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                  )}
+                    <Check
+                        className={cn(
+                        "mr-2 h-4 w-4",
+                        value === option.value ? "opacity-100" : "opacity-0"
+                        )}
+                    />
+                    <span className="flex-1 truncate">{option.label}</span>
+                    {onEdit && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 ml-2"
+                            type="button"
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleEdit(option.value, e);
+                            }}
+                        >
+                        <Pencil className="h-3 w-3" />
+                        </Button>
+                    )}
+                    </CommandItem>
+                ))}
+                </CommandGroup>
+                </ScrollArea>
+                {onAddNew && (
+                <CommandItem
+                    onSelect={handleAddNew}
+                    onMouseDown={(e) => e.preventDefault()}
+                    className="cursor-pointer mt-1 border-t"
+                >
+                    <Plus className="mr-2 h-4 w-4" />
+                    {addNewLabel}
                 </CommandItem>
-              ))}
-            </CommandGroup>
-            {onAddNew && filteredOptions.length > 0 && (
-              <CommandItem
-                onSelect={handleAddNew}
-                onMouseDown={(e) => e.preventDefault()}
-                className="cursor-pointer mt-1 border-t"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                {addNewLabel}
-              </CommandItem>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+                )}
+            </CommandList>
+            </Command>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

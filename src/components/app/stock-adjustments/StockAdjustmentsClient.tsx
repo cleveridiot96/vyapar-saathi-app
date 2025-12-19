@@ -46,7 +46,7 @@ export function StockAdjustmentsClient() {
 
   const filteredAdjustments = useMemo(() => {
     if (!hydrated) return [];
-    return adjustments
+    return (adjustments || [])
       .filter(adj => isDateInFinancialYear(adj.date, financialYear))
       .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
   }, [adjustments, financialYear, hydrated]);

@@ -36,9 +36,7 @@ import { useInventory } from "@/hooks/useInventory";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MasterForm } from "@/components/app/masters/MasterForm";
-import dynamic from 'next/dynamic';
-
-const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
+import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 
 interface AddLocationTransferFormProps {
   isOpen: boolean;
@@ -81,6 +79,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   const [isMasterFormOpen, setIsMasterFormOpen] = React.useState(false);
   const [masterFormItemType, setMasterFormItemType] = React.useState<MasterItemType | null>(null);
+  const [masterItemToEdit, setMasterItemToEdit] = React.useState<MasterItem | null>(null);
 
   const methods = useForm<LocationTransferFormValues>({
     resolver: zodResolver(locationTransferSchema),
@@ -113,12 +112,21 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
 
   const fromLocationId = watch('fromLocationId');
 
-  const handleOpenMasterForm = React.useCallback((type: MasterItemType, e?: React.MouseEvent) => {
-    e?.preventDefault();
-    e?.stopPropagation();
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType) => {
+    setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
   }, []);
+  
+  const handleEditMasterItem = React.useCallback((id: string) => {
+    const allMasters = getAllMasters();
+    const itemToEdit = allMasters.find(i => i.id === id) || null;
+    if (itemToEdit) {
+      setMasterItemToEdit(itemToEdit);
+      setMasterFormItemType(itemToEdit.type);
+      setIsMasterFormOpen(true);
+    }
+  }, [getAllMasters]);
 
   const handleMasterFormSubmit = React.useCallback((newItem: MasterItem) => {
       addOrUpdateMaster(newItem);
@@ -161,7 +169,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
 
   return (
     <>
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>{transferToEdit ? 'Edit Location Transfer' : 'New Location Transfer'}</DialogTitle>
@@ -185,13 +193,13 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
               )} />
               <FormField control={control} name="fromLocationId" render={({ field }) => (
                 <FormItem><FormLabel>From Warehouse</FormLabel>
-                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" onAddNew={(e) => handleOpenMasterForm("Warehouse", e)} {...field} />
+                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" onAddNew={() => handleOpenMasterForm("Warehouse")} onEdit={(id) => handleEditMasterItem(id)} {...field} />
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={control} name="toLocationId" render={({ field }) => (
                 <FormItem><FormLabel>To Warehouse</FormLabel>
-                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" onAddNew={(e) => handleOpenMasterForm("Warehouse", e)} {...field} />
+                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" onAddNew={() => handleOpenMasterForm("Warehouse")} onEdit={(id) => handleEditMasterItem(id)} {...field} />
                   <FormMessage />
                 </FormItem>
               )} />
@@ -295,7 +303,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
           isOpen={isMasterFormOpen}
           onClose={() => setIsMasterFormOpen(false)}
           onSubmit={handleMasterFormSubmit}
-          initialData={null}
+          initialData={masterItemToEdit}
           itemTypeFromButton={masterFormItemType!}
         />
       )}
