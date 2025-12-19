@@ -35,6 +35,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useInventory } from "@/hooks/useInventory";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MasterForm } from "@/components/app/masters/MasterForm";
 import dynamic from 'next/dynamic';
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
@@ -77,6 +78,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
+  const [isMasterFormOpen, setIsMasterFormOpen] = React.useState(false);
 
   const methods = useForm<LocationTransferFormValues>({
     resolver: zodResolver(locationTransferSchema),
@@ -143,6 +145,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   , [availableStock, fromLocationId]);
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
@@ -167,13 +170,13 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
               )} />
               <FormField control={control} name="fromLocationId" render={({ field }) => (
                 <FormItem><FormLabel>From Warehouse</FormLabel>
-                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" {...field} />
+                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" onAddNew={() => setIsMasterFormOpen(true)} {...field} />
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={control} name="toLocationId" render={({ field }) => (
                 <FormItem><FormLabel>To Warehouse</FormLabel>
-                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" {...field} />
+                  <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" onAddNew={() => setIsMasterFormOpen(true)} {...field} />
                   <FormMessage />
                 </FormItem>
               )} />
@@ -267,6 +270,16 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
         </FormProvider>
       </DialogContent>
     </Dialog>
+     {isMasterFormOpen && (
+        <MasterForm
+          isOpen={isMasterFormOpen}
+          onClose={() => setIsMasterFormOpen(false)}
+          onSubmit={addOrUpdateMaster}
+          initialData={null}
+          itemTypeFromButton={"Warehouse"}
+        />
+      )}
+    </>
   );
 };
 

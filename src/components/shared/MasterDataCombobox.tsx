@@ -54,6 +54,18 @@ export function MasterDataCombobox({
 
   const selectedOption = options.find((opt) => opt.value === value);
 
+  const handleAddNewClick = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setOpen(false);
+    if (onAddNew) {
+      onAddNew();
+    } else {
+      window.dispatchEvent(new CustomEvent('open-master-form'));
+    }
+  };
+
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -64,11 +76,6 @@ export function MasterDataCombobox({
           className={cn("w-full justify-between", className)}
           disabled={disabled}
           type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setOpen(!open);
-          }}
         >
           <span className="truncate">
             {selectedOption ? selectedOption.label : placeholder}
@@ -87,18 +94,14 @@ export function MasterDataCombobox({
           <CommandInput placeholder={searchPlaceholder} />
           <CommandEmpty>
             {notFoundMessage}
-            {onAddNew && (
+            {(onAddNew) && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="w-full justify-start mt-2"
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setOpen(false);
-                  onAddNew();
-                }}
+                onMouseDown={handleAddNewClick}
+                onClick={handleAddNewClick}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 {addNewLabel}
@@ -128,11 +131,17 @@ export function MasterDataCombobox({
                     size="icon"
                     className="h-6 w-6 ml-2"
                     type="button"
-                    onClick={(e) => {
+                    onMouseDown={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       setOpen(false);
                       onEdit(option.value);
+                    }}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setOpen(false);
+                        onEdit(option.value);
                     }}
                   >
                     <Pencil className="h-3 w-3" />
@@ -141,19 +150,15 @@ export function MasterDataCombobox({
               </CommandItem>
             ))}
           </CommandGroup>
-          {onAddNew && options.length > 0 && (
+          {(onAddNew) && options.length > 0 && (
             <div className="border-t p-1">
               <Button
                 variant="ghost"
                 size="sm"
                 className="w-full justify-start"
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setOpen(false);
-                  onAddNew();
-                }}
+                onMouseDown={handleAddNewClick}
+                onClick={handleAddNewClick}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 {addNewLabel}
