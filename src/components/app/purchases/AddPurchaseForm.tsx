@@ -579,7 +579,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                       <FormField 
                         control={control} 
                         name={`expenses.${index}.amount`} 
-                        render={({ field: { value, onChange, ...itemField } }) => (
+                        render={({ field: { onChange, ...itemField } }) => (
                           <FormItem className="md:col-span-2">
                             <FormLabel>Amount (₹)</FormLabel>
                             <FormControl>
@@ -588,11 +588,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                                 step="0.01"
                                 placeholder="Amount"
                                 {...itemField}
-                                value={value ?? ''}
-                                onChange={e => {
-                                  const amount = e.target.value ? parseFloat(e.target.value) : undefined;
-                                  onChange(amount);
-                                }}
+                                value={itemField.value ?? ''}
+                                onChange={e => onChange(parseFloat(e.target.value) || undefined)}
                               />
                             </FormControl>
                             <FormMessage />
@@ -635,7 +632,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             <FormLabel>Payment Mode</FormLabel>
                             <Select 
                               onValueChange={onChange} 
-                              value={value}
+                              defaultValue={value}
                             >
                               <FormControl>
                                 <SelectTrigger>
