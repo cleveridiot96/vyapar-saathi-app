@@ -111,6 +111,16 @@
     background: linear-gradient(135deg, hsl(150 50% 5%), hsl(150 50% 2%));
   }
 
+  input,
+  textarea {
+    @apply uppercase;
+  }
+  
+  input::placeholder,
+  textarea::placeholder {
+      @apply uppercase;
+  }
+
   [data-sidebar="sidebar"] {
     background-color: transparent; /* Make sidebar transparent to show gradient if desired, or keep variable */
     @apply bg-background/50 backdrop-blur-md; /* Glassmorphism effect */
