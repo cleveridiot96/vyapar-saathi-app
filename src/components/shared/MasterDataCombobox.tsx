@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
 import Fuse from 'fuse.js';
+import { debounce } from '@/lib/utils';
 
 interface Option {
   value: string;
@@ -55,6 +56,7 @@ export function MasterDataCombobox({
 }: MasterDataComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
+  const [debouncedSearchValue, setDebouncedSearchValue] = React.useState("");
 
   const selectedOption = options.find((opt) => opt.value === value);
 
@@ -64,6 +66,18 @@ export function MasterDataCombobox({
     threshold: 0.4,
   }), [options]);
 
+  const debouncedSearch = React.useCallback(
+    debounce((value: string) => {
+      setDebouncedSearchValue(value);
+    }, 200),
+    []
+  );
+
+  React.useEffect(() => {
+    debouncedSearch(searchValue);
+  }, [searchValue, debouncedSearch]);
+
+
   const handleSelect = React.useCallback((currentValue: string) => {
     onChange(currentValue === value ? undefined : currentValue);
     setOpen(false);
@@ -71,21 +85,21 @@ export function MasterDataCombobox({
   }, [onChange, value]);
   
   const searchResults = React.useMemo(() => {
-    if (!searchValue) return { exactMatch: null, suggestions: options.map(o => ({ item: o })) };
-    const results = fuse.search(searchValue);
-    const exactMatch = options.find(opt => opt.label.toLowerCase() === searchValue.toLowerCase());
+    if (!debouncedSearchValue) return { exactMatch: null, suggestions: options.map(o => ({ item: o })) };
+    const results = fuse.search(debouncedSearchValue);
+    const exactMatch = options.find(opt => opt.label.toLowerCase() === debouncedSearchValue.toLowerCase());
     return {
       exactMatch,
       suggestions: results,
     };
-  }, [options, searchValue, fuse]);
+  }, [options, debouncedSearchValue, fuse]);
 
   const bestSuggestion = React.useMemo(() => {
     if (searchResults.exactMatch || searchResults.suggestions.length === 0) {
       return null;
     }
     const best = searchResults.suggestions[0];
-    if (best && best.score && best.score < 0.2) { // Threshold for "Did you mean?"
+    if (best && best.score && best.score < 0.25) { // Stricter threshold for better suggestions
       return best.item;
     }
     return null;
@@ -129,8 +143,8 @@ export function MasterDataCombobox({
                   <CommandItem
                     key={`suggestion-${bestSuggestion.value}`}
                     value={bestSuggestion.label}
-                    onMouseDown={(e) => { e.preventDefault(); handleSelect(bestSuggestion.value); }}
-                    className="bg-amber-100/80 text-amber-900 hover:!bg-amber-100/90 focus:!bg-amber-100/90"
+                    onSelect={() => handleSelect(bestSuggestion.value)}
+                    className="bg-amber-100/80 text-amber-900 hover:!bg-amber-100/90 focus:!bg-amber-100/90 select-none active:scale-95"
                   >
                     <Lightbulb className="mr-2 h-4 w-4" />
                     Did you mean: <span className="font-semibold ml-1">{bestSuggestion.label}?</span>
@@ -140,8 +154,8 @@ export function MasterDataCombobox({
                   <CommandItem
                     key={item.value}
                     value={item.label}
-                    onMouseDown={(e) => { e.preventDefault(); handleSelect(item.value); }}
-                    className="hover:bg-muted"
+                    onSelect={() => handleSelect(item.value)}
+                    className="hover:bg-muted select-none active:scale-95"
                   >
                     <Check className={cn("mr-2 h-4 w-4", value === item.value ? "opacity-100" : "opacity-0")} />
                     <span className="flex-1 truncate">{item.label}</span>
@@ -151,8 +165,7 @@ export function MasterDataCombobox({
                         size="icon"
                         className="h-6 w-6 ml-2"
                         type="button"
-                        onMouseDown={(e) => {
-                           e.preventDefault();
+                        onClick={(e) => {
                            e.stopPropagation();
                            setOpen(false);
                            onEdit(item.value, e);
@@ -167,13 +180,11 @@ export function MasterDataCombobox({
             </ScrollArea>
             {onAddNew && (
               <CommandItem
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
+                onSelect={(e) => {
                   setOpen(false);
                   onAddNew(e as any);
                 }}
-                className="cursor-pointer mt-1 border-t hover:bg-muted"
+                className="cursor-pointer mt-1 border-t hover:bg-muted select-none active:scale-95"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 {addNewLabel}
