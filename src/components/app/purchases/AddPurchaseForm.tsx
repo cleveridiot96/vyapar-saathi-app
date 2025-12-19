@@ -416,7 +416,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                           </div>
                           </div>
                       ))}
-                      <Button type="button" variant="outline" size="sm" onClick={() => appendExpense({ id: `exp-${Date.now()}`, account: undefined, amount: undefined, paymentMode: "Cash", partyId: undefined, partyName: 'Self' })} className="mt-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => appendExpense({ account: undefined, amount: undefined, paymentMode: "Cash", partyId: undefined, partyName: 'Self' })} className="mt-2">
                           <PlusCircle className="mr-2 h-4 w-4" /> Add Expense Row
                       </Button>
                       </div>
@@ -438,7 +438,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                           <div className="pt-4 border-t mt-4">
                               <h4 className="font-semibold mb-2 text-muted-foreground">PER-VAKKAL LANDED COST</h4>
                               <ScrollArea className="h-24">
-                              <Table>
+                              <Table size="sm">
                                   <TableHeader>
                                       <TableRow>
                                           <TableHead>VAKKAL</TableHead>
