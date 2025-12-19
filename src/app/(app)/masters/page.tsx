@@ -141,7 +141,7 @@ export default function MastersPage() {
     if (doesNameExist(item.name, item.type, item.id, allMasterItems)) {
       toast({
         title: "Duplicate Name",
-        description: `An item named "${'\'' + item.name + '\''}" of type "${item.type}" already exists. Please use a different name.`,
+        description: `An item named "'${item.name}'" of type "${item.type}" already exists. Please use a different name.`,
         variant: "destructive",
       });
       return;
@@ -368,3 +368,5 @@ export default function MastersPage() {
     </div>
   );
 }
+
+    

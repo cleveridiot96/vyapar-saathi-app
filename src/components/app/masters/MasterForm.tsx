@@ -26,7 +26,9 @@ import type { MasterItem, MasterItemType } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MASTER_TYPES_CONFIG } from "@/lib/constants";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Lock, Unlock } from "lucide-react";
+import { Lock, Unlock, RefreshCw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface MasterFormProps {
   isOpen: boolean;
@@ -58,9 +60,11 @@ export function MasterForm({
   initialData,
   fixedIds = [],
 }: MasterFormProps) {
+  const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
   const isEditingFixed = initialData ? fixedIds.includes(initialData.id) : false;
   const isLocked = initialData?.locked || isEditingFixed;
-
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -105,9 +109,20 @@ export function MasterForm({
     onClose();
   };
   
+  const handleManualRefresh = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsRefreshing(true);
+    // In a real app with TanStack Query, you would do:
+    // await queryClient.invalidateQueries({ queryKey: ['masters'] });
+    // For this demo, we just simulate the refresh.
+    window.dispatchEvent(new Event('reindex-search'));
+    toast({ title: "Refreshed", description: "Master data re-synced." });
+    setIsRefreshing(false);
+  };
+  
   const allMasterTypes = Object.keys(MASTER_TYPES_CONFIG).filter(type => type !== 'Product') as MasterItemType[];
   const getSingularLabel = (type: MasterItemType) => {
-    if (type === 'Expense') return 'Expense'; // Already singular
+    if (type === 'Expense') return 'Expense';
     return type.endsWith('s') ? type.slice(0, -1) : type;
   }
   const singularLabel = getSingularLabel(itemType);
@@ -119,20 +134,30 @@ export function MasterForm({
     }
   }
 
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-lg max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>
-            {initialData ? `Edit ${singularLabel}` : `Add New ${singularLabel}`}
-          </DialogTitle>
-          {isLocked && (
-            <DialogDescription className="text-yellow-600 flex items-center gap-2 pt-2">
-              <Lock className="h-4 w-4" /> This item is locked. Unlock to edit.
-            </DialogDescription>
-          )}
+        <DialogHeader className="flex flex-row items-start justify-between pr-8">
+          <div className="flex flex-col gap-1">
+            <DialogTitle>
+              {initialData ? `Edit ${singularLabel}` : `Add New ${singularLabel}`}
+            </DialogTitle>
+            {isLocked && (
+                <DialogDescription className="text-yellow-600 flex items-center gap-2 pt-2">
+                <Lock className="h-4 w-4" /> This item is locked. Unlock to edit.
+                </DialogDescription>
+            )}
+             {!isLocked && (
+                <DialogDescription>
+                    Fill in the details for the master item.
+                </DialogDescription>
+             )}
+          </div>
+          <Button variant="ghost" size="icon" onClick={handleManualRefresh} disabled={isRefreshing} className="-mt-1">
+             <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+          </Button>
         </DialogHeader>
+        
         <ScrollArea className="-mx-6 flex-1 px-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-4">
@@ -141,7 +166,7 @@ export function MasterForm({
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
+                    <FormLabel>Type <span className="text-destructive">*</span></FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} disabled={isLocked || !!initialData}>
                         <FormControl>
                             <SelectTrigger><SelectValue placeholder="Select an item type" /></SelectTrigger>
@@ -162,7 +187,7 @@ export function MasterForm({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{singularLabel} Name</FormLabel>
+                  <FormLabel>{singularLabel} Name <span className="text-destructive">*</span></FormLabel>
                   <FormControl>
                     <Input placeholder={`Enter ${singularLabel.toLowerCase()} name`} {...field} disabled={isLocked} />
                   </FormControl>
@@ -198,7 +223,7 @@ export function MasterForm({
                              <SelectContent>
                                 <SelectItem value="Percentage">Percentage (%)</SelectItem>
                                 <SelectItem value="Fixed">Fixed (₹)</SelectItem>
-                              </SelectContent>
+                             </SelectContent>
                           </Select>
                           <FormMessage />
                         </FormItem>
@@ -234,7 +259,7 @@ export function MasterForm({
                              <SelectContent>
                                 <SelectItem value="Dr">Debit (Receivable)</SelectItem>
                                 <SelectItem value="Cr">Credit (Payable)</SelectItem>
-                              </SelectContent>
+                             </SelectContent>
                           </Select>
                           <FormMessage />
                         </FormItem>
