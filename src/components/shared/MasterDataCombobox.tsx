@@ -33,7 +33,7 @@ interface MasterDataComboboxProps {
   notFoundMessage?: string;
   addNewLabel?: string;
   onAddNew?: (e?: React.MouseEvent) => void;
-  onEdit?: (id: string, e?: React.MouseEvent) => void;
+  onEdit?: (id: string) => void;
   disabled?: boolean;
   className?: string;
 }
@@ -56,17 +56,11 @@ export function MasterDataCombobox({
 
   const selectedOption = options.find((opt) => opt.value === value);
 
-  const handleSelect = React.useCallback((selectedValue: string) => {
-    // Find the option by its label (which is what cmdk uses for the value)
-    const option = options.find(opt => 
-      opt.label.toLowerCase() === selectedValue.toLowerCase()
-    );
-    if (option) {
-      onChange(option.value === value ? undefined : option.value);
-    }
+  const handleSelect = React.useCallback((currentValue: string) => {
+    onChange(currentValue === value ? undefined : currentValue);
     setOpen(false);
     setSearchValue("");
-  }, [options, value, onChange]);
+  }, [onChange, value]);
 
   const handleAddNew = React.useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -87,14 +81,14 @@ export function MasterDataCombobox({
       setOpen(false);
       setSearchValue("");
       setTimeout(() => {
-        onEdit(id, e);
+        onEdit(id);
       }, 100);
     }
   }, [onEdit]);
 
   const filteredOptions = React.useMemo(() => {
-      if (!searchValue) return options;
-      return options.filter(option => option.label.toLowerCase().includes(searchValue.toLowerCase()));
+    if (!searchValue) return options;
+    return options.filter(option => option.label.toLowerCase().includes(searchValue.toLowerCase()));
   }, [options, searchValue]);
 
   return (
@@ -127,7 +121,7 @@ export function MasterDataCombobox({
             onValueChange={setSearchValue}
           />
           <CommandList>
-            {filteredOptions.length === 0 && (
+            {filteredOptions.length === 0 ? (
               <CommandEmpty>
                 <div className="py-2 text-center text-sm">
                   {notFoundMessage}
@@ -145,38 +139,35 @@ export function MasterDataCombobox({
                   </Button>
                 )}
               </CommandEmpty>
-            )}
+            ) : null}
             <CommandGroup>
               {filteredOptions.map((option) => (
-                  <CommandItem
-                    key={option.value}
-                    value={option.label}
-                    onSelect={handleSelect}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value === option.value ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    <span className="flex-1 truncate">{option.label}</span>
-                    {onEdit && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 ml-2"
-                        type="button"
-                        onMouseDown={(e) => handleEdit(option.value, e)}
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </Button>
+                <CommandItem
+                  key={option.value}
+                  value={option.label}
+                  onSelect={() => handleSelect(option.value)}
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option.value ? "opacity-100" : "opacity-0"
                     )}
-                  </CommandItem>
-                ))}
+                  />
+                  <span className="flex-1 truncate">{option.label}</span>
+                  {onEdit && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 ml-2"
+                      type="button"
+                      onMouseDown={(e) => handleEdit(option.value, e)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  )}
+                </CommandItem>
+              ))}
             </CommandGroup>
             {onAddNew && filteredOptions.length > 0 && (
               <div className="border-t p-1">

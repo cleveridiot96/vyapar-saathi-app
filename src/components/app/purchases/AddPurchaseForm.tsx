@@ -146,7 +146,11 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     };
   }, [watchedFormValues]);
 
-  const handleOpenMasterForm = React.useCallback((type: MasterItemType) => {
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType, e?: React.MouseEvent) => {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
     setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
@@ -350,7 +354,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             searchPlaceholder="SEARCH SUPPLIERS..."
                             notFoundMessage="NO SUPPLIER FOUND."
                             addNewLabel="ADD NEW SUPPLIER"
-                            onAddNew={() => handleOpenMasterForm("Supplier")}
+                            onAddNew={(e) => handleOpenMasterForm("Supplier", e)}
                             onEdit={(id) => handleEditMasterItem("Supplier", id)}
                           />
                           <FormMessage />
@@ -373,7 +377,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             searchPlaceholder="SEARCH AGENTS..."
                             notFoundMessage="NO AGENT FOUND."
                             addNewLabel="ADD NEW AGENT"
-                            onAddNew={() => handleOpenMasterForm("Agent")}
+                            onAddNew={(e) => handleOpenMasterForm("Agent", e)}
                             onEdit={(id) => handleEditMasterItem("Agent", id)}
                           />
                           <FormMessage />
@@ -396,7 +400,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             searchPlaceholder="SEARCH LOCATIONS..."
                             notFoundMessage="NO LOCATION FOUND."
                             addNewLabel="ADD NEW LOCATION"
-                            onAddNew={() => handleOpenMasterForm("Warehouse")}
+                            onAddNew={(e) => handleOpenMasterForm("Warehouse", e)}
                             onEdit={(id) => handleEditMasterItem("Warehouse", id)}
                           />
                           <FormMessage />
@@ -615,7 +619,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                               searchPlaceholder="Search parties..."
                               notFoundMessage="No party found."
                               addNewLabel="Add New Party"
-                              onAddNew={() => handleOpenMasterForm("Transporter")}
+                              onAddNew={(e) => handleOpenMasterForm("Transporter", e)}
                               onEdit={(id) => handleEditMasterItem("Transporter", id)}
                             />
                             <FormMessage />
@@ -627,12 +631,12 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                       <FormField 
                         control={control} 
                         name={`expenses.${index}.paymentMode`} 
-                        render={({ field: { value, onChange } }) => (
+                        render={({ field: itemField }) => (
                           <FormItem className="md:col-span-3">
                             <FormLabel>Payment Mode</FormLabel>
                             <Select 
-                              onValueChange={onChange} 
-                              value={value}
+                              onValueChange={itemField.onChange} 
+                              value={itemField.value}
                             >
                               <FormControl>
                                 <SelectTrigger>
@@ -731,11 +735,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
 
                 {/* Form Actions */}
                 <DialogFooter className="pt-4">
-                  <DialogClose asChild>
-                    <Button type="button" variant="outline" onClick={onClose}>
-                      CANCEL
-                    </Button>
-                  </DialogClose>
+                  <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
                   <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting 
                       ? (purchaseToEdit ? "SAVING..." : "ADDING...") 

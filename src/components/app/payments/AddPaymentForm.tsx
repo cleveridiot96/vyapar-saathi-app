@@ -142,7 +142,8 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
   }, [watchedStockItems]);
 
 
-  const handleOpenMasterForm = React.useCallback((type: MasterItemType = "Supplier") => {
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType = "Supplier", e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
@@ -201,9 +202,9 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
       partyName: selectedParty.name,
       partyType: selectedParty.type as MasterItemType,
       amount: totalPaymentAmount,
-      paymentType: values.paymentType as 'Cash' | 'Stock',
+      paymentType: values.paymentType,
       paymentMethod: values.paymentType === 'Cash' ? values.paymentMethod : undefined,
-      transactionType: values.transactionType as 'On Account' | 'Against Bill',
+      transactionType: values.transactionType,
       againstBills: values.transactionType === 'Against Bill' ? values.againstBills : [],
       stockItems: values.paymentType === 'Stock' ? values.stockItems : [],
       source: values.source,
@@ -326,7 +327,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
                         options={parties.map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
                         placeholder="Select Party" searchPlaceholder="Search parties..." notFoundMessage="No party found." 
                         addNewLabel="Add New Party"
-                        onAddNew={() => handleOpenMasterForm('Supplier')}
+                        onAddNew={(e) => handleOpenMasterForm("Supplier", e)}
                         onEdit={handleEditMasterItem}
                       /> <FormMessage />
                     </FormItem>)}
