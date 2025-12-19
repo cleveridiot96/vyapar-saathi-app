@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -26,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import type { MasterItem, MasterItemType } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MASTER_TYPES_CONFIG } from "@/lib/constants";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface MasterFormProps {
   isOpen: boolean;
@@ -100,8 +100,7 @@ export function MasterForm({
   
   const allMasterTypes = Object.keys(MASTER_TYPES_CONFIG).filter(type => type !== 'Product') as MasterItemType[];
   const getSingularLabel = (type: MasterItemType) => {
-    if (type === 'Expenses') return 'Expense';
-    if (type === 'Masters') return 'Master';
+    if (type === 'Expense') return 'Expense'; // Already singular
     return type.endsWith('s') ? type.slice(0, -1) : type;
   }
   const singularLabel = getSingularLabel(itemType);
@@ -109,7 +108,7 @@ export function MasterForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent onPointerDownOutside={(e) => e.preventDefault()}>
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-lg max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
             {initialData ? `Edit ${singularLabel}` : `Add New ${singularLabel}`}
@@ -118,8 +117,9 @@ export function MasterForm({
             Fill in the details for the master item.
           </DialogDescription>
         </DialogHeader>
+        <ScrollArea className="-mx-6 flex-1 px-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-4">
              <FormField
                 control={form.control}
                 name="type"
@@ -132,7 +132,7 @@ export function MasterForm({
                         </FormControl>
                         <SelectContent>
                           {allMasterTypes.map(type => (
-                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                            <SelectItem key={type} value={type}>{getSingularLabel(type)}</SelectItem>
                           ))}
                         </SelectContent>
                     </Select>
@@ -226,15 +226,15 @@ export function MasterForm({
                     />
               </div>
             )}
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit">Save</Button>
-            </DialogFooter>
           </form>
         </Form>
+        </ScrollArea>
+        <DialogFooter className="border-t pt-4 mt-4">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={form.handleSubmit(handleSubmit)}>Save</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

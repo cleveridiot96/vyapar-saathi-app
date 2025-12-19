@@ -1,8 +1,7 @@
-
 "use client";
 
 import * as React from 'react';
-import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -111,15 +110,16 @@ export function MergeLotsForm({ isOpen, onClose, onSubmit, warehouses, available
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-3xl">
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Merge Stock Lots</DialogTitle>
           <DialogDescription>
             Combine multiple existing stock lots from the same warehouse into a single new lot. The system will calculate the new weighted average cost.
           </DialogDescription>
         </DialogHeader>
+        <ScrollArea className="flex-1 -mx-6 px-6">
         <FormProvider {...form}>
-          <form onSubmit={form.handleSubmit(processSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(processSubmit)} className="space-y-4 pt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -195,13 +195,13 @@ export function MergeLotsForm({ isOpen, onClose, onSubmit, warehouses, available
                 </Table>
               </div>
             )}
-
-            <DialogFooter>
-              <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-              <Button type="submit">Confirm Merge</Button>
-            </DialogFooter>
           </form>
         </FormProvider>
+        </ScrollArea>
+        <DialogFooter className="border-t pt-4 mt-4">
+          <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+          <Button type="button" onClick={form.handleSubmit(processSubmit)}>Confirm Merge</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

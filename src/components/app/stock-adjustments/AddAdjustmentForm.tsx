@@ -1,4 +1,3 @@
-
 "use client";
 import React from 'react';
 import { useForm } from 'react-hook-form';
@@ -32,6 +31,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const adjustmentSchema = z.object({
   date: z.date({ required_error: "Date is required." }),
@@ -94,15 +94,16 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent onPointerDownOutside={(e) => e.preventDefault()}>
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>New Stock Adjustment</DialogTitle>
           <DialogDescription>
             Record a manual change to stock levels. Use positive numbers for additions and negative numbers for reductions in 'Correction' mode.
           </DialogDescription>
         </DialogHeader>
+        <ScrollArea className="flex-1 -mx-6 px-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(processSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(processSubmit)} className="space-y-4 pt-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="date" render={({ field }) => (
                 <FormItem><FormLabel>Date</FormLabel>
@@ -156,12 +157,13 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
                 <FormControl><Textarea placeholder="Explain the reason for this adjustment..." {...field} /></FormControl>
                 <FormMessage />
               </FormItem>)} />
-            <DialogFooter>
-              <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-              <Button type="submit">Save Adjustment</Button>
-            </DialogFooter>
           </form>
         </Form>
+        </ScrollArea>
+        <DialogFooter className="border-t pt-4 mt-4">
+          <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+          <Button type="button" onClick={form.handleSubmit(processSubmit)}>Save Adjustment</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
