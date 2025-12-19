@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -354,7 +355,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(openState) => { if (!openState) { onClose(); } }}>
-        <DialogContent className="sm:max-w-6xl">
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-6xl">
           <DialogHeader>
             <DialogTitle>{saleToEdit ? 'Edit Sale' : 'Add New Sale'}</DialogTitle>
             <DialogDescription>Create a sale with one or more items.</DialogDescription>

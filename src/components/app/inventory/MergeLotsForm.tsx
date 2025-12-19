@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -110,7 +111,7 @@ export function MergeLotsForm({ isOpen, onClose, onSubmit, warehouses, available
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Merge Stock Lots</DialogTitle>
           <DialogDescription>

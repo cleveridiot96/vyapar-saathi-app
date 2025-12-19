@@ -170,7 +170,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   return (
     <>
     <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>{transferToEdit ? 'Edit Location Transfer' : 'New Location Transfer'}</DialogTitle>
           <DialogDescription>Move stock between warehouses and account for costs.</DialogDescription>

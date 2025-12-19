@@ -99,12 +99,12 @@ export function MasterForm({
   };
   
   const allMasterTypes = Object.keys(MASTER_TYPES_CONFIG).filter(type => type !== 'Product') as MasterItemType[];
-  const singularLabel = itemType.endsWith('s') && itemType !== 'Expense' ? itemType.slice(0, -1) : itemType;
+  const singularLabel = itemType.endsWith('s') && itemType !== 'Expense' && itemType !== 'Masters' ? itemType.slice(0, -1) : itemType;
 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>
             {initialData ? `Edit ${singularLabel}` : `Add New ${singularLabel}`}

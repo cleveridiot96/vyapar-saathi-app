@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -266,7 +267,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{paymentToEdit ? 'Edit Payment' : 'Add New Payment'}</DialogTitle>
             <DialogDescription>

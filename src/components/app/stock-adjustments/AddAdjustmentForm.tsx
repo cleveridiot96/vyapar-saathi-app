@@ -1,3 +1,4 @@
+
 "use client";
 import React from 'react';
 import { useForm } from 'react-hook-form';
@@ -93,7 +94,7 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>New Stock Adjustment</DialogTitle>
           <DialogDescription>
