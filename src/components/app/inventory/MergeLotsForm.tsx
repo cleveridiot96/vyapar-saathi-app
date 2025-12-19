@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import * as React from 'react';
 import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -46,12 +46,12 @@ export function MergeLotsForm({ isOpen, onClose, onSubmit, warehouses, available
   const watchedWarehouseId = form.watch("warehouseId");
   const watchedLotsToMerge = form.watch("lotsToMerge");
 
-  const lotsInWarehouse = useMemo(() => {
+  const lotsInWarehouse = React.useMemo(() => {
     if (!watchedWarehouseId) return [];
     return availableStock.filter(s => s.locationId === watchedWarehouseId && s.currentBags > 0);
   }, [availableStock, watchedWarehouseId]);
 
-  const mergeSummary = useMemo(() => {
+  const mergeSummary = React.useMemo(() => {
     const selectedLots = availableStock.filter(s => watchedLotsToMerge.includes(s.key));
     if (selectedLots.length === 0) {
       return { totalBags: 0, totalWeight: 0, newLandedCost: 0, totalCostOfGoods: 0 };
@@ -77,7 +77,7 @@ export function MergeLotsForm({ isOpen, onClose, onSubmit, warehouses, available
     form.setValue("lotsToMerge", newSelection, { shouldValidate: true });
   };
   
-  useEffect(() => {
+  React.useEffect(() => {
     form.setValue("lotsToMerge", []);
   }, [watchedWarehouseId, form]);
 
