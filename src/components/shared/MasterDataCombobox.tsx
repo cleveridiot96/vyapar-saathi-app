@@ -78,12 +78,6 @@ export function MasterDataCombobox({
   }, [searchValue, debouncedSearch]);
 
 
-  const handleSelect = React.useCallback((currentValue: string) => {
-    onChange(currentValue === value ? undefined : currentValue);
-    setOpen(false);
-    setSearchValue("");
-  }, [onChange, value]);
-  
   const searchResults = React.useMemo(() => {
     if (!debouncedSearchValue) return { exactMatch: null, suggestions: options.map(o => ({ item: o })) };
     const results = fuse.search(debouncedSearchValue);
@@ -142,8 +136,12 @@ export function MasterDataCombobox({
                 {bestSuggestion && (
                   <CommandItem
                     key={`suggestion-${bestSuggestion.value}`}
-                    value={bestSuggestion.label}
-                    onSelect={() => handleSelect(bestSuggestion.value)}
+                    value={bestSuggestion.value}
+                    onSelect={(currentValue) => {
+                      onChange(currentValue);
+                      setOpen(false);
+                      setSearchValue("");
+                    }}
                     className="bg-amber-100/80 text-amber-900 hover:!bg-amber-100/90 focus:!bg-amber-100/90 select-none active:scale-95"
                   >
                     <Lightbulb className="mr-2 h-4 w-4" />
@@ -153,8 +151,12 @@ export function MasterDataCombobox({
                 {searchResults.suggestions.map(({ item }) => (
                   <CommandItem
                     key={item.value}
-                    value={item.label}
-                    onSelect={() => handleSelect(item.value)}
+                    value={item.value}
+                    onSelect={(currentValue) => {
+                      onChange(currentValue === value ? undefined : currentValue);
+                      setOpen(false);
+                      setSearchValue("");
+                    }}
                     className="hover:bg-muted select-none active:scale-95"
                   >
                     <Check className={cn("mr-2 h-4 w-4", value === item.value ? "opacity-100" : "opacity-0")} />
