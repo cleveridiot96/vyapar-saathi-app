@@ -5,18 +5,11 @@ import { Check, ChevronsUpDown, Plus, Pencil, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
 import Fuse from 'fuse.js';
 import { debounce } from '@/lib/utils';
@@ -60,7 +53,7 @@ export function MasterDataCombobox({
   const selectedOption = options.find((opt) => opt.value === value);
 
   const fuse = React.useMemo(() => new Fuse(options, {
-    keys: ['label'],
+    keys: ['label', 'value'],
     includeScore: true,
     threshold: 0.4,
   }), [options]);
@@ -76,23 +69,22 @@ export function MasterDataCombobox({
     debouncedSearch(searchValue);
   }, [searchValue, debouncedSearch]);
 
-  const labelToValueMap = React.useMemo(() => {
-    const map = new Map<string, string>();
-    options.forEach(opt => {
-      map.set(opt.label.toLowerCase(), opt.value);
-    });
-    return map;
-  }, [options]);
-
-  const handleSelect = React.useCallback((currentValue: string) => {
-    const selectedValue = labelToValueMap.get(currentValue.toLowerCase());
-    
-    if (selectedValue) {
-      onChange(selectedValue === value ? undefined : selectedValue);
-    }
+  const handleItemClick = React.useCallback((itemValue: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onChange(itemValue === value ? undefined : itemValue);
     setOpen(false);
     setSearchValue("");
-  }, [onChange, value, labelToValueMap]);
+  }, [onChange, value]);
+
+  const handleAddNewClick = React.useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setOpen(false);
+    if (onAddNew) {
+      onAddNew(e);
+    }
+  }, [onAddNew]);
   
   const searchResults = React.useMemo(() => {
     if (!debouncedSearchValue) return { exactMatch: null, suggestions: options.map(o => ({ item: o })) };
@@ -116,8 +108,8 @@ export function MasterDataCombobox({
   }, [searchResults]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
@@ -131,77 +123,85 @@ export function MasterDataCombobox({
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-        <Command shouldFilter={false}>
-          <CommandInput
-            placeholder={searchPlaceholder}
-            value={searchValue}
-            onValueChange={setSearchValue}
-            autoFocus
-          />
-          <CommandList>
+      </DialogTrigger>
+      <DialogContent 
+        className="p-0" 
+        onPointerDownOutside={(e) => e.preventDefault()} 
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <DialogTitle className="sr-only">{placeholder}</DialogTitle>
+        <div className="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground">
+          <div className="flex items-center border-b px-3">
+            <input
+              type="text"
+              placeholder={searchPlaceholder}
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              autoFocus
+            />
+          </div>
+          <div className="max-h-[300px] overflow-y-auto overflow-x-hidden">
             <ScrollArea className="h-64">
-              <CommandEmpty>
-                <div className="py-2 text-center text-sm">
-                  {notFoundMessage}
+              {searchResults.suggestions.length === 0 && !bestSuggestion ? (
+                <div className="py-6 text-center text-sm">{notFoundMessage}</div>
+              ) : (
+                <div className="overflow-hidden p-1 text-foreground">
+                  {bestSuggestion && (
+                    <div
+                      key={`suggestion-${bestSuggestion.value}`}
+                      className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none bg-amber-100/80 text-amber-900 hover:bg-amber-100/90 transition-colors mb-1"
+                      onMouseDown={(e) => handleItemClick(bestSuggestion.value, e)}
+                      role="option"
+                      aria-selected={value === bestSuggestion.value}
+                    >
+                      <Lightbulb className="mr-2 h-4 w-4" />
+                      Did you mean: <span className="font-semibold ml-1">{bestSuggestion.label}?</span>
+                    </div>
+                  )}
+                  {searchResults.suggestions.map(({ item }) => (
+                    <div
+                      key={item.value}
+                      className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted transition-colors"
+                      onMouseDown={(e) => handleItemClick(item.value, e)}
+                      role="option"
+                      aria-selected={value === item.value}
+                    >
+                      <Check className={cn("mr-2 h-4 w-4", value === item.value ? "opacity-100" : "opacity-0")} />
+                      <span className="flex-1 truncate">{item.label}</span>
+                      {onEdit && (
+                        <button
+                          className="h-6 w-6 ml-2 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setOpen(false);
+                            onEdit(item.value, e);
+                          }}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              </CommandEmpty>
-              <CommandGroup>
-                {bestSuggestion && (
-                  <CommandItem
-                    key={`suggestion-${bestSuggestion.value}`}
-                    value={bestSuggestion.label}
-                    onSelect={handleSelect}
-                    className="bg-amber-100/80 text-amber-900 hover:!bg-amber-100/90 focus:!bg-amber-100/90 select-none active:scale-95"
-                  >
-                    <Lightbulb className="mr-2 h-4 w-4" />
-                    Did you mean: <span className="font-semibold ml-1">{bestSuggestion.label}?</span>
-                  </CommandItem>
-                )}
-                {searchResults.suggestions.map(({ item }) => (
-                  <CommandItem
-                    key={item.value}
-                    value={item.label}
-                    onSelect={handleSelect}
-                    className="hover:bg-muted select-none active:scale-95"
-                  >
-                    <Check className={cn("mr-2 h-4 w-4", value === item.value ? "opacity-100" : "opacity-0")} />
-                    <span className="flex-1 truncate">{item.label}</span>
-                    {onEdit && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 ml-2"
-                        type="button"
-                        onClick={(e) => {
-                           e.stopPropagation();
-                           setOpen(false);
-                           onEdit(item.value, e);
-                        }}
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+              )}
             </ScrollArea>
             {onAddNew && (
-              <CommandItem
-                onSelect={(e) => {
-                  setOpen(false);
-                  onAddNew(e as any);
-                }}
-                className="cursor-pointer mt-1 border-t hover:bg-muted select-none active:scale-95"
+              <div
+                className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none mt-1 border-t hover:bg-muted transition-colors"
+                onMouseDown={handleAddNewClick}
+                role="button"
+                tabIndex={0}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 {addNewLabel}
-              </CommandItem>
+              </div>
             )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
