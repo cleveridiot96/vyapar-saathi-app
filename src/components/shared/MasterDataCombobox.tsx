@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -60,6 +61,24 @@ export function MasterDataCombobox({
 
   const selectedOption = options.find((opt) => opt.value === value);
 
+  const fuse = React.useMemo(() => new Fuse(options, {
+    keys: ['label'],
+    includeScore: true,
+    threshold: 0.4,
+  }), [options]);
+
+  const debouncedSearch = React.useCallback(
+    debounce((value: string) => {
+      setDebouncedSearchValue(value);
+    }, 200),
+    []
+  );
+
+  React.useEffect(() => {
+    debouncedSearch(searchValue);
+  }, [searchValue, debouncedSearch]);
+
+  // FIX: Create a map to convert labels back to values
   const labelToValueMap = React.useMemo(() => {
     const map = new Map<string, string>();
     options.forEach(opt => {
@@ -78,25 +97,7 @@ export function MasterDataCombobox({
     setOpen(false);
     setSearchValue("");
   }, [onChange, value, labelToValueMap]);
-
-  const fuse = React.useMemo(() => new Fuse(options, {
-    keys: ['label'],
-    includeScore: true,
-    threshold: 0.4,
-  }), [options]);
-
-  const debouncedSearch = React.useCallback(
-    debounce((value: string) => {
-      setDebouncedSearchValue(value);
-    }, 200),
-    []
-  );
-
-  React.useEffect(() => {
-    debouncedSearch(searchValue);
-  }, [searchValue, debouncedSearch]);
-
-
+  
   const searchResults = React.useMemo(() => {
     if (!debouncedSearchValue) return { exactMatch: null, suggestions: options.map(o => ({ item: o })) };
     const results = fuse.search(debouncedSearchValue);
@@ -112,7 +113,7 @@ export function MasterDataCombobox({
       return null;
     }
     const best = searchResults.suggestions[0];
-    if (best && best.score && best.score < 0.25) { // Stricter threshold for better suggestions
+    if (best && best.score && best.score < 0.25) {
       return best.item;
     }
     return null;
@@ -155,7 +156,8 @@ export function MasterDataCombobox({
                 {bestSuggestion && (
                   <CommandItem
                     key={`suggestion-${bestSuggestion.value}`}
-                    onSelect={() => handleSelect(bestSuggestion.label)}
+                    value={bestSuggestion.label}
+                    onSelect={handleSelect}
                     className="bg-amber-100/80 text-amber-900 hover:!bg-amber-100/90 focus:!bg-amber-100/90 select-none active:scale-95"
                   >
                     <Lightbulb className="mr-2 h-4 w-4" />
