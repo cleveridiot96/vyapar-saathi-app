@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -7,8 +8,10 @@ import { SidebarContent, SidebarHeader, SidebarFooter, SidebarSeparator } from '
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut } from 'lucide-react';
 import { Button } from './ui/button';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function SidebarNav() {
+  const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
 
   return (
     <>
@@ -30,7 +33,7 @@ export function SidebarNav() {
       <SidebarFooter>
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
-            <AvatarImage src="https://picsum.photos/seed/user/100/100" alt="User" />
+            {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt={userAvatar.description} data-ai-hint={userAvatar.imageHint} />}
             <AvatarFallback>VS</AvatarFallback>
           </Avatar>
           <div className="flex-1 overflow-hidden">

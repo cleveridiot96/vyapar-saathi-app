@@ -1,3 +1,4 @@
+
 "use client";
 
 import { StockAdjustmentsClient } from "@/components/app/stock-adjustments/StockAdjustmentsClient";
