@@ -60,6 +60,25 @@ export function MasterDataCombobox({
 
   const selectedOption = options.find((opt) => opt.value === value);
 
+  const labelToValueMap = React.useMemo(() => {
+    const map = new Map<string, string>();
+    options.forEach(opt => {
+      map.set(opt.label.toLowerCase(), opt.value);
+    });
+    return map;
+  }, [options]);
+
+  const handleSelect = React.useCallback((selectedLabel: string) => {
+    // Convert label back to value
+    const selectedValue = labelToValueMap.get(selectedLabel.toLowerCase());
+    
+    if (selectedValue) {
+      onChange(selectedValue === value ? undefined : selectedValue);
+    }
+    setOpen(false);
+    setSearchValue("");
+  }, [onChange, value, labelToValueMap]);
+
   const fuse = React.useMemo(() => new Fuse(options, {
     keys: ['label'],
     includeScore: true,
@@ -136,12 +155,7 @@ export function MasterDataCombobox({
                 {bestSuggestion && (
                   <CommandItem
                     key={`suggestion-${bestSuggestion.value}`}
-                    value={bestSuggestion.value}
-                    onSelect={(currentValue) => {
-                      onChange(currentValue);
-                      setOpen(false);
-                      setSearchValue("");
-                    }}
+                    onSelect={() => handleSelect(bestSuggestion.label)}
                     className="bg-amber-100/80 text-amber-900 hover:!bg-amber-100/90 focus:!bg-amber-100/90 select-none active:scale-95"
                   >
                     <Lightbulb className="mr-2 h-4 w-4" />
@@ -151,12 +165,8 @@ export function MasterDataCombobox({
                 {searchResults.suggestions.map(({ item }) => (
                   <CommandItem
                     key={item.value}
-                    value={item.value}
-                    onSelect={(currentValue) => {
-                      onChange(currentValue === value ? undefined : currentValue);
-                      setOpen(false);
-                      setSearchValue("");
-                    }}
+                    value={item.label}
+                    onSelect={handleSelect}
                     className="hover:bg-muted select-none active:scale-95"
                   >
                     <Check className={cn("mr-2 h-4 w-4", value === item.value ? "opacity-100" : "opacity-0")} />
