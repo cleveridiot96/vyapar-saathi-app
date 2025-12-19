@@ -72,15 +72,14 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
                   "flex items-center justify-center h-8 w-8 rounded-full shrink-0 transition-colors",
                   sidebarState === 'expanded' && "mr-3",
                    isActive 
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    ? "bg-transparent"
                     : "bg-transparent text-sidebar-foreground group-hover:text-sidebar-accent-foreground"
               )}>
                 <LazyIcon name={item.iconName} />
               </div>
               <span className={cn(
-                  "truncate text-sm",
-                  sidebarState === 'collapsed' && "sr-only", 
-                  isActive ? "font-semibold" : "font-medium"
+                  "truncate text-sm font-medium",
+                  sidebarState === 'collapsed' && "sr-only"
               )}>
                 {item.title}
               </span>
@@ -95,15 +94,19 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
                     href={item.href}
                     onClick={handleLinkClick}
                     className={cn(
-                      "relative flex items-center transition-colors duration-150 ease-in-out group focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar-background",
-                      "text-sidebar-foreground hover:text-sidebar-accent-foreground rounded-md",
+                      "relative flex items-center transition-colors duration-150 ease-in-out group focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar-background rounded-md",
                       sidebarState === 'collapsed'
                         ? "w-10 h-10 justify-center" 
                         : "w-full justify-start px-2.5 py-2", 
                       isActive
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-inner"
-                        : "hover:bg-sidebar-accent/50"
+                        ? "shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-px"
+                        : "hover:bg-sidebar-accent/50 text-sidebar-foreground"
                     )}
+                    style={isActive ? {
+                        '--shadow-color': item.shadow,
+                        backgroundImage: `linear-gradient(to bottom right, ${item.gradientFrom}, ${item.gradientTo})`,
+                        color: item.textColor,
+                    } as React.CSSProperties : {}}
                     aria-current={isActive ? "page" : undefined}
                   >
                     {buttonContent}

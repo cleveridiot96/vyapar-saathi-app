@@ -22,7 +22,7 @@ export function AppShell({
                     </div>
                 </SidebarHeader>
                 <SidebarContent className="py-2">
-                    <ClientSidebarMenu navItems={features} />
+                    <ClientSidebarMenu navItems={features.filter(f => f.href !== '/dashboard')} />
                 </SidebarContent>
             </Sidebar>
 
