@@ -65,8 +65,8 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   onMasterDataUpdate,
 }) => {
   const { toast } = useToast();
-  const { masterData, getAllMasters, addOrUpdateMaster } = useTransactions();
-  const { customers = [], transporters = [], brokers = [], expenses = [], warehouses = [] } = masterData;
+  const { masterData, addOrUpdateMaster } = useTransactions();
+  const { Customer: customers, Transporter: transporters, Broker: brokers, Expense: expenses, Warehouse: warehouses } = masterData;
   const { availableStock } = useInventory(saleToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -241,26 +241,24 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   }, [brokerId, brokers, summary.totalGoodsValue, appendExpense, removeExpense, setValue, watch]);
 
 
-  const handleOpenMasterForm = React.useCallback((type: MasterItemType, e?: React.MouseEvent) => {
-    e?.preventDefault();
-    e?.stopPropagation();
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType) => {
     setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
   }, []);
   
-  const handleEditMasterItem = React.useCallback((id: string, e?: React.MouseEvent) => {
-    e?.preventDefault();
-    e?.stopPropagation();
-    const allMasters = getAllMasters();
-    const itemToEdit = allMasters.find(i => i.id === id) || null;
+  const handleEditMasterItem = React.useCallback((type: MasterItemType, id: string) => {
+    let itemToEdit: MasterItem | null = null;
+    if (type === 'Customer' && customers) itemToEdit = customers.find(i => i.id === id) || null;
+    else if (type === 'Broker' && brokers) itemToEdit = brokers.find(i => i.id === id) || null;
+    else if (type === 'Transporter' && transporters) itemToEdit = transporters.find(t => t.id === t.id) || null;
 
     if (itemToEdit) {
         setMasterItemToEdit(itemToEdit);
-        setMasterFormItemType(itemToEdit.type);
+        setMasterFormItemType(type);
         setIsMasterFormOpen(true);
     }
-  }, [getAllMasters]);
+  }, [customers, brokers, transporters]);
 
   const handleMasterFormSubmit = React.useCallback((newItem: MasterItem) => {
     onMasterDataUpdate(newItem);
@@ -385,8 +383,8 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                             onChange={field.onChange} 
                             options={(customers || []).map(c => ({ value: c.id, label: c.name }))} 
                             placeholder="Select Customer" 
-                            onAddNew={(e) => handleOpenMasterForm("Customer", e)}
-                            onEdit={(id, e) => handleEditMasterItem(id, e)}
+                            onAddNew={() => handleOpenMasterForm("Customer")}
+                            onEdit={(id) => handleEditMasterItem("Customer", id)}
                           /> <FormMessage />
                         </FormItem>)} />
                        <FormField control={control} name="brokerId" render={({ field }) => (
@@ -396,8 +394,8 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                             onChange={field.onChange} 
                             options={(brokers || []).map(b => ({ value: b.id, label: b.name }))} 
                             placeholder="Select Broker" 
-                            onAddNew={(e) => handleOpenMasterForm("Broker", e)}
-                            onEdit={(id, e) => handleEditMasterItem(id, e)}
+                            onAddNew={() => handleOpenMasterForm("Broker")}
+                            onEdit={(id) => handleEditMasterItem("Broker", id)}
                           />
                           <FormMessage />
                         </FormItem>)} />
@@ -516,13 +514,13 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                                   <MasterDataCombobox value={itemField.value} onChange={itemField.onChange}
                                     options={((brokers || []).concat(customers || [])).map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
                                     placeholder="Select Party" addNewLabel="Add New Party"
-                                    onAddNew={(e) => handleOpenMasterForm("Broker", e)} onEdit={(id, e) => handleEditMasterItem(id, e)}
+                                    onAddNew={() => handleOpenMasterForm("Broker")} onEdit={(id) => handleEditMasterItem("Broker", id)}
                                     disabled={isCommission}
                                   /> <FormMessage />
                                 </FormItem>)} />
                               <FormField control={control} name={`expenses.${index}.paymentMode`} render={({ field: itemField }) => (
                                 <FormItem className="md:col-span-3"><FormLabel>Pay Mode</FormLabel>
-                                  <Select onValueChange={itemField.onChange} value={itemField.value} disabled={isCommission}>
+                                  <Select onValueChange={itemField.onChange} value={itemField.value}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Mode" /></SelectTrigger></FormControl>
                                     <SelectContent>
                                         <SelectItem value="Auto-adjusted">Auto-adjusted</SelectItem>

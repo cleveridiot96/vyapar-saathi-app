@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, ReactNode, useCallback, useState } from 'react';
+import React, { createContext, useContext, ReactNode, useCallback, useState, useMemo } from 'react';
 import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 
 interface PrintSettings {
@@ -58,7 +58,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [financialYear]);
 
 
-  const value = {
+  const value = useMemo(() => ({
     financialYear,
     setFinancialYear,
     availableFinancialYears,
@@ -72,7 +72,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setPrintSettings,
     getPreviousFinancialYear,
     getNextFinancialYear
-  };
+  }), [
+    financialYear, setFinancialYear, availableFinancialYears, setAvailableFinancialYears,
+    isAppHydrating, lowStockThreshold, setLowStockThreshold, fontSize, handleSetFontSize,
+    printSettings, setPrintSettings, getPreviousFinancialYear, getNextFinancialYear
+  ]);
 
   return (
     <SettingsContext.Provider value={value}>
