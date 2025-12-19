@@ -16,6 +16,7 @@ import {
   Dialog,
   DialogContent,
   DialogTrigger,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
 
@@ -87,6 +88,7 @@ export function MasterDataCombobox({
         </Button>
       </DialogTrigger>
       <DialogContent className="p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <DialogTitle className="sr-only">{placeholder}</DialogTitle>
         <Command shouldFilter={false}>
           <CommandInput
             placeholder={searchPlaceholder}
@@ -95,19 +97,20 @@ export function MasterDataCombobox({
           />
           <CommandList>
             <ScrollArea className="h-64">
-              {filteredOptions.length === 0 && !onAddNew && (
-                <CommandEmpty>
-                  <div className="py-2 text-center text-sm">
-                    {notFoundMessage}
-                  </div>
-                </CommandEmpty>
-              )}
+              <CommandEmpty>
+                <div className="py-2 text-center text-sm">
+                  {notFoundMessage}
+                </div>
+              </CommandEmpty>
               <CommandGroup>
                 {filteredOptions.map((option) => (
                   <CommandItem
                     key={option.value}
                     value={option.label}
-                    onSelect={() => handleSelect(option.value)}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelect(option.value);
+                    }}
                   >
                     <Check
                       className={cn(
@@ -122,7 +125,9 @@ export function MasterDataCombobox({
                         size="icon"
                         className="h-6 w-6 ml-2"
                         type="button"
-                        onClick={(e) => {
+                        onMouseDown={(e) => {
+                           e.preventDefault();
+                           e.stopPropagation();
                            if(onEdit) {
                                setOpen(false);
                                onEdit(option.value, e);
@@ -138,7 +143,8 @@ export function MasterDataCombobox({
             </ScrollArea>
             {onAddNew && (
               <CommandItem
-                onSelect={(e) => {
+                onMouseDown={(e) => {
+                  e.preventDefault();
                   if (onAddNew) {
                     setOpen(false);
                     onAddNew(e as any);
