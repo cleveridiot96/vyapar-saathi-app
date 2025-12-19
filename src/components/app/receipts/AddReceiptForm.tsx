@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -401,4 +402,8 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
           itemTypeFromButton={masterFormItemType!} 
         />
       )}
-    </
+    </>
+  );
+};
+
+export const AddReceiptForm = React.memo(AddReceiptFormComponent);
