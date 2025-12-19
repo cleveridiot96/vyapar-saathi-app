@@ -267,10 +267,10 @@ export interface StockAdjustment {
   lotNumber: string;
   locationId: string;
   locationName: string;
-  bags: number; // can be negative for reduction
-  weight: number; // can be negative for reduction
+  bags: number;
+  weight: number;
   type: 'Correction' | 'Wastage' | 'Theft' | 'Reversal' | 'Initial Stock';
-  reason: string;
+  reason?: string;
 }
 
 export interface SearchableItem {

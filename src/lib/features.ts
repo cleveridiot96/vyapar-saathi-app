@@ -16,6 +16,7 @@ import {
   CalendarDays,
   Users,
   DatabaseBackup,
+  SlidersHorizontal,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -65,6 +66,15 @@ export const features: Feature[] = [
     gradientTo: '#5a32a3',
     textColor: 'white',
     shadow: '0 10px 25px -5px rgba(111, 66, 193, 0.4), 0 8px 10px -6px rgba(111, 66, 193, 0.4)',
+  },
+  {
+    title: 'Stock Adjustments',
+    href: '/stock-adjustments',
+    icon: SlidersHorizontal,
+    gradientFrom: '#f09819',
+    gradientTo: '#edde5d',
+    textColor: 'black',
+    shadow: '0 10px 25px -5px rgba(240, 152, 25, 0.4), 0 8px 10px -6px rgba(240, 152, 25, 0.4)',
   },
   {
     title: 'Cash Book',
