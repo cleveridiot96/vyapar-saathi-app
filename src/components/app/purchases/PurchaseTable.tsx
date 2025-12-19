@@ -31,7 +31,7 @@ interface PurchaseTableProps {
   onDownloadPdf?: (purchase: Purchase) => void;
 }
 
-const PurchaseTableComponent: React.FC<PurchaseTableProps> = ({ data, onEdit, onDelete, onDownloadPdf }) => {
+export function PurchaseTable({ data, onEdit, onDelete, onDownloadPdf }: PurchaseTableProps) {
   const [expandedRows, setExpandedRows] = React.useState<Record<string, boolean>>({});
 
   const toggleRow = (id: string) => {
@@ -134,5 +134,3 @@ const PurchaseTableComponent: React.FC<PurchaseTableProps> = ({ data, onEdit, on
       </ScrollArea>
   );
 }
-
-export const PurchaseTable = React.memo(PurchaseTableComponent);

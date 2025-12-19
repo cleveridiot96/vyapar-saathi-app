@@ -284,6 +284,11 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
       setIsSubmitting(false);
     }
   }, [summary, purchaseToEdit, warehouses, suppliers, agents, transporters, getAllMasters, onSubmit, onClose, toast]);
+  
+  const isLastItemValid = React.useMemo(() => {
+    const lastItem = watchedFormValues.items?.[watchedFormValues.items.length - 1];
+    return lastItem && lastItem.lotNumber && lastItem.quantity && lastItem.netWeight && lastItem.rate;
+  }, [watchedFormValues.items]);
 
   if (!isOpen) return null;
 
@@ -544,6 +549,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                         type="button"
                         variant="outline"
                         onClick={() => append({ lotNumber: "", quantity: undefined, netWeight: undefined, rate: undefined })}
+                        disabled={!isLastItemValid}
                       >
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Item
                       </Button>
@@ -763,5 +769,3 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     </>
   );
 };
-
-    
