@@ -1,186 +1,207 @@
 "use client";
 
-import React from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { MasterDataCombobox } from '@/components/shared/MasterDataCombobox';
-import { PlusCircle, Trash2 } from 'lucide-react';
-import type { LocationTransfer, MasterItem, AggregatedInventoryItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import type { Warehouse, LocationTransfer, LocationTransferItem } from '@/lib/types';
+import type { AggregatedInventoryItem } from '@/hooks/useInventory';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
+
+const mergeLotsSchema = (availableStock: AggregatedInventoryItem[]) => z.object({
+  warehouseId: z.string().min(1, "Warehouse selection is required."),
+  lotsToMerge: z.array(z.string()).min(2, "Please select at least two lots to merge."),
+  newLotNumber: z.string().min(1, "New lot number is required.").refine(
+    (val) => !availableStock.some(s => s.lotNumber.toUpperCase() === val.toUpperCase()),
+    { message: "This lot number already exists." }
+  ),
+});
+
+type MergeLotsFormValues = z.infer<ReturnType<typeof mergeLotsSchema>>;
 
 interface MergeLotsFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: Omit<LocationTransfer, 'id' | 'date'>) => void;
-  warehouses: MasterItem[];
+  warehouses: Warehouse[];
   availableStock: AggregatedInventoryItem[];
 }
 
-const mergeSchema = z.object({
-  fromLocationId: z.string().min(1, 'Source warehouse is required'),
-  toLocationId: z.string().min(1, 'Destination warehouse is required'),
-  newLotNumber: z.string().min(1, 'New lot number is required'),
-  lotsToMerge: z.array(z.object({
-    lotNumber: z.string().min(1, 'Please select a lot')
-  })).min(2, 'Please select at least two lots to merge'),
-  notes: z.string().optional(),
-});
-
-type MergeFormValues = z.infer<typeof mergeSchema>;
-
-export const MergeLotsForm: React.FC<MergeLotsFormProps> = ({ isOpen, onClose, onSubmit, warehouses, availableStock }) => {
+export function MergeLotsForm({ isOpen, onClose, onSubmit, warehouses, availableStock }: MergeLotsFormProps) {
   const { toast } = useToast();
-  const form = useForm<MergeFormValues>({
-    resolver: zodResolver(mergeSchema),
-    defaultValues: {
-      fromLocationId: '',
-      toLocationId: '',
-      newLotNumber: '',
-      lotsToMerge: [{ lotNumber: '' }, { lotNumber: '' }],
-    },
-  });
-  
-  const fromLocationId = form.watch('fromLocationId');
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "lotsToMerge"
+  const form = useForm<MergeLotsFormValues>({
+    resolver: zodResolver(mergeLotsSchema(availableStock)),
+    defaultValues: { warehouseId: undefined, lotsToMerge: [], newLotNumber: "" },
   });
 
-  const stockOptions = React.useMemo(() => {
-    return availableStock
-      .filter(s => s.locationId === fromLocationId)
-      .map(s => ({ value: s.lotNumber, label: `${s.lotNumber} (${s.currentBags} bags)` }));
-  }, [availableStock, fromLocationId]);
+  const watchedWarehouseId = form.watch("warehouseId");
+  const watchedLotsToMerge = form.watch("lotsToMerge");
 
-  const handleSubmit = (values: MergeFormValues) => {
-    const lots = values.lotsToMerge.map(l => l.lotNumber);
-    const uniqueLots = new Set(lots);
-    if (uniqueLots.size !== lots.length) {
-      toast({ title: 'Duplicate lots selected', variant: 'destructive' });
-      return;
+  const lotsInWarehouse = useMemo(() => {
+    if (!watchedWarehouseId) return [];
+    return availableStock.filter(s => s.locationId === watchedWarehouseId && s.currentBags > 0);
+  }, [availableStock, watchedWarehouseId]);
+
+  const mergeSummary = useMemo(() => {
+    const selectedLots = availableStock.filter(s => watchedLotsToMerge.includes(s.key));
+    if (selectedLots.length === 0) {
+      return { totalBags: 0, totalWeight: 0, newLandedCost: 0, totalCostOfGoods: 0 };
     }
 
-    const itemsToTransfer = lots.map(lotNumber => {
-      const stockItem = availableStock.find(s => s.lotNumber === lotNumber && s.locationId === values.fromLocationId);
-      if (!stockItem) throw new Error(`Stock for ${lotNumber} not found.`);
-      return {
-        id: `transfer-item-${lotNumber}`,
-        originalLotNumber: lotNumber,
-        newLotNumber: values.newLotNumber,
-        quantity: stockItem.currentBags,
-        netWeight: stockItem.currentWeight,
-        costOfGoods: stockItem.cogs,
-      };
-    });
+    const totalWeight = selectedLots.reduce((sum, lot) => sum + lot.currentWeight, 0);
+    const totalCost = selectedLots.reduce((sum, lot) => sum + (lot.currentWeight * lot.effectiveRate), 0);
+    const totalBags = selectedLots.reduce((sum, lot) => sum + lot.currentBags, 0);
 
-    const transferData: Omit<LocationTransfer, 'id' | 'date'> = {
-      fromLocationId: values.fromLocationId,
-      fromLocationName: warehouses.find(w => w.id === values.fromLocationId)?.name || 'N/A',
-      toLocationId: values.toLocationId,
-      toLocationName: warehouses.find(w => w.id === values.toLocationId)?.name || 'N/A',
-      items: itemsToTransfer,
-      totalTransferCost: 0,
-      notes: `Merged lots: ${lots.join(', ')} into ${values.newLotNumber}. ${values.notes || ''}`,
+    return {
+      totalBags,
+      totalWeight,
+      newLandedCost: totalWeight > 0 ? totalCost / totalWeight : 0,
+      totalCostOfGoods: totalCost,
     };
+  }, [availableStock, watchedLotsToMerge]);
 
-    onSubmit(transferData);
+  const handleLotToggle = (lotKey: string) => {
+    const currentSelection = form.getValues("lotsToMerge");
+    const newSelection = currentSelection.includes(lotKey)
+      ? currentSelection.filter(key => key !== lotKey)
+      : [...currentSelection, lotKey];
+    form.setValue("lotsToMerge", newSelection, { shouldValidate: true });
   };
   
+  useEffect(() => {
+    form.setValue("lotsToMerge", []);
+  }, [watchedWarehouseId, form]);
+
+  const processSubmit = (values: MergeLotsFormValues) => {
+    const selectedLotsData = availableStock.filter(s => values.lotsToMerge.includes(s.key));
+    
+    const transferItems: LocationTransferItem[] = selectedLotsData.map(lot => ({
+      id: `transfer-item-${lot.lotNumber}-${Date.now()}`,
+      originalLotNumber: lot.lotNumber,
+      newLotNumber: values.newLotNumber,
+      quantity: lot.currentBags,
+      netWeight: lot.currentWeight,
+      costOfGoods: lot.currentWeight * lot.effectiveRate,
+    }));
+    
+    const warehouse = warehouses.find(w => w.id === values.warehouseId);
+
+    const transferData: Omit<LocationTransfer, 'id' | 'date'> = {
+      fromLocationId: values.warehouseId,
+      fromLocationName: warehouse?.name || 'N/A',
+      toLocationId: values.warehouseId,
+      toLocationName: warehouse?.name || 'N/A',
+      items: transferItems,
+      totalTransferCost: 0, 
+      notes: `MERGE OF ${selectedLotsData.length} LOTS INTO ${values.newLotNumber}`,
+    };
+    
+    onSubmit(transferData);
+    onClose();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Merge Lots</DialogTitle>
+          <DialogTitle>Merge Stock Lots</DialogTitle>
+          <DialogDescription>
+            Combine multiple existing stock lots from the same warehouse into a single new lot. The system will calculate the new weighted average cost.
+          </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+        <FormProvider {...form}>
+          <form onSubmit={form.handleSubmit(processSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="fromLocationId"
+                name="warehouseId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>From Warehouse</FormLabel>
-                    <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" {...field} />
+                    <FormLabel>Warehouse</FormLabel>
+                    <MasterDataCombobox
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))}
+                      placeholder="Select Warehouse"
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
+               <FormField
                 control={form.control}
-                name="toLocationId"
+                name="newLotNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>To Warehouse</FormLabel>
-                     <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" {...field} />
+                    <FormLabel>New Merged Lot Number</FormLabel>
+                    <FormControl>
+                        <Input placeholder="e.g., MERGED-LOT-1" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
             <FormField
               control={form.control}
-              name="newLotNumber"
-              render={({ field }) => (
+              name="lotsToMerge"
+              render={() => (
                 <FormItem>
-                  <FormLabel>New Merged Lot Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., MERGED-123" {...field} />
-                  </FormControl>
+                  <FormLabel>Select Lots to Merge</FormLabel>
+                  <ScrollArea className="h-64 border rounded-md p-2">
+                    {lotsInWarehouse.length === 0 ? (
+                        <p className="text-center text-muted-foreground p-4">Select a warehouse to see available lots.</p>
+                    ) : (
+                        lotsInWarehouse.map(lot => (
+                            <div key={lot.key} className="flex items-center space-x-3 p-2 rounded-md hover:bg-muted">
+                                <Checkbox
+                                    id={lot.key}
+                                    checked={watchedLotsToMerge.includes(lot.key)}
+                                    onCheckedChange={() => handleLotToggle(lot.key)}
+                                />
+                                <label htmlFor={lot.key} className="flex-grow grid grid-cols-4 gap-2 text-sm cursor-pointer">
+                                    <span className="font-medium col-span-2">{lot.lotNumber}</span>
+                                    <span className="text-right">{Math.round(lot.currentBags)} bags</span>
+                                    <span className="text-right">{lot.currentWeight.toFixed(2)} kg</span>
+                                </label>
+                            </div>
+                        ))
+                    )}
+                  </ScrollArea>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <div className="space-y-2">
-              <FormLabel>Lots to Merge</FormLabel>
-              {fields.map((field, index) => (
-                <div key={field.id} className="flex items-center gap-2">
-                  <FormField
-                    control={form.control}
-                    name={`lotsToMerge.${index}.lotNumber`}
-                    render={({ field }) => (
-                      <FormItem className="flex-grow">
-                        <MasterDataCombobox options={stockOptions} placeholder="Select lot to merge" {...field} />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} disabled={fields.length <= 2}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-               <Button type="button" variant="outline" size="sm" onClick={() => append({ lotNumber: '' })}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Lot
-              </Button>
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Any additional notes" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+
+            {watchedLotsToMerge.length > 0 && (
+              <div className="p-4 border rounded-lg bg-muted/50">
+                <h3 className="font-semibold text-lg mb-2">Merge Summary</h3>
+                <Table>
+                  <TableBody>
+                    <TableRow><TableCell>Total Bags:</TableCell><TableCell className="text-right font-bold">{Math.round(mergeSummary.totalBags).toLocaleString()}</TableCell></TableRow>
+                    <TableRow><TableCell>Total Weight:</TableCell><TableCell className="text-right font-bold">{mergeSummary.totalWeight.toLocaleString(undefined, {minimumFractionDigits:2})} kg</TableCell></TableRow>
+                    <TableRow className="text-primary"><TableCell>New Weighted Avg Cost:</TableCell><TableCell className="text-right font-bold">₹{mergeSummary.newLandedCost.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} / kg</TableCell></TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
 
             <DialogFooter>
               <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-              <Button type="submit">Merge Lots</Button>
+              <Button type="submit">Confirm Merge</Button>
             </DialogFooter>
           </form>
-        </Form>
+        </FormProvider>
       </DialogContent>
     </Dialog>
   );
-};
+}
