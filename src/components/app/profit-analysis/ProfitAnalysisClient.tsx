@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import type { Sale, CostBreakdown } from "@/lib/types";
+import type { Sale, TransactionalProfitInfo, CostBreakdown } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,31 +19,6 @@ import { cn } from "@/lib/utils";
 import { useTransactions } from '@/hooks/useTransactions';
 import Link from 'next/link';
 
-export interface TransactionalProfitInfo {
-  saleId: string;
-  date: string;
-  billNumber?: string;
-  customerName?: string;
-  brokerName?: string;
-  lotNumber: string;
-  saleNetWeightKg: number;
-  saleQuantityBags: number;
-  // Rates
-  basePurchaseRate: number;
-  landedCostPerKg: number;
-  saleRatePerKg: number;
-  // Values
-  goodsValue: number;
-  costOfGoodsSold: number;
-  grossProfit: number;
-  netProfit: number;
-  // Breakdown
-  costBreakdown: CostBreakdown;
-  saleExpenses: {
-    total: number;
-    [key: string]: number;
-  }
-}
 
 interface MonthlySummaryInfo {
     monthKey: string;
@@ -442,7 +417,7 @@ export function ProfitAnalysisClient() {
               </Card>
             </TabsContent>
             
-            <TabsContent value="calculator" className="mt-4">
+            <TabsContent value="calculator" className="mt-4" ref={calculatorRef}>
                 <Card>
                     <CardHeader className="p-4 bg-primary/10 rounded-t-xl">
                         <CardTitle className="text-xl uppercase text-primary">PROFIT &amp; COST CALCULATOR</CardTitle>
