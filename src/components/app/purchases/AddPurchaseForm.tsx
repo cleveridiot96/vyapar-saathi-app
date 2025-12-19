@@ -305,8 +305,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
             </div>
           </DialogHeader>
           
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <ScrollArea className="h-full">
+          <div className="flex-1 min-h-0 overflow-y-auto">
               <div className="px-6 pb-6">
               <FormProvider {...formMethods}>
                 <form onSubmit={formHandleSubmit(processSubmit)} className="space-y-4 pt-4">
@@ -736,7 +735,6 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                 </form>
               </FormProvider>
               </div>
-            </ScrollArea>
           </div>
            <DialogFooter className="p-6 pt-4 border-t">
               <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
