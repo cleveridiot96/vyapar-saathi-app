@@ -15,6 +15,7 @@ import {
   DatabaseBackup, SlidersHorizontal, Landmark, Search, HelpCircle as FallbackIcon, Menu
 } from 'lucide-react';
 import type { LucideProps } from 'lucide-react';
+import { useHydrated } from "@/hooks/useHydrated";
 
 const iconMap: Record<string, React.ComponentType<LucideProps>> = {
   LayoutDashboard, ShoppingCart, ShoppingBag, Truck, Boxes, BookOpenCheck,
@@ -35,13 +36,29 @@ interface ClientSidebarMenuProps {
 
 export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
   const pathname = usePathname();
-  const { state: sidebarState, setOpenMobile } = useSidebar(); 
+  const { state: sidebarState, setOpenMobile, isMobile } = useSidebar(); 
+  const isHydrated = useHydrated();
 
   const handleLinkClick = () => {
     if (setOpenMobile) {
       setOpenMobile(false);
     }
   };
+  
+  if (!isHydrated) {
+    return (
+        <SidebarMenu className="p-2 space-y-0.5">
+            {navItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                     <div className="flex items-center w-full justify-start px-2.5 py-2 h-10">
+                        <div className="h-8 w-8 rounded-full mr-3 shrink-0 bg-muted/50 animate-pulse"></div>
+                        <div className="h-4 w-3/4 rounded bg-muted/50 animate-pulse"></div>
+                     </div>
+                </SidebarMenuItem>
+            ))}
+        </SidebarMenu>
+    );
+  }
 
   return (
     <TooltipProvider>

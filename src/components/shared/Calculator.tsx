@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from 'react';
@@ -108,10 +109,15 @@ export const Calculator = ({ isVisible, onClose }: { isVisible: boolean, onClose
     const calcState = useCalculatorState();
     const isHydrated = useHydrated();
     
-    const getDefaultPosition = () => ({
-        x: typeof window !== 'undefined' ? window.innerWidth - 370 : 0,
-        y: 80,
-    });
+    const getDefaultPosition = () => {
+        if (typeof window === 'undefined') {
+            return { x: 0, y: 0 };
+        }
+        return {
+            x: window.innerWidth - 370,
+            y: 80,
+        }
+    };
     
     const [position, setPosition] = React.useState(getDefaultPosition());
     const [size, setSize] = React.useState({ width: 340, height: 520 });
@@ -216,9 +222,13 @@ export const Calculator = ({ isVisible, onClose }: { isVisible: boolean, onClose
         { direction: 'bottom-right', cursor: 'nwse-resize', className: 'h-4 w-4 bottom-0 right-0' },
     ];
     
+    if (!isHydrated) {
+        return null;
+    }
+
     return (
         <AnimatePresence>
-            {isVisible && isHydrated && (
+            {isVisible && (
                 <motion.div
                     ref={calcRef}
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
