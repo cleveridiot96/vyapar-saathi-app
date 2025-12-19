@@ -4,6 +4,24 @@ This is a NextJS starter in Firebase Studio.
 
 To get started, take a look at src/app/page.tsx.
 
+## Application Architecture: The "Backend-less" Backend
+
+A key design feature of this application is its ability to run entirely offline. This is achieved by treating your web browser as its own self-contained backend.
+
+### How It Works
+
+1.  **In-Memory Storage**: When the application loads, all of your data—masters, purchases, sales, and other transactions—is held directly in your browser's memory. This is managed primarily by React's `useState` hooks within central "providers" like `TransactionsProvider`.
+
+2.  **No Internet Required**: Because all data and logic reside within the browser, the application does not need to communicate with a remote server to function. All calculations, filtering, and data manipulation happen instantly on your device.
+
+3.  **Data Persistence**: The primary trade-off for this speed and offline capability is that the data is **ephemeral**. It will be **lost if you close the browser tab or perform a hard refresh**.
+
+4.  **Backup & Restore**: To permanently save your work, you must use the **Backup & Restore** feature. This allows you to download all your current application data into a single file on your computer and upload it again during a future session.
+
+This client-side approach ensures maximum performance and full offline functionality.
+
+---
+
 ## Core UI Components Explained
 
 Let's peel back the layers and look directly at the code that powers both the simple and smart dropdowns. Seeing the implementation will make the concepts we discussed crystal clear.
