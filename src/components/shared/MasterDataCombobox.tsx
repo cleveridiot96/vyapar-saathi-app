@@ -32,8 +32,8 @@ interface MasterDataComboboxProps {
   searchPlaceholder?: string;
   notFoundMessage?: string;
   addNewLabel?: string;
-  onAddNew?: () => void;
-  onEdit?: (id: string) => void;
+  onAddNew?: (e?: React.MouseEvent) => void;
+  onEdit?: (id: string, e?: React.MouseEvent) => void;
   disabled?: boolean;
   className?: string;
 }
@@ -77,7 +77,6 @@ export function MasterDataCombobox({
         align="start"
         side="bottom"
         sideOffset={4}
-        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
@@ -92,7 +91,7 @@ export function MasterDataCombobox({
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    onAddNew();
+                    onAddNew(e);
                     setOpen(false);
                   }}
                 >
@@ -110,6 +109,7 @@ export function MasterDataCombobox({
                     onChange(option.value === value ? undefined : option.value);
                     setOpen(false);
                   }}
+                  onMouseDown={(e) => e.preventDefault()}
                 >
                   <Check
                     className={cn(
@@ -127,7 +127,7 @@ export function MasterDataCombobox({
                       onMouseDown={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        onEdit(option.value);
+                        onEdit(option.value, e);
                         setOpen(false);
                       }}
                     >
@@ -146,7 +146,7 @@ export function MasterDataCombobox({
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    onAddNew();
+                    onAddNew(e);
                     setOpen(false);
                   }}
                 >
