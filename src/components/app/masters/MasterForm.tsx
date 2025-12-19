@@ -98,14 +98,16 @@ export function MasterForm({
     onClose();
   };
   
-  const allMasterTypes = Object.keys(MASTER_TYPES_CONFIG) as MasterItemType[];
+  const allMasterTypes = Object.keys(MASTER_TYPES_CONFIG).filter(type => type !== 'Product') as MasterItemType[];
+  const singularLabel = itemType.endsWith('s') && itemType !== 'Expense' ? itemType.slice(0, -1) : itemType;
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {initialData ? "Edit" : "Add"} Master Item
+            {initialData ? `Edit ${singularLabel}` : `Add New ${singularLabel}`}
           </DialogTitle>
           <DialogDescription>
             Fill in the details for the master item.
@@ -118,7 +120,7 @@ export function MasterForm({
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Item Type</FormLabel>
+                    <FormLabel>Type</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} disabled={isEditingFixed}>
                         <FormControl>
                             <SelectTrigger><SelectValue placeholder="Select an item type" /></SelectTrigger>
@@ -139,9 +141,9 @@ export function MasterForm({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{itemType} Name</FormLabel>
+                  <FormLabel>{singularLabel} Name</FormLabel>
                   <FormControl>
-                    <Input placeholder={`Enter ${itemType.toLowerCase()} name`} {...field} disabled={isEditingFixed} />
+                    <Input placeholder={`Enter ${singularLabel.toLowerCase()} name`} {...field} disabled={isEditingFixed} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -169,7 +171,7 @@ export function MasterForm({
                       name="commissionType"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Commission Type</FormLabel>
+                          <FormLabel>Type</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                              <FormControl><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger></FormControl>
                              <SelectContent>

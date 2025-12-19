@@ -146,13 +146,17 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     };
   }, [watchedFormValues]);
 
-  const handleOpenMasterForm = React.useCallback((type: MasterItemType) => {
+  const handleOpenMasterForm = React.useCallback((type: MasterItemType, e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
   }, []);
   
-  const handleEditMasterItem = React.useCallback((id: string) => {
+  const handleEditMasterItem = React.useCallback((id: string, e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     const allMasters = getAllMasters();
     const itemToEdit = allMasters.find(i => i.id === id) || null;
 
@@ -278,28 +282,26 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(openState) => { if (!openState) onClose(); }}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>{purchaseToEdit ? 'EDIT PURCHASE' : 'ADD NEW PURCHASE'}</DialogTitle>
+            <DialogTitle>{purchaseToEdit ? 'Edit Purchase' : 'Add New Purchase'}</DialogTitle>
             <DialogDescription>
-              ENTER THE DETAILS FOR THE PURCHASE RECORD. CLICK SAVE WHEN YOU'RE DONE.
+              Enter the details for the purchase record. Click Save when you're done.
             </DialogDescription>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 pr-4">
+          <ScrollArea className="flex-1 pr-4 -mr-2">
             <FormProvider {...formMethods}>
               <form onSubmit={formHandleSubmit(processSubmit)} className="space-y-4 p-1">
                 
-                {/* Basic Details Section */}
                 <div className="p-4 border rounded-md shadow-sm">
-                  <h3 className="text-lg font-medium mb-3 text-primary">BASIC DETAILS & PARTIES</h3>
+                  <h3 className="text-lg font-medium mb-3 text-primary">Basic Details & Parties</h3>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     
-                    {/* Purchase Date */}
                     <FormField 
                       control={control} 
                       name="date" 
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
-                          <FormLabel>PURCHASE DATE</FormLabel>
+                          <FormLabel>Purchase Date</FormLabel>
                           <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                             <PopoverTrigger asChild>
                               <FormControl>
@@ -310,7 +312,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                                     !field.value && "text-muted-foreground"
                                   )}
                                 >
-                                  {field.value ? format(field.value, "dd/MM/yy") : <span>PICK A DATE</span>}
+                                  {field.value ? format(field.value, "dd/MM/yy") : <span>Pick a date</span>}
                                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                 </Button>
                               </FormControl>
@@ -335,69 +337,66 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                       )}
                     />
                     
-                    {/* Supplier */}
                     <FormField 
                       control={control} 
                       name="supplierId" 
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>SUPPLIER</FormLabel>
+                          <FormLabel>Supplier</FormLabel>
                           <MasterDataCombobox
                             value={field.value}
                             onChange={field.onChange}
                             options={suppliers.map(s => ({ value: s.id, label: s.name }))}
-                            placeholder="SELECT SUPPLIER"
-                            searchPlaceholder="SEARCH SUPPLIERS..."
-                            notFoundMessage="NO SUPPLIER FOUND."
-                            addNewLabel="ADD NEW SUPPLIER"
-                            onAddNew={() => handleOpenMasterForm("Supplier")}
-                            onEdit={(id) => handleEditMasterItem(id)}
+                            placeholder="Select Supplier"
+                            searchPlaceholder="Search Suppliers..."
+                            notFoundMessage="No Supplier found."
+                            addNewLabel="Add New Supplier"
+                            onAddNew={(e) => handleOpenMasterForm("Supplier", e)}
+                            onEdit={(id, e) => handleEditMasterItem(id, e)}
                           />
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     
-                    {/* Agent */}
                     <FormField 
                       control={control} 
                       name="agentId" 
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>AGENT (OPTIONAL)</FormLabel>
+                          <FormLabel>Agent</FormLabel>
                           <MasterDataCombobox
                             value={field.value}
                             onChange={field.onChange}
                             options={agents.map(a => ({ value: a.id, label: a.name }))}
-                            placeholder="SELECT AGENT"
-                            searchPlaceholder="SEARCH AGENTS..."
-                            notFoundMessage="NO AGENT FOUND."
-                            addNewLabel="ADD NEW AGENT"
-                            onAddNew={() => handleOpenMasterForm("Agent")}
-                            onEdit={(id) => handleEditMasterItem(id)}
+                            placeholder="Select Agent"
+                            searchPlaceholder="Search Agents..."
+                            notFoundMessage="No Agent found."
+                            addNewLabel="Add New Agent"
+                            onAddNew={(e) => handleOpenMasterForm("Agent", e)}
+                            onEdit={(id, e) => handleEditMasterItem(id, e)}
                           />
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     
-                    {/* Location */}
                     <FormField 
                       control={control} 
                       name="locationId" 
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>LOCATION (WAREHOUSE)</FormLabel>
+                          <FormLabel>Location</FormLabel>
                           <MasterDataCombobox
                             value={field.value}
                             onChange={field.onChange}
                             options={warehouses.map(w => ({ value: w.id, label: w.name }))}
-                            placeholder="SELECT LOCATION"
-                            searchPlaceholder="SEARCH LOCATIONS..."
-                            notFoundMessage="NO LOCATION FOUND."
-                            addNewLabel="ADD NEW LOCATION"
-                            onAddNew={() => handleOpenMasterForm("Warehouse")}
-                            onEdit={(id) => handleEditMasterItem(id)}
+                            placeholder="Select Location"
+                            searchPlaceholder="Search Locations..."
+                            notFoundMessage="No Location found."
+                            addNewLabel="Add New Location"
+                            onAddNew={(e) => handleOpenMasterForm("Warehouse", e)}
+                            onEdit={(id, e) => handleEditMasterItem(id, e)}
                           />
                           <FormMessage />
                         </FormItem>
@@ -406,22 +405,20 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                   </div>
                 </div>
 
-                {/* Items Section */}
                 <div className="p-4 border rounded-md shadow-sm">
-                  <h3 className="text-lg font-medium mb-3 text-primary">ITEMS</h3>
+                  <h3 className="text-lg font-medium mb-3 text-primary">Items</h3>
                   {fields.map((field, index) => (
                     <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start p-3 border-b last:border-b-0">
                       
-                      {/* Lot Number */}
                       <FormField 
                         control={control} 
                         name={`items.${index}.lotNumber`} 
                         render={({ field: itemField }) => (
                           <FormItem className="md:col-span-3">
-                            <FormLabel>VAKKAL/LOT NO.</FormLabel>
+                            <FormLabel>Vakkal/Lot No.</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="E.G., AB/6 OR BU-5"
+                                placeholder="E.g., AB/6 or BU-5"
                                 {...itemField}
                                 onChange={(e) => handleLotNumberChange(index, e.target.value)}
                               />
@@ -431,18 +428,17 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                         )}
                       />
                       
-                      {/* Quantity */}
                       <FormField 
                         control={control} 
                         name={`items.${index}.quantity`} 
                         render={({ field: itemField }) => (
                           <FormItem className="md:col-span-2">
-                            <FormLabel>BAGS</FormLabel>
+                            <FormLabel>Bags</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
                                 step="1"
-                                placeholder="BAGS"
+                                placeholder="Bags"
                                 {...itemField}
                                 value={itemField.value ?? ''}
                                 onChange={e => {
@@ -456,18 +452,17 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                         )}
                       />
                       
-                      {/* Net Weight */}
                       <FormField 
                         control={control} 
                         name={`items.${index}.netWeight`} 
                         render={({ field: itemField }) => (
                           <FormItem className="md:col-span-2">
-                            <FormLabel>NET WT.</FormLabel>
+                            <FormLabel>Net Wt.</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
                                 step="0.01"
-                                placeholder="KG"
+                                placeholder="Kg"
                                 {...itemField}
                                 value={itemField.value ?? ''}
                                 onChange={e => {
@@ -481,18 +476,17 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                         )}
                       />
                       
-                      {/* Rate */}
                       <FormField 
                         control={control} 
                         name={`items.${index}.rate`} 
                         render={({ field: itemField }) => (
                           <FormItem className="md:col-span-2">
-                            <FormLabel>RATE</FormLabel>
+                            <FormLabel>Rate</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
                                 step="0.01"
-                                placeholder="₹/KG"
+                                placeholder="₹/Kg"
                                 {...itemField}
                                 value={itemField.value ?? ''}
                                 onChange={e => {
@@ -506,15 +500,13 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                         )}
                       />
                       
-                      {/* Goods Value (Calculated) */}
                       <div className="md:col-span-2">
-                        <FormLabel>GOODS VALUE (₹)</FormLabel>
+                        <FormLabel>Goods Value (₹)</FormLabel>
                         <div className="font-medium text-sm h-10 flex items-center px-3 border border-dashed rounded-md bg-muted/50 text-foreground/80">
                           {Math.round(summary.itemsWithLandedCost[index]?.goodsValue || 0).toLocaleString('en-IN')}
                         </div>
                       </div>
                       
-                      {/* Delete Button */}
                       <div className="md:col-span-1 flex items-end justify-end">
                         <Button
                           type="button"
@@ -535,18 +527,16 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                       variant="outline"
                       onClick={() => append({ lotNumber: "", quantity: undefined, netWeight: undefined, rate: undefined })}
                     >
-                      <PlusCircle className="mr-2 h-4 w-4" /> ADD ITEM
+                      <PlusCircle className="mr-2 h-4 w-4" /> Add Item
                     </Button>
                   </div>
                 </div>
 
-                {/* Expenses Section */}
                 <div className="p-4 border rounded-md shadow-sm">
-                  <h3 className="text-lg font-medium mb-3 text-primary">EXPENSES</h3>
+                  <h3 className="text-lg font-medium mb-3 text-primary">Expenses</h3>
                   {expenseFields.map((field, index) => (
                     <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end p-3 border-b last:border-b-0">
                       
-                      {/* Account */}
                       <FormField 
                         control={control} 
                         name={`expenses.${index}.account`} 
@@ -575,7 +565,6 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                         )}
                       />
                       
-                      {/* Amount */}
                       <FormField 
                         control={control} 
                         name={`expenses.${index}.amount`} 
@@ -597,13 +586,12 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                         )}
                       />
                       
-                      {/* Party */}
                       <FormField 
                         control={control} 
                         name={`expenses.${index}.partyId`} 
                         render={({ field: itemField }) => (
                           <FormItem className="md:col-span-3">
-                            <FormLabel>Party (Optional)</FormLabel>
+                            <FormLabel>Party</FormLabel>
                             <MasterDataCombobox
                               value={itemField.value}
                               onChange={itemField.onChange}
@@ -615,15 +603,14 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                               searchPlaceholder="Search parties..."
                               notFoundMessage="No party found."
                               addNewLabel="Add New Party"
-                              onAddNew={() => handleOpenMasterForm("Transporter")}
-                              onEdit={(id) => handleEditMasterItem(id)}
+                              onAddNew={(e) => handleOpenMasterForm("Transporter", e)}
+                              onEdit={(id, e) => handleEditMasterItem(id, e)}
                             />
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                       
-                      {/* Payment Mode */}
                       <FormField 
                         control={control} 
                         name={`expenses.${index}.paymentMode`} 
@@ -650,7 +637,6 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                         )}
                       />
                       
-                      {/* Delete Button */}
                       <div className="md:col-span-1 flex items-center justify-end">
                         <Button
                           type="button"
@@ -680,20 +666,19 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                   </Button>
                 </div>
 
-                {/* Summary Section */}
                 <div className="p-4 border border-dashed rounded-md bg-muted/50 space-y-2">
                   <div className="flex items-center justify-between text-md font-semibold">
-                    <span>GOODS VALUE:</span>
+                    <span>Goods Value:</span>
                     <p>₹{Math.round(summary.totalGoodsValue).toLocaleString('en-IN')}</p>
                   </div>
                   <div className="flex items-center justify-between text-md font-semibold">
-                    <span>TOTAL EXPENSES:</span>
+                    <span>Total Expenses:</span>
                     <p>₹{Math.round(summary.totalExpenses).toLocaleString('en-IN')}</p>
                   </div>
                   <div className="flex items-center justify-between border-t pt-2 mt-2">
                     <div className="flex items-center text-lg font-semibold text-primary">
                       <Info className="w-5 h-5 mr-2" />
-                      TOTAL PURCHASE VALUE:
+                      Total Purchase Value:
                     </div>
                     <p className="text-xl font-bold text-primary">
                       ₹{Math.round(summary.totalAmount).toLocaleString('en-IN')}
@@ -703,20 +688,20 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                   {summary.totalNetWeight > 0 && summary.itemsWithLandedCost.length > 0 && (
                     <div className="pt-4 border-t mt-4">
                       <h4 className="font-semibold mb-2 text-muted-foreground">
-                        PER-VAKKAL LANDED COST
+                        Per-Vakkal Landed Cost
                       </h4>
                       <ScrollArea className="h-24">
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>VAKKAL</TableHead>
-                              <TableHead className="text-right">LANDED COST (₹/KG)</TableHead>
+                              <TableHead>Vakkal</TableHead>
+                              <TableHead className="text-right">Landed Cost (₹/Kg)</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {summary.itemsWithLandedCost.map((item, index) => (
                               <TableRow key={index}>
-                                <TableCell>{item.lotNumber || `ITEM ${index + 1}`}</TableCell>
+                                <TableCell>{item.lotNumber || `Item ${index + 1}`}</TableCell>
                                 <TableCell className="text-right font-medium">
                                   ₹{Math.round(item.landedCostPerKg || 0).toLocaleString('en-IN')}
                                 </TableCell>
@@ -729,23 +714,21 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                   )}
                 </div>
 
-                {/* Form Actions */}
-                <DialogFooter className="pt-4">
-                  <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting 
-                      ? (purchaseToEdit ? "SAVING..." : "ADDING...") 
-                      : (purchaseToEdit ? "SAVE CHANGES" : "ADD PURCHASE")
-                    }
-                  </Button>
-                </DialogFooter>
               </form>
             </FormProvider>
           </ScrollArea>
+           <DialogFooter className="pt-4 border-t">
+              <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
+              <Button type="button" onClick={formHandleSubmit(processSubmit)} disabled={isSubmitting}>
+                {isSubmitting 
+                  ? (purchaseToEdit ? "Saving..." : "Adding...") 
+                  : (purchaseToEdit ? "Save Changes" : "Add Purchase")
+                }
+              </Button>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Master Form Modal */}
       {isMasterFormOpen && masterFormItemType && (
         <MasterForm
           isOpen={isMasterFormOpen}
