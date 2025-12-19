@@ -1,9 +1,14 @@
 "use client";
 
 import * as React from "react";
-import type { Payment } from "@/lib/types";
-import { format, parseISO } from "date-fns";
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,10 +17,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DataTable } from "@/components/shared/DataTable";
-import { type ColumnDef } from "@tanstack/react-table";
-import { DataTableColumnHeader } from "@/components/shared/DataTableColumnHeader";
+import { MoreVertical, Pencil, Trash2, Package } from "lucide-react";
+import type { Payment } from "@/lib/types";
+import { format, parseISO } from 'date-fns';
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PaymentTableProps {
   data: Payment[];
@@ -23,56 +30,83 @@ interface PaymentTableProps {
   onDelete: (paymentId: string) => void;
 }
 
-export const PaymentTable: React.FC<PaymentTableProps> = ({ data, onEdit, onDelete }) => {
-  const columns = React.useMemo<ColumnDef<Payment>[]>(() => [
-    {
-      accessorKey: 'date',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
-      cell: ({ row }) => format(parseISO(row.original.date), "dd/MM/yy"),
-    },
-    {
-      accessorKey: 'partyName',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Party" />,
-      cell: ({ row }) => `${row.original.partyName} (${row.original.partyType})`,
-    },
-    {
-      accessorKey: 'amount',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Amount (₹)" className="justify-end" />,
-      cell: ({ row }) => <div className="text-right font-semibold">{row.original.amount.toLocaleString('en-IN')}</div>,
-    },
-    {
-      accessorKey: 'paymentMethod',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Method" />,
-    },
-    {
-      accessorKey: 'paymentType',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
-      cell: ({ row }) => <Badge variant={row.original.paymentType === 'Stock' ? 'secondary' : 'outline'}>{row.original.paymentType}</Badge>
-    },
-    {
-      accessorKey: 'notes',
-      header: 'Notes',
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreVertical className="h-4 w-4" /><span className="sr-only">Actions</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(row.original)}><Pencil className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onDelete(row.original.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
-              <Trash2 className="mr-2 h-4 w-4" /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ], [onEdit, onDelete]);
+const PaymentTableComponent: React.FC<PaymentTableProps> = ({ data, onEdit, onDelete }) => {
+  if (data.length === 0) {
+    return <p className="text-center text-muted-foreground py-8">No payments recorded yet.</p>;
+  }
 
-  return <DataTable columns={columns} data={data} />;
-};
+  return (
+    <TooltipProvider>
+      <ScrollArea className="rounded-md border shadow-sm h-[60vh]">
+        <Table className="min-w-full whitespace-nowrap">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">Date</TableHead>
+              <TableHead>Party Name</TableHead>
+              <TableHead>Party Type</TableHead>
+              <TableHead>Method</TableHead>
+              <TableHead>Notes</TableHead>
+              <TableHead className="text-right">Amount (₹)</TableHead>
+              <TableHead className="text-center w-[80px]">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.map((payment) => (
+              <TableRow key={payment.id} className="uppercase">
+                <TableCell>{format(parseISO(payment.date), "dd/MM/yy")}</TableCell>
+                <TableCell>{payment.partyName || payment.partyId}</TableCell>
+                <TableCell><Badge variant="secondary" className="uppercase">{payment.partyType}</Badge></TableCell>
+                <TableCell>
+                    <div className="flex items-center gap-2">
+                        {payment.paymentType === 'Stock' ? <Package className="h-4 w-4 text-muted-foreground"/> : null}
+                        <span>{payment.paymentType === 'Stock' ? 'STOCK' : payment.paymentMethod}</span>
+                    </div>
+                </TableCell>
+                <TableCell>
+                  {payment.notes ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="whitespace-normal break-words">{payment.notes}</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{payment.notes}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    'N/A'
+                  )}
+                </TableCell>
+                <TableCell className="text-right font-semibold">{payment.amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
+                <TableCell className="text-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                        <span className="sr-only">Actions</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onEdit(payment)}>
+                        <Pencil className="mr-2 h-4 w-4" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => onDelete(payment.id)}
+                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+    </TooltipProvider>
+  );
+}
+
+export const PaymentTable = React.memo(PaymentTableComponent);
