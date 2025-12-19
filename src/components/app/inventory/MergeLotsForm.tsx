@@ -106,7 +106,7 @@ export const MergeLotsForm: React.FC<MergeLotsFormProps> = ({ isOpen, onClose, o
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>From Warehouse</FormLabel>
-                    <MasterDataCombobox options={warehouses.map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" {...field} />
+                    <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" {...field} />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -117,7 +117,7 @@ export const MergeLotsForm: React.FC<MergeLotsFormProps> = ({ isOpen, onClose, o
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>To Warehouse</FormLabel>
-                     <MasterDataCombobox options={warehouses.map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" {...field} />
+                     <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" {...field} />
                     <FormMessage />
                   </FormItem>
                 )}

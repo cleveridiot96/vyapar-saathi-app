@@ -22,7 +22,7 @@ export function LowStockWarning() {
 
   React.useEffect(() => {
     const warehouseStock: Record<string, number> = {};
-    allAggregatedInventory.forEach(item => {
+    (allAggregatedInventory || []).forEach(item => {
       warehouseStock[item.locationId] = (warehouseStock[item.locationId] || 0) + item.currentBags;
     });
 
@@ -39,6 +39,8 @@ export function LowStockWarning() {
     setShowWarning(false);
     router.push('/inventory');
   };
+
+  if (!showWarning) return null;
 
   return (
     <AlertDialog open={showWarning} onOpenChange={setShowWarning}>

@@ -8,7 +8,6 @@ import { X, Percent, Divide, History as HistoryIcon, Trash2, GripVertical } from
 import { AnimatePresence, motion } from "framer-motion";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '../ui/scroll-area';
-import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 import { useHydrated } from '@/hooks/useHydrated';
 
 const operatorButtonClasses = "bg-accent text-accent-foreground hover:bg-accent/90";
@@ -22,7 +21,7 @@ interface HistoryEntry {
 const useCalculatorState = () => {
     const [input, setInput] = React.useState('');
     const [result, setResult] = React.useState('');
-    const [history, setHistory] = useLocalStorageState<HistoryEntry[]>('calculatorHistory', []);
+    const [history, setHistory] = React.useState<HistoryEntry[]>([]);
     const inputRef = React.useRef<HTMLInputElement>(null);
 
     const handleButtonClick = (value: string) => {
@@ -114,8 +113,8 @@ export const Calculator = ({ isVisible, onClose }: { isVisible: boolean, onClose
         y: 80,
     });
     
-    const [position, setPosition] = useLocalStorageState('calculatorPosition', getDefaultPosition());
-    const [size, setSize] = useLocalStorageState('calculatorSize', { width: 340, height: 520 });
+    const [position, setPosition] = React.useState(getDefaultPosition());
+    const [size, setSize] = React.useState({ width: 340, height: 520 });
     
     const calcRef = React.useRef<HTMLDivElement>(null);
     const isDragging = React.useRef(false);

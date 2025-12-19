@@ -42,7 +42,7 @@ const adjustmentSchema = z.object({
   locationId: z.string().min(1, "Location is required."),
   bags: z.coerce.number(),
   weight: z.coerce.number(),
-  type: z.enum(['Correction', 'Wastage', 'Theft', 'Initial Stock']),
+  type: z.enum(['Correction', 'Wastage', 'Theft', 'Initial Stock', 'Reversal']),
   reason: z.string().min(1, "Reason is required."),
 });
 
@@ -109,6 +109,7 @@ export const AddAdjustmentForm: React.FC<AddAdjustmentFormProps> = ({ isOpen, on
                         <SelectItem value="Wastage">Wastage</SelectItem>
                         <SelectItem value="Theft">Theft</SelectItem>
                         <SelectItem value="Initial Stock">Initial Stock</SelectItem>
+                        <SelectItem value="Reversal">Reversal</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -124,7 +125,7 @@ export const AddAdjustmentForm: React.FC<AddAdjustmentFormProps> = ({ isOpen, on
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Lot Number</FormLabel>
-                    <MasterDataCombobox options={availableLots.map(l => ({value: l, label: l}))} placeholder="Select lot" {...field} />
+                    <MasterDataCombobox options={(availableLots || []).map(l => ({value: l, label: l}))} placeholder="Select lot" {...field} />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -135,7 +136,7 @@ export const AddAdjustmentForm: React.FC<AddAdjustmentFormProps> = ({ isOpen, on
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Warehouse</FormLabel>
-                    <MasterDataCombobox options={warehouses.map(w => ({value: w.id, label: w.name}))} placeholder="Select warehouse" {...field} />
+                    <MasterDataCombobox options={(warehouses || []).map(w => ({value: w.id, label: w.name}))} placeholder="Select warehouse" {...field} />
                     <FormMessage />
                   </FormItem>
                 )}

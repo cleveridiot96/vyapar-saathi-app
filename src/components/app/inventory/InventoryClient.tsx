@@ -22,14 +22,18 @@ import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { useSettings } from "@/contexts/SettingsContext";
 import { InventoryTable } from "./InventoryTable"; 
 import { cn } from "@/lib/utils";
+import { PartyBrokerLeaderboard } from "./PartyBrokerLeaderboard";
+import { MergeLotsForm } from "./MergeLotsForm";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { LowStockWarning } from "@/components/app/dashboard/LowStockWarning";
 import { useTransactions } from '@/hooks/useTransactions';
+import { AddAdjustmentForm } from "../stock-adjustments/AddAdjustmentForm";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import type { AggregatedInventoryItem } from '@/hooks/useInventory';
 import { useInventory } from '@/hooks/useInventory';
-import type { StockAdjustment } from '@/lib/types';
+import type { LocationTransfer, StockAdjustment } from '@/lib/types';
 import { useHydrated } from '@/hooks/useHydrated';
 import { isDateInFinancialYear } from "@/lib/utils";
 
@@ -41,7 +45,7 @@ export function InventoryClient() {
   const { toast } = useToast();
   const isHydrated = useHydrated();
   const { financialYear, isAppHydrating, lowStockThreshold } = useSettings();
-  const { masterData, adjustments, setAdjustments } = useTransactions();
+  const { masterData, locationTransfers, setLocationTransfers, adjustments, setAdjustments } = useTransactions();
   const { warehouses } = masterData;
   
   const { allAggregatedInventory, isLoading: isInventoryLoading } = useInventory();
@@ -49,23 +53,21 @@ export function InventoryClient() {
   const [archivedLotKeys, setArchivedLotKeys] = React.useState<string[]>([]);
   React.useEffect(() => {
     if(isHydrated) {
-        const stored = localStorage.getItem(ARCHIVED_LOTS_STORAGE_KEY);
-        if(stored) setArchivedLotKeys(JSON.parse(stored));
+        // This is a mock for now, will not persist.
     }
   }, [isHydrated]);
   const setAndStoreArchivedLotKeys = (updater: React.SetStateAction<string[]>) => {
-    setArchivedLotKeys(prev => {
-        const newState = typeof updater === 'function' ? updater(prev) : updater;
-        localStorage.setItem(ARCHIVED_LOTS_STORAGE_KEY, JSON.stringify(newState));
-        return newState;
-    });
+    setArchivedLotKeys(updater);
+    // localStorage interaction removed.
   };
 
   const [itemToArchive, setItemToArchive] = React.useState<AggregatedInventoryItem | null>(null);
   const [showArchiveConfirm, setShowArchiveConfirm] = React.useState(false);
   const [selectedWarehouseId, setSelectedWarehouseId] = React.useState<string | null>(warehouseIdFromQuery || null);
+  const [isMergeFormOpen, setIsMergeFormOpen] = React.useState(false);
   const [activeRowSelection, setActiveRowSelection] = React.useState<Record<string, boolean>>({});
   const [archivedRowSelection, setArchivedRowSelection] = React.useState<Record<string, boolean>>({});
+  const [isAdjustmentFormOpen, setIsAdjustmentFormOpen] = React.useState(false);
   const [itemToReverse, setItemToReverse] = React.useState<StockAdjustment | null>(null);
   
   React.useEffect(() => {
@@ -106,6 +108,12 @@ export function InventoryClient() {
     if (!selectedWarehouseId) return archivedInventory;
     return archivedInventory.filter(item => item.locationId === selectedWarehouseId);
   }, [archivedInventory, selectedWarehouseId]);
+
+  const allLotsInSystem = React.useMemo(() => {
+    const lots = new Set<string>();
+    allAggregatedInventory.forEach(item => lots.add(item.lotNumber));
+    return Array.from(lots).sort();
+  }, [allAggregatedInventory]);
 
   const filteredAdjustments = React.useMemo(() => {
     if (isAppHydrating) return [];
@@ -160,6 +168,24 @@ export function InventoryClient() {
     return warehouses.find(w => w.id === selectedWarehouseId)?.name || "Selected Warehouse";
   };
   
+  const handleMergeSubmit = (mergeData: Omit<LocationTransfer, 'id' | 'date'>) => {
+    const newTransfer = {
+      id: `lt-merge-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      ...mergeData,
+    };
+    setLocationTransfers(prev => [newTransfer, ...prev]);
+    toast({ title: "Lots Merged", description: `Successfully merged lots into ${mergeData.items[0].newLotNumber}.` });
+    setIsMergeFormOpen(false);
+    window.dispatchEvent(new CustomEvent('reindex-search'));
+  };
+  
+  const handleAddAdjustment = React.useCallback((newAdjustment: Omit<StockAdjustment, 'id'>) => {
+    setAdjustments(prev => [{ ...newAdjustment, id: `adj-${Date.now()}` }, ...prev]);
+    toast({ title: 'Adjustment Recorded', description: 'The stock adjustment has been successfully saved.' });
+    window.dispatchEvent(new CustomEvent('reindex-search'));
+  }, [setAdjustments, toast]);
+
   const handleReverseAttempt = (adjustment: StockAdjustment) => {
     if (adjustment.type === 'Reversal') {
       toast({ title: 'Cannot Reverse', description: 'This is already a reversal transaction.', variant: 'destructive' });
@@ -180,9 +206,8 @@ export function InventoryClient() {
         type: 'Reversal',
         reason: `Reversal of adjustment ID: ${itemToReverse.id}`,
       };
-      setAdjustments(prev => [{ ...reversal, id: `adj-${Date.now()}` }, ...prev]);
+      handleAddAdjustment(reversal);
       setItemToReverse(null);
-      toast({title: "Adjustment Reversed"});
     }
   };
 
@@ -208,11 +233,13 @@ export function InventoryClient() {
 
   return (
     <div className="space-y-6 print-area">
+      <LowStockWarning />
       <PrintHeaderSymbol className="hidden print:block text-center text-lg font-semibold mb-4" />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print">
         <h1 className="text-3xl font-bold text-foreground">Inventory Dashboard (FY {financialYear})</h1>
         <div className="flex items-center gap-2">
            <Button asChild variant="outline"><Link href="/purchases"><PlusCircle className="mr-2 h-4 w-4" />New Purchase</Link></Button>
+           <Button variant="outline" onClick={() => setIsMergeFormOpen(true)}><GitMerge className="mr-2 h-4 w-4" />Merge Stock</Button>
            <Button asChild variant="outline"><Link href="/location-transfer"><ArrowRightLeft className="mr-2 h-4 w-4" />Transfer Stock</Link></Button>
            <Button asChild><Link href="/sales"><ShoppingCart className="mr-2 h-4 w-4" />Sell Stock</Link></Button>
            <Button variant="outline" size="icon" onClick={() => window.print()}><Printer className="h-5 w-5" /><span className="sr-only">Print</span></Button>
@@ -340,6 +367,9 @@ export function InventoryClient() {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Stock Adjustments History</CardTitle>
+                <Button onClick={() => setIsAdjustmentFormOpen(true)}>
+                  <PlusCircle className="mr-2 h-4 w-4" /> New Adjustment
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -390,6 +420,30 @@ export function InventoryClient() {
         </TabsContent>
       </Tabs>
       
+      <div className="mt-8 no-print">
+        <PartyBrokerLeaderboard items={allAggregatedInventory} />
+      </div>
+
+      {isMergeFormOpen && (
+        <MergeLotsForm
+          isOpen={isMergeFormOpen}
+          onClose={() => setIsMergeFormOpen(false)}
+          onSubmit={handleMergeSubmit}
+          warehouses={warehouses}
+          availableStock={activeInventory}
+        />
+      )}
+
+      {isAdjustmentFormOpen && (
+         <AddAdjustmentForm
+            isOpen={isAdjustmentFormOpen}
+            onClose={() => setIsAdjustmentFormOpen(false)}
+            onSubmit={handleAddAdjustment}
+            warehouses={(masterData as any).Warehouse}
+            availableLots={allLotsInSystem}
+        />
+      )}
+
       {itemToReverse && (
         <AlertDialog open={!!itemToReverse} onOpenChange={(open) => !open && setItemToReverse(null)}>
           <AlertDialogContent>

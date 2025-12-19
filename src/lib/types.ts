@@ -284,3 +284,11 @@ export interface DaybookEntry {
   Icon: React.ElementType;
   colorClass: string;
 }
+
+export interface Warehouse extends MasterItem {
+  type: 'Warehouse';
+}
+
+export interface Expense extends MasterItem {
+  type: 'Expense';
+}

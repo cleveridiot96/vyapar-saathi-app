@@ -49,7 +49,7 @@ export function useInventory(saleIdToExclude?: string) {
         });
         
         // 2. Process Adjustments
-        adjustments.forEach(adj => {
+        (adjustments || []).forEach(adj => {
             const key = `${adj.locationId}${KEY_SEPARATOR}${adj.lotNumber}`;
             if(inventory[key]) {
                 inventory[key].currentBags += adj.bags;
@@ -141,8 +141,8 @@ export function useInventory(saleIdToExclude?: string) {
             if (sale) {
                 const originalSaleItem = sale.items.find(i => i.lotNumber === sr.originalLotNumber);
                 if (originalSaleItem) {
-                    const mumbaiWarehouse = Object.values(inventory).find(i => i.locationId === FIXED_WAREHOUSES.MUMBAI_ID);
-                    const key = `${mumbaiWarehouse?.locationId || FIXED_WAREHOUSES.MUMBAI_ID}${KEY_SEPARATOR}${sr.originalLotNumber}`;
+                    const mumbaiWarehouse = Object.values(inventory).find(i => i.locationId === FIXED_WAREHOUSES.find(fw => fw.name === 'Mumbai')?.id);
+                    const key = `${mumbaiWarehouse?.locationId || 'wh-mumbai'}${KEY_SEPARATOR}${sr.originalLotNumber}`;
                      if (inventory[key]) {
                         inventory[key].currentBags += sr.quantityReturned;
                         inventory[key].currentWeight += sr.netWeightReturned;
@@ -155,8 +155,8 @@ export function useInventory(saleIdToExclude?: string) {
         sales.forEach(s => {
             if (s.id === saleIdToExclude) return;
             s.items.forEach(item => {
-                 const mumbaiWarehouse = Object.values(inventory).find(i => i.locationId === FIXED_WAREHOUSES.MUMBAI_ID);
-                 const key = `${mumbaiWarehouse?.locationId || FIXED_WAREHOUSES.MUMBAI_ID}${KEY_SEPARATOR}${item.lotNumber}`;
+                 const mumbaiWarehouse = Object.values(inventory).find(i => i.locationId === FIXED_WAREHOUSES.find(fw => fw.name === 'Mumbai')?.id);
+                 const key = `${mumbaiWarehouse?.locationId || 'wh-mumbai'}${KEY_SEPARATOR}${item.lotNumber}`;
                  if (inventory[key]) {
                     inventory[key].currentBags -= item.quantity;
                     inventory[key].currentWeight -= item.netWeight;
