@@ -1,48 +1,25 @@
-"use client";
-
 import React from "react";
-import { usePathname } from 'next/navigation';
-import { Sidebar, SidebarInset, SidebarTrigger, SidebarHeader, SidebarContent } from "@/components/ui/sidebar";
+import { Sidebar, SidebarInset, SidebarHeader, SidebarContent } from "@/components/ui/sidebar";
 import { features } from "@/lib/features";
-import { Menu, Loader } from "lucide-react";
+import { Menu } from "lucide-react";
 import { ClientSidebarMenu } from "@/components/layout/ClientSidebarMenu";
-import { AppHeader } from "@/components/layout/AppHeader";
-import { useHydrated } from "@/hooks/useHydrated";
-import { useTransactions } from "@/hooks/useTransactions";
 import ErrorBoundary from "../ErrorBoundary";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
-    const pathname = usePathname();
-    const isHydrated = useHydrated();
-    const { isTransactionsLoaded, isMasterDataLoaded } = useTransactions();
-    
-    const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/setup') || pathname.startsWith('/recover');
-
-    if (isAuthPage) {
-        return <>{children}</>;
-    }
-    
-    if (!isHydrated || !isTransactionsLoaded || !isMasterDataLoaded) {
-        return (
-            <div className="flex h-screen w-screen items-center justify-center bg-background">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader className="h-12 w-12 animate-spin text-primary" />
-                    <p className="text-lg font-semibold text-muted-foreground">
-                        Loading Application Data...
-                    </p>
-                </div>
-            </div>
-        );
-    }
-    
-    // Fully loaded UI shell
+export function AppShell({ 
+    header,
+    children 
+}: { 
+    header: React.ReactNode;
+    children: React.ReactNode 
+}) {
     return (
         <div className="flex h-screen w-screen overflow-hidden">
             <Sidebar className="border-r border-sidebar-border shadow-lg print:hidden" collapsible="icon">
                 <SidebarHeader className="flex h-14 items-center justify-center p-2 border-b border-sidebar-border">
-                    <SidebarTrigger>
-                        <Menu className="h-6 w-6 text-sidebar-foreground" />
-                    </SidebarTrigger>
+                    <div className="flex items-center gap-2">
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-sidebar-foreground"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                        <h2 className="text-lg font-semibold tracking-tight text-sidebar-foreground">Vyapar Saathi</h2>
+                    </div>
                 </SidebarHeader>
                 <SidebarContent className="py-2">
                     <ClientSidebarMenu navItems={features} />
@@ -51,7 +28,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <SidebarInset>
                 <div className="flex flex-col flex-1 min-h-0 relative">
-                    <AppHeader />
+                    {header}
                     <main className="flex-1 overflow-y-auto p-2 sm:p-4 w-full print:p-0 print:m-0 print:overflow-visible">
                        <ErrorBoundary>{children}</ErrorBoundary>
                     </main>

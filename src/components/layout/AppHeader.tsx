@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
+import React from "react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Menu } from "lucide-react";
 import { AppHeaderContentInternal } from "@/components/layout/AppHeaderContentInternal";
-import { SidebarTrigger } from '../ui/sidebar';
 
 export function AppHeader() {
   return (
@@ -14,7 +14,7 @@ export function AppHeader() {
             </SidebarTrigger>
         </div>
         <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-            <AppHeaderContentInternal />
+          <AppHeaderContentInternal />
         </div>
     </header>
   );

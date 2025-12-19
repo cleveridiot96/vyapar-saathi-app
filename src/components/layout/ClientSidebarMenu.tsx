@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SidebarMenu, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar"; 
+import { SidebarMenu, SidebarMenuItem, useSidebar, SidebarTrigger } from "@/components/ui/sidebar"; 
 import type { Feature as NavItem } from "@/lib/features";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { HelpCircle as FallbackIcon } from 'lucide-react';
+import { HelpCircle as FallbackIcon, Menu } from 'lucide-react';
 import type { LucideProps } from 'lucide-react';
 import React, { ComponentType, useEffect, useState } from "react";
 
@@ -73,7 +73,6 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
   const { state: sidebarState, setOpenMobile } = useSidebar(); 
 
   const handleLinkClick = () => {
-    // Only close the sidebar on mobile after a navigation action
     if (setOpenMobile) {
       setOpenMobile(false);
     }
@@ -82,12 +81,18 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
   return (
     <TooltipProvider>
       <SidebarMenu className="p-2 space-y-0.5">
+        <SidebarTrigger className="group-data-[collapsible=icon]:hidden w-full justify-start px-2.5 py-2 mb-2">
+            <div className={cn("flex items-center justify-center h-8 w-8 rounded-full shrink-0 transition-colors bg-transparent text-sidebar-foreground group-hover:text-sidebar-accent-foreground")}>
+                <Menu className="h-5 w-5" />
+            </div>
+            <span className="font-semibold text-sm">Collapse Menu</span>
+        </SidebarTrigger>
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href)) || (pathname === "/" && item.href === "/dashboard");
 
           const buttonContent = (
             <>
-              <div className={cn( // Icon circle
+              <div className={cn(
                   "flex items-center justify-center h-8 w-8 rounded-full shrink-0 transition-colors",
                   sidebarState === 'expanded' && "mr-3",
                    isActive 
@@ -96,7 +101,7 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
               )}>
                 <LazyIcon name={item.iconName} />
               </div>
-              <span className={cn( // Text
+              <span className={cn(
                   "truncate text-sm",
                   sidebarState === 'collapsed' && "sr-only", 
                   isActive ? "font-semibold" : "font-medium"
@@ -112,7 +117,7 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
                 <TooltipTrigger asChild>
                   <Link
                     href={item.href}
-                    onClick={handleLinkClick} // Add this onClick handler
+                    onClick={handleLinkClick}
                     className={cn(
                       "relative flex items-center transition-colors duration-150 ease-in-out group focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar-background",
                       "text-sidebar-foreground hover:text-sidebar-accent-foreground rounded-md",
@@ -141,6 +146,3 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
           );
         })}
       </SidebarMenu>
-    </TooltipProvider>
-  );
-}
