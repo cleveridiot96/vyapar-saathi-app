@@ -16,7 +16,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { CalendarPlus } from 'lucide-react';
 import { useHydrated } from '@/hooks/useHydrated';
-import { Skeleton } from '../ui/skeleton';
 
 export function FinancialYearToggle() {
   const { 
@@ -56,13 +55,12 @@ export function FinancialYearToggle() {
     return [...availableFinancialYears].sort((a,b) => b.localeCompare(a));
   }, [availableFinancialYears]);
 
-
   return (
     <div className="flex items-center">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="px-3 text-sm font-semibold whitespace-nowrap w-[110px]">
-            {isHydrated ? `FY ${financialYear}` : 'FY ...'}
+          <Button variant="outline" className="px-3 text-sm font-semibold whitespace-nowrap w-[110px]" suppressHydrationWarning>
+            FY {isHydrated ? financialYear : '...'}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="center" className="w-[200px]">
