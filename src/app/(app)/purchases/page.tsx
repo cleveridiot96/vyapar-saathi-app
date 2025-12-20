@@ -96,7 +96,7 @@ export default function PurchasesPage() {
   const updatePurchase = usePurchaseStore((state) => state.updatePurchase);
   const deletePurchase = usePurchaseStore((state) => state.deletePurchase);
   
-  // useTransactions for other data
+  // useTransactions for other data and master data updates
   const {
     purchaseReturns,
     setPurchaseReturns,
