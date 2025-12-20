@@ -4,19 +4,18 @@ import type { DaybookEntry } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Printer, ShoppingCart, Receipt as ReceiptIcon, ArrowRightCircle, ArrowLeftCircle, ArrowRightLeft, FileText, BookMarked } from "lucide-react";
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subDays } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/SettingsContext";
-import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
-import type { DateRange } from "react-day-picker";
 import { DataTableColumnHeader } from '@/components/shared/DataTableColumnHeader';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/shared/DataTable';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useHydrated } from '@/hooks/useHydrated';
+import { isDateInFinancialYear } from '@/lib/utils';
 
 
 const typeToIconMap: Record<DaybookEntry['type'], React.ElementType> = {
@@ -54,58 +53,47 @@ export function DaybookClient() {
   // Data states from central hook
   const { purchases, sales, receipts, payments, locationTransfers, ledger: ledgerData, isTransactionsLoaded } = useTransactions();
 
-
-  // Filter and sort states
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
-
-  useEffect(() => {
-    if (!dateRange) {
-        const today = new Date();
-        setDateRange({ from: startOfMonth(today), to: endOfMonth(today) });
-    }
-  }, [dateRange]);
-
   const allDaybookEntries = useMemo((): DaybookEntry[] => {
     if (!isTransactionsLoaded) return [];
     
     const entries: DaybookEntry[] = [];
 
-    purchases.forEach(p => entries.push({
+    purchases.filter(p => isDateInFinancialYear(p.date, financialYear)).forEach(p => entries.push({
       id: `pur-${p.id}`, date: p.date, type: 'Purchase', voucherNo: p.id.slice(-6).toUpperCase(),
       party: p.supplierName || 'UNKNOWN', debit: p.totalAmount, credit: 0,
       narration: `PURCHASE OF ${p.items.map(i=>i.lotNumber).join(', ')}`, href: `/purchases#${p.id}`,
       Icon: typeToIconMap['Purchase'], colorClass: typeToColorMap['Purchase'],
     }));
 
-    sales.forEach(s => entries.push({
+    sales.filter(s => isDateInFinancialYear(s.date, financialYear)).forEach(s => entries.push({
       id: `sal-${s.id}`, date: s.date, type: 'Sale', voucherNo: s.billNumber || s.id.slice(-6).toUpperCase(),
       party: s.customerName || 'UNKNOWN', debit: 0, credit: s.billedAmount,
       narration: `SALE OF ${s.items.map(i=>i.lotNumber).join(', ')}`, href: `/sales#${s.id}`,
       Icon: typeToIconMap['Sale'], colorClass: typeToColorMap['Sale'],
     }));
 
-    payments.forEach(p => entries.push({
+    payments.filter(p => isDateInFinancialYear(p.date, financialYear)).forEach(p => entries.push({
       id: `pay-${p.id}`, date: p.date, type: 'Payment', voucherNo: p.id.slice(-6).toUpperCase(),
       party: p.partyName || 'UNKNOWN', debit: 0, credit: p.amount,
       narration: `PAYMENT VIA ${p.paymentMethod || 'CASH'}`, href: `/payments#${p.id}`,
       Icon: typeToIconMap['Payment'], colorClass: typeToColorMap['Payment'],
     }));
 
-    receipts.forEach(r => entries.push({
+    receipts.filter(r => isDateInFinancialYear(r.date, financialYear)).forEach(r => entries.push({
       id: `rec-${r.id}`, date: r.date, type: 'Receipt', voucherNo: r.id.slice(-6).toUpperCase(),
       party: r.partyName || 'UNKNOWN', debit: r.amount, credit: 0,
       narration: `RECEIPT VIA ${r.paymentMethod}`, href: `/receipts#${r.id}`,
       Icon: typeToIconMap['Receipt'], colorClass: typeToColorMap['Receipt'],
     }));
 
-    locationTransfers.forEach(t => entries.push({
+    locationTransfers.filter(t => isDateInFinancialYear(t.date, financialYear)).forEach(t => entries.push({
       id: `trn-${t.id}`, date: t.date, type: 'Transfer', voucherNo: t.id.slice(-6).toUpperCase(),
       party: 'INTERNAL TRANSFER', debit: 0, credit: 0,
       narration: `FROM ${t.fromLocationName} TO ${t.toLocationName}`, href: `/location-transfer#${t.id}`,
       Icon: typeToIconMap['Transfer'], colorClass: typeToColorMap['Transfer'],
     }));
     
-    ledgerData.filter(l => l.type === 'Expense').forEach(l => {
+    ledgerData.filter(l => l.type === 'Expense' && isDateInFinancialYear(l.date, financialYear)).forEach(l => {
         let href = '/payments'; // Default fallback
         if(l.linkedTo?.voucherId) {
             if(l.linkedTo?.voucherType === 'Purchase') href = `/purchases#${l.linkedTo.voucherId}`;
@@ -122,40 +110,7 @@ export function DaybookClient() {
     });
 
     return entries.sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [isTransactionsLoaded, purchases, sales, payments, receipts, locationTransfers, ledgerData]);
-
-  const filteredEntries = useMemo(() => {
-    let filtered = allDaybookEntries;
-
-    if (dateRange?.from) {
-        const toDate = dateRange.to || dateRange.from;
-        filtered = filtered.filter(entry => entry.date && isWithinInterval(parseISO(entry.date), { start: startOfDay(dateRange.from!), end: endOfDay(toDate) }));
-    }
-    
-    return filtered;
-
-  }, [allDaybookEntries, dateRange]);
-  
-  const setDateQuickFilter = useCallback((preset: 'today' | 'yesterday' | 'dayBeforeYesterday') => {
-    const today = new Date();
-    let from, to;
-
-    switch (preset) {
-      case 'today':
-        from = startOfDay(today);
-        to = endOfDay(today);
-        break;
-      case 'yesterday':
-        from = startOfDay(subDays(today, 1));
-        to = endOfDay(subDays(today, 1));
-        break;
-      case 'dayBeforeYesterday':
-        from = startOfDay(subDays(today, 2));
-        to = endOfDay(subDays(today, 2));
-        break;
-    }
-    setDateRange({ from, to });
-  }, []);
+  }, [isTransactionsLoaded, purchases, sales, payments, receipts, locationTransfers, ledgerData, financialYear]);
   
   const columns: ColumnDef<DaybookEntry>[] = useMemo(() => [
     {
@@ -219,7 +174,7 @@ export function DaybookClient() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
             <div>
                 <CardTitle className="text-2xl flex items-center gap-3">
-                    <BookMarked className="h-7 w-7 text-primary"/> DAYBOOK / JOURNAL
+                    <BookMarked className="h-7 w-7 text-primary"/> DAYBOOK / JOURNAL (FY {financialYear})
                 </CardTitle>
                 <CardDescription>A CHRONOLOGICAL VIEW OF ALL BUSINESS TRANSACTIONS.</CardDescription>
             </div>
@@ -227,20 +182,9 @@ export function DaybookClient() {
           </div>
         </CardHeader>
         <CardContent>
-            <div className="flex flex-col md:flex-row gap-2 mb-2 p-2 border rounded-md no-print items-center flex-wrap">
-                <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
-                 <div className="flex gap-1 ml-auto">
-                    <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('today')}>TODAY</Button>
-                    <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('yesterday')}>YESTERDAY</Button>
-                    <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('dayBeforeYesterday')}>
-                        {format(subDays(new Date(), 2), 'EEEE').toUpperCase()}
-                    </Button>
-                </div>
-            </div>
-
             <DataTable
                 columns={columns}
-                data={filteredEntries}
+                data={allDaybookEntries}
                 onRowClick={(row) => row.original.href && router.push(row.original.href)}
                 getRowId={(row) => row.id}
                 initialState={{

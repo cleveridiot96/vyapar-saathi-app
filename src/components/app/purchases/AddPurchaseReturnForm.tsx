@@ -1,16 +1,12 @@
-
 "use client";
 
 import * as React from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { purchaseReturnSchema, type PurchaseReturnFormValues } from "@/lib/schemas/purchaseReturnSchema";
@@ -38,7 +34,6 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
 }) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   const [selectedOriginalPurchase, setSelectedOriginalPurchase] = React.useState<Purchase | null>(null);
   const [netWeightReturnedManuallySet, setNetWeightReturnedManuallySet] = React.useState(!!purchaseReturnToEdit?.netWeightReturned);
 
@@ -46,7 +41,6 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
     resolver: zodResolver(purchaseReturnSchema(purchases, existingPurchaseReturns)),
     defaultValues: purchaseReturnToEdit
       ? {
-          date: new Date(purchaseReturnToEdit.date),
           originalPurchaseId: purchaseReturnToEdit.originalPurchaseId,
           originalLotNumber: purchaseReturnToEdit.originalLotNumber,
           quantityReturned: purchaseReturnToEdit.quantityReturned,
@@ -55,7 +49,6 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
           notes: purchaseReturnToEdit.notes || "",
         }
       : {
-          date: new Date(),
           originalPurchaseId: undefined,
           originalLotNumber: undefined,
           quantityReturned: undefined,
@@ -74,7 +67,6 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
     if (isOpen) {
       const defaultVals = purchaseReturnToEdit
         ? {
-            date: new Date(purchaseReturnToEdit.date),
             originalPurchaseId: purchaseReturnToEdit.originalPurchaseId,
             originalLotNumber: purchaseReturnToEdit.originalLotNumber,
             quantityReturned: purchaseReturnToEdit.quantityReturned,
@@ -82,7 +74,7 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
             returnReason: purchaseReturnToEdit.returnReason || "",
             notes: purchaseReturnToEdit.notes || "",
           }
-        : { date: new Date(), originalPurchaseId: undefined, originalLotNumber: undefined, quantityReturned: undefined, netWeightReturned: undefined, returnReason: "", notes: "" };
+        : { originalPurchaseId: undefined, originalLotNumber: undefined, quantityReturned: undefined, netWeightReturned: undefined, returnReason: "", notes: "" };
       reset(defaultVals);
       setSelectedOriginalPurchase(purchaseReturnToEdit ? purchases.find(p => p.id === purchaseReturnToEdit.originalPurchaseId) || null : null);
       setNetWeightReturnedManuallySet(!!purchaseReturnToEdit?.netWeightReturned);
@@ -141,7 +133,7 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
 
     const purchaseReturnData: PurchaseReturn = {
       id: purchaseReturnToEdit?.id || `pr-${Date.now()}`,
-      date: format(values.date, "yyyy-MM-dd"),
+      date: format(new Date(), "yyyy-MM-dd"),
       originalPurchaseId: originalPurchase.id,
       originalLotNumber: values.originalLotNumber,
       originalSupplierId: originalPurchase.supplierId,
@@ -181,33 +173,6 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
         <FormProvider {...formMethods}>
           <Form {...formMethods}>
             <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1 pr-3">
-              <FormField control={control} name="date" render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Return Date</FormLabel>
-                  <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                          {field.value ? format(field.value, "dd/MM/yy") : <span>Pick a date</span>}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={(date) => {
-                          if (date) field.onChange(date);
-                          setIsDatePickerOpen(false);
-                        }}
-                        disabled={(date) => date > new Date()}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover><FormMessage />
-                </FormItem>)}
-              />
               <FormField control={control} name="originalPurchaseId" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Original Purchase</FormLabel>

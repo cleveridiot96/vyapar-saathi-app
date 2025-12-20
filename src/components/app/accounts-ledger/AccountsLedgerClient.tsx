@@ -4,9 +4,7 @@ import React, { useMemo, useEffect } from 'react';
 import type { MasterItem } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
-import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
-import type { DateRange } from "react-day-picker";
-import { format, parseISO, startOfDay, endOfDay, isWithinInterval, isBefore, subMonths, subWeeks, startOfYear } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { BookUser, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -16,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useHydrated } from '@/hooks/useHydrated';
 import dynamic from 'next/dynamic';
+import { isDateInFinancialYear } from '@/lib/utils';
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
@@ -41,7 +40,7 @@ const initialLedgerData = {
 
 export function AccountsLedgerClient() {
   const isHydrated = useHydrated();
-  const { isAppHydrating } = useSettings();
+  const { financialYear, isAppHydrating } = useSettings();
   const { 
     purchases, 
     sales, 
@@ -51,7 +50,6 @@ export function AccountsLedgerClient() {
   } = useTransactions();
   
   const [selectedPartyId, setSelectedPartyId] = React.useState<string>("");
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -69,70 +67,53 @@ export function AccountsLedgerClient() {
     return allMasters.map(p => ({ value: p.id, label: `${p.name} (${p.type})` }));
   }, [allMasters]);
 
-  const setDatePreset = (preset: 'ytd' | '6m' | '3m' | '1m' | '1w' | 'today') => {
-    const to = endOfDay(new Date());
-    let from;
-    switch (preset) {
-        case 'ytd': from = startOfYear(to); break;
-        case '6m': from = startOfDay(subMonths(to, 6)); break;
-        case '3m': from = startOfDay(subMonths(to, 3)); break;
-        case '1m': from = startOfDay(subMonths(to, 1)); break;
-        case '1w': from = startOfDay(subWeeks(to, 1)); break;
-        case 'today': from = startOfDay(to); break;
-    }
-    setDateRange({ from, to });
-  };
-
   const ledgerData = useMemo(() => {
     if (!selectedPartyId || !isHydrated) return initialLedgerData;
 
-    const fromDate = dateRange?.from ? startOfDay(dateRange.from) : new Date(0);
-    const toDate = dateRange?.to ? endOfDay(dateRange.to) : new Date();
-    
     let openingBalance = 0;
     const periodTransactions: FinancialLedgerTransaction[] = [];
     
     // Calculate Opening Balance
     sales.forEach(s => {
-      if (isBefore(parseISO(s.date), fromDate) && (s.customerId === selectedPartyId || s.brokerId === selectedPartyId)) {
+      if (!isDateInFinancialYear(s.date, financialYear) && (s.customerId === selectedPartyId || s.brokerId === selectedPartyId)) {
         openingBalance += s.billedAmount;
       }
     });
     purchases.forEach(p => {
-      if (isBefore(parseISO(p.date), fromDate) && (p.supplierId === selectedPartyId || p.agentId === selectedPartyId)) {
+      if (!isDateInFinancialYear(p.date, financialYear) && (p.supplierId === selectedPartyId || p.agentId === selectedPartyId)) {
         openingBalance -= p.totalAmount;
       }
     });
     receipts.forEach(r => {
-      if (isBefore(parseISO(r.date), fromDate) && r.partyId === selectedPartyId) {
+      if (!isDateInFinancialYear(r.date, financialYear) && r.partyId === selectedPartyId) {
         openingBalance -= (r.amount + (r.cashDiscount || 0));
       }
     });
      payments.forEach(p => {
-      if (isBefore(parseISO(p.date), fromDate) && p.partyId === selectedPartyId) {
+      if (!isDateInFinancialYear(p.date, financialYear) && p.partyId === selectedPartyId) {
         openingBalance += p.amount;
       }
     });
 
     // Process Period Transactions
     sales.forEach(s => {
-      if (isWithinInterval(parseISO(s.date), { start: fromDate, end: toDate }) && (s.customerId === selectedPartyId || s.brokerId === selectedPartyId)) {
+      if (isDateInFinancialYear(s.date, financialYear) && (s.customerId === selectedPartyId || s.brokerId === selectedPartyId)) {
         periodTransactions.push({ id: `sale-${s.id}`, date: s.date, particulars: `Sold: ${s.items.map(i=>i.lotNumber).join(', ')}`, voucherType: 'Sale', voucherNo: s.billNumber, debit: s.billedAmount, credit: 0, balance: 0, href: `/sales#${s.id}` });
       }
     });
     purchases.forEach(p => {
-      if (isWithinInterval(parseISO(p.date), { start: fromDate, end: toDate }) && (p.supplierId === selectedPartyId || p.agentId === selectedPartyId)) {
+      if (isDateInFinancialYear(p.date, financialYear) && (p.supplierId === selectedPartyId || p.agentId === selectedPartyId)) {
         periodTransactions.push({ id: `pur-${p.id}`, date: p.date, particulars: `Purchased: ${p.items.map(i=>i.lotNumber).join(', ')}`, voucherType: 'Purchase', debit: 0, credit: p.totalAmount, balance: 0, href: `/purchases#${p.id}` });
       }
     });
     receipts.forEach(r => {
-      if (isWithinInterval(parseISO(r.date), { start: fromDate, end: toDate }) && r.partyId === selectedPartyId) {
+      if (isDateInFinancialYear(r.date, financialYear) && r.partyId === selectedPartyId) {
         const totalCredit = r.amount + (r.cashDiscount || 0);
         periodTransactions.push({ id: `rec-${r.id}`, date: r.date, particulars: `Received via ${r.paymentMethod}`, voucherType: 'Receipt', debit: 0, credit: totalCredit, balance: 0, href: `/receipts#${r.id}` });
       }
     });
      payments.forEach(p => {
-      if (isWithinInterval(parseISO(p.date), { start: fromDate, end: toDate }) && p.partyId === selectedPartyId) {
+      if (isDateInFinancialYear(p.date, financialYear) && p.partyId === selectedPartyId) {
         periodTransactions.push({ id: `pay-${p.id}`, date: p.date, particulars: `Paid via ${p.paymentMethod}`, voucherType: 'Payment', debit: p.amount, credit: 0, balance: 0, href: `/payments#${p.id}` });
       }
     });
@@ -149,7 +130,7 @@ export function AccountsLedgerClient() {
     const totalCredit = transactionsWithBalance.reduce((sum, tx) => sum + tx.credit, 0);
 
     return { transactions: transactionsWithBalance, openingBalance, closingBalance: runningBalance, totalDebit, totalCredit };
-  }, [selectedPartyId, dateRange, purchases, sales, payments, receipts, isHydrated]);
+  }, [selectedPartyId, purchases, sales, payments, receipts, isHydrated, financialYear]);
 
   const handlePartySelect = (value: string | undefined) => {
     setSelectedPartyId(value || "");
@@ -183,15 +164,6 @@ export function AccountsLedgerClient() {
                             notFoundMessage="NO PARTY FOUND."
                             className="h-9 text-base w-full md:w-64"
                         />
-                        <DatePickerWithRange date={dateRange} onDateChange={setDateRange} className="w-full sm:w-auto"/>
-                        <div className="flex gap-1">
-                            <Button variant="outline" size="sm" onClick={() => setDatePreset('today')}>Today</Button>
-                            <Button variant="outline" size="sm" onClick={() => setDatePreset('1w')}>1W</Button>
-                            <Button variant="outline" size="sm" onClick={() => setDatePreset('1m')}>1M</Button>
-                            <Button variant="outline" size="sm" onClick={() => setDatePreset('3m')}>3M</Button>
-                            <Button variant="outline" size="sm" onClick={() => setDatePreset('6m')}>6M</Button>
-                            <Button variant="outline" size="sm" onClick={() => setDatePreset('ytd')}>YTD</Button>
-                        </div>
                         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-5 w-5" /><span className="sr-only">Print</span></Button>
                     </div>
                 </div>
@@ -203,7 +175,7 @@ export function AccountsLedgerClient() {
                 <CardHeader className="pt-2 pb-4">
                   <CardTitle className="text-xl">Statement for {selectedPartyDetails.name}</CardTitle>
                   <CardDescription>
-                    {dateRange?.from && format(dateRange.from, 'dd/MM/yy')} to {dateRange?.to ? format(dateRange.to, 'dd/MM/yy') : 'Today'}
+                    For Financial Year {financialYear}
                   </CardDescription>
                 </CardHeader>
                  <ScrollArea className="flex-grow border rounded-md">

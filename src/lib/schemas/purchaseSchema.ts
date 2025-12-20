@@ -17,7 +17,6 @@ export const expenseSchema = z.object({
 });
 
 export const purchaseSchema = z.object({
-  date: z.date({ required_error: "Purchase date is required." }),
   supplierId: z.string().min(1, "Supplier is required."),
   agentId: z.string().optional(),
   locationId: z.string().min(1, "Location/Warehouse is required."),

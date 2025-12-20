@@ -1,10 +1,9 @@
-
 "use client";
 
 import * as React from "react";
 import { useForm, FormProvider, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -22,11 +21,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Input } from '@/components/ui/input';
 import { Select as ShadSelect, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, PlusCircle, Trash2, Package } from "lucide-react";
+import { PlusCircle, Trash2, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { paymentSchema, type PaymentFormValues } from "@/lib/schemas/paymentSchema";
@@ -68,7 +65,6 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
   const { availableStock } = useInventory(paymentToEdit?.id); // Exclude current payment's stock usage if editing
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   const [isMasterFormOpen, setIsMasterFormOpen] = React.useState(false);
   const [masterFormItemType, setMasterFormItemType] = React.useState<MasterItemType | null>(null);
   const [masterItemToEdit, setMasterItemToEdit] = React.useState<MasterItem | null>(null);
@@ -78,7 +74,6 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
     resolver: zodResolver(paymentSchema),
     defaultValues: paymentToEdit
       ? {
-          date: new Date(paymentToEdit.date),
           partyId: paymentToEdit.partyId,
           paymentType: paymentToEdit.paymentType || 'Cash',
           amount: paymentToEdit.paymentType === 'Cash' ? paymentToEdit.amount : undefined,
@@ -90,7 +85,6 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
           stockItems: paymentToEdit.stockItems || [],
         }
       : {
-          date: new Date(),
           partyId: undefined, 
           paymentType: 'Cash',
           amount: undefined,
@@ -201,7 +195,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
 
     const paymentData: Payment = {
       id: paymentToEdit?.id || `payment-${Date.now()}`,
-      date: format(values.date, "yyyy-MM-dd"),
+      date: format(new Date(), "yyyy-MM-dd"),
       partyId: values.partyId as string,
       partyName: selectedParty.name,
       partyType: selectedParty.type as MasterItemType,
@@ -306,24 +300,6 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField control={control} name="date" render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Payment Date</FormLabel>
-                      <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                              {field.value ? format(field.value, "dd/MM/yy") : <span>Pick a date</span>}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar mode="single" selected={field.value} onSelect={(date) => { if (date) field.onChange(date); setIsDatePickerOpen(false); }} disabled={(date) => date > new Date()} initialFocus />
-                        </PopoverContent>
-                      </Popover><FormMessage />
-                    </FormItem>)}
-                  />
                   <FormField control={control} name="partyId" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Party</FormLabel>

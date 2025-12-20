@@ -18,7 +18,6 @@ const billAllocationSchema = z.object({
 
 
 export const paymentSchema = z.object({
-    date: z.date({ required_error: "Date is required."}),
     partyId: z.string().min(1, "Party must be selected."),
     amount: z.coerce.number().optional(),
     paymentMethod: z.enum(['Cash', 'Bank', 'UPI']).optional(),

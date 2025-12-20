@@ -27,14 +27,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import type { StockAdjustment, MasterItem } from '@/lib/types';
 import { format } from 'date-fns';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const adjustmentSchema = z.object({
-  date: z.date({ required_error: "Date is required." }),
   lotNumber: z.string().min(1, "Lot number is required."),
   locationId: z.string().min(1, "Location is required."),
   type: z.enum(['Correction', 'Wastage', 'Theft', 'Initial Stock', 'Reversal'], { required_error: "Adjustment type is required." }),
@@ -59,9 +54,8 @@ interface AddAdjustmentFormProps {
 export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, availableLots }: AddAdjustmentFormProps) {
   const form = useForm<AdjustmentFormValues>({
     resolver: zodResolver(adjustmentSchema),
-    defaultValues: { date: new Date(), bags: 0, weight: 0 },
+    defaultValues: { bags: 0, weight: 0 },
   });
-  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   const watchedType = form.watch("type");
 
   const processSubmit = (values: AdjustmentFormValues) => {
@@ -76,7 +70,7 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
     const location = warehouses.find(w => w.id === values.locationId);
 
     onSubmit({
-      date: format(values.date, 'yyyy-MM-dd'),
+      date: format(new Date(), 'yyyy-MM-dd'),
       lotNumber: values.lotNumber,
       locationId: values.locationId,
       locationName: location?.name || values.locationId,
@@ -85,7 +79,7 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
       type: values.type,
       reason: values.reason,
     });
-    form.reset({ date: new Date(), bags: 0, weight: 0 });
+    form.reset({ bags: 0, weight: 0 });
     onClose();
   };
 
@@ -105,16 +99,6 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
         <Form {...form}>
           <form onSubmit={form.handleSubmit(processSubmit)} className="space-y-4 pt-4">
             <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="date" render={({ field }) => (
-                <FormItem><FormLabel>Date</FormLabel>
-                  <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                    <PopoverTrigger asChild><FormControl>
-                        <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                          {field.value ? format(field.value, "dd/MM/yy") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button></FormControl></PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(d) => {if(d) field.onChange(d); setIsDatePickerOpen(false);}} disabled={(d) => d > new Date()} initialFocus /></PopoverContent>
-                  </Popover><FormMessage />
-                </FormItem>)} />
               <FormField control={form.control} name="type" render={({ field }) => (
                 <FormItem><FormLabel>Adjustment Type</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>

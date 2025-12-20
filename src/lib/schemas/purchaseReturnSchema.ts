@@ -2,7 +2,6 @@ import { z } from "zod";
 import type { Purchase, PurchaseReturn } from "@/lib/types";
 
 export const purchaseReturnSchema = (purchases: Purchase[], existingPurchaseReturns: PurchaseReturn[], currentReturnId?: string) => z.object({
-  date: z.date({ required_error: "Return date is required." }),
   originalPurchaseId: z.string().min(1, "Original purchase must be selected."),
   originalLotNumber: z.string().min(1, "Original lot number must be selected."),
   quantityReturned: z.coerce.number().positive("Quantity must be positive."),
@@ -34,10 +33,6 @@ export const purchaseReturnSchema = (purchases: Purchase[], existingPurchaseRetu
         .filter(pr => pr.id !== currentReturnId && pr.originalLotNumber === data.originalLotNumber)
         .reduce((sum, pr) => sum + pr.quantityReturned, 0);
 
-    const previouslyReturnedNetWeight = existingPurchaseReturns
-        .filter(pr => pr.id !== currentReturnId && pr.originalLotNumber === data.originalLotNumber)
-        .reduce((sum, pr) => sum + pr.netWeightReturned, 0);
-
     if (data.quantityReturned > (originalItem.quantity - previouslyReturnedQty)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -45,6 +40,10 @@ export const purchaseReturnSchema = (purchases: Purchase[], existingPurchaseRetu
             message: `Cannot return more than available. Original: ${originalItem.quantity}, Already Returned: ${previouslyReturnedQty}.`,
         });
     }
+
+    const previouslyReturnedNetWeight = existingPurchaseReturns
+        .filter(pr => pr.id !== currentReturnId && pr.originalLotNumber === data.originalLotNumber)
+        .reduce((sum, pr) => sum + pr.netWeightReturned, 0);
 
     if (data.netWeightReturned > (originalItem.netWeight - previouslyReturnedNetWeight)) {
         ctx.addIssue({

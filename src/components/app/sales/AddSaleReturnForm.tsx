@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -8,9 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { saleReturnSchema, type SaleReturnFormValues } from "@/lib/schemas/saleReturnSchema";
@@ -38,14 +34,12 @@ export const AddSaleReturnForm: React.FC<AddSaleReturnFormProps> = ({
 }) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   const [selectedOriginalSale, setSelectedOriginalSale] = React.useState<Sale | null>(null);
 
   const formMethods = useForm<SaleReturnFormValues>({
     resolver: zodResolver(saleReturnSchema(sales, existingSaleReturns)),
     defaultValues: saleReturnToEdit
       ? {
-          date: new Date(saleReturnToEdit.date),
           originalSaleId: saleReturnToEdit.originalSaleId,
           originalLotNumber: saleReturnToEdit.originalLotNumber,
           quantityReturned: saleReturnToEdit.quantityReturned,
@@ -55,7 +49,6 @@ export const AddSaleReturnForm: React.FC<AddSaleReturnFormProps> = ({
           restockingFee: saleReturnToEdit.restockingFee || undefined,
         }
       : {
-          date: new Date(),
           originalSaleId: undefined,
           originalLotNumber: undefined,
           quantityReturned: undefined,
@@ -75,7 +68,6 @@ export const AddSaleReturnForm: React.FC<AddSaleReturnFormProps> = ({
     if (isOpen) {
       reset(saleReturnToEdit
         ? {
-            date: new Date(saleReturnToEdit.date),
             originalSaleId: saleReturnToEdit.originalSaleId,
             originalLotNumber: saleReturnToEdit.originalLotNumber,
             quantityReturned: saleReturnToEdit.quantityReturned,
@@ -84,7 +76,7 @@ export const AddSaleReturnForm: React.FC<AddSaleReturnFormProps> = ({
             notes: saleReturnToEdit.notes || "",
             restockingFee: saleReturnToEdit.restockingFee || undefined,
           }
-        : { date: new Date(), originalSaleId: undefined, originalLotNumber: undefined, quantityReturned: undefined, netWeightReturned: undefined, returnReason: "", notes: "", restockingFee: undefined }
+        : { originalSaleId: undefined, originalLotNumber: undefined, quantityReturned: undefined, netWeightReturned: undefined, returnReason: "", notes: "", restockingFee: undefined }
       );
       setSelectedOriginalSale(saleReturnToEdit ? sales.find(s => s.id === saleReturnToEdit.originalSaleId) || null : null);
     }
@@ -136,7 +128,7 @@ export const AddSaleReturnForm: React.FC<AddSaleReturnFormProps> = ({
 
     const saleReturnData: SaleReturn = {
       id: saleReturnToEdit?.id || `sr-${Date.now()}`,
-      date: format(values.date, "yyyy-MM-dd"),
+      date: format(new Date(), "yyyy-MM-dd"),
       originalSaleId: originalSale.id,
       originalBillNumber: originalSale.billNumber,
       originalCustomerId: originalSale.customerId,
@@ -178,33 +170,6 @@ export const AddSaleReturnForm: React.FC<AddSaleReturnFormProps> = ({
         <FormProvider {...formMethods}>
           <Form {...formMethods}>
             <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1 pr-3">
-              <FormField control={control} name="date" render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Return Date</FormLabel>
-                  <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                          {field.value ? format(field.value, "dd/MM/yy") : <span>Pick a date</span>}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={(date) => {
-                          if (date) field.onChange(date);
-                          setIsDatePickerOpen(false);
-                        }}
-                        disabled={(date) => date > new Date()}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover><FormMessage />
-                </FormItem>)}
-              />
               <FormField control={control} name="originalSaleId" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Original Sale</FormLabel>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -22,9 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Info, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
+import { Info, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { purchaseSchema, type PurchaseFormValues } from "@/lib/schemas/purchaseSchema";
@@ -55,7 +52,6 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   const { Supplier: suppliers = [], Agent: agents = [], Warehouse: warehouses = [], Transporter: transporters = [], Expense: expenses = [] } = masterData;
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   const [isMasterFormOpen, setIsMasterFormOpen] = React.useState(false);
   const [masterFormItemType, setMasterFormItemType] = React.useState<MasterItemType | null>(null);
   const [masterItemToEdit, setMasterItemToEdit] = React.useState<MasterItem | null>(null);
@@ -65,7 +61,6 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   const getDefaultValues = React.useCallback((editData?: Purchase | null): PurchaseFormValues => {
     if (editData) {
       return {
-        date: new Date(editData.date),
         locationId: editData.locationId,
         supplierId: editData.supplierId,
         agentId: editData.agentId || undefined,
@@ -80,7 +75,6 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
       };
     }
     return {
-      date: new Date(),
       locationId: undefined,
       supplierId: undefined,
       agentId: undefined,
@@ -236,7 +230,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
 
       const purchaseData: Purchase = {
         id: purchaseToEdit?.id || `purchase-${Date.now()}`,
-        date: format(values.date, "yyyy-MM-dd"),
+        date: format(new Date(), "yyyy-MM-dd"),
         locationId: values.locationId as string,
         locationName: warehouses.find(w => w.id === values.locationId)?.name || 'Unknown Location',
         supplierId: values.supplierId as string,
@@ -318,47 +312,6 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                   <div className="p-4 border rounded-md shadow-sm">
                     <h3 className="text-lg font-medium mb-3 text-primary">Basic Details & Parties</h3>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                      
-                      <FormField 
-                        control={control} 
-                        name="date" 
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Purchase Date <span className="text-destructive">*</span></FormLabel>
-                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant="outline"
-                                    className={cn(
-                                      "w-full pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    {field.value ? format(field.value, "dd/MM/yy") : <span>Pick a date</span>}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={(date) => {
-                                    if (date) {
-                                      field.onChange(date);
-                                      setIsDatePickerOpen(false);
-                                    }
-                                  }}
-                                  disabled={(date) => date > new Date()}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                       
                       <FormField 
                         control={control} 

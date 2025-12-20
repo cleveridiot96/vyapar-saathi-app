@@ -10,7 +10,7 @@ import { LocationTransferSlipPrint } from "./LocationTransferSlipPrint";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format as formatDateFn, parseISO, subDays, startOfDay, endOfDay, subMonths, subWeeks, startOfYear } from 'date-fns';
+import { format as formatDateFn, parseISO } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -36,8 +36,6 @@ import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { cn } from "@/lib/utils";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useInventory } from '@/hooks/useInventory';
-import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
-import type { DateRange } from "react-day-picker";
 import { renderToStaticMarkup } from 'react-dom/server';
 
 const KEY_SEPARATOR = '_$_';
@@ -105,16 +103,8 @@ export function LocationTransferClient() {
   const [itemToDelete, setItemToDelete] = React.useState<LocationTransfer | null>(null);
 
   const [activeTab, setActiveTab] = React.useState('stockOverview');
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
   
   const { availableStock, isLoading: isInventoryLoading } = useInventory();
-
-  React.useEffect(() => {
-    if (!dateRange) {
-        const today = new Date();
-        setDateRange({ from: startOfDay(subDays(today, 30)), to: endOfDay(today) });
-    }
-  }, [dateRange]);
 
   const handleAddOrUpdateTransfer = React.useCallback((transfer: LocationTransfer) => {
     const isEditing = locationTransfers.some(t => t.id === transfer.id);
@@ -168,9 +158,9 @@ export function LocationTransferClient() {
   }, []);
 
   const expandedTransfers = React.useMemo(() => {
-    if (isAppHydrating || !dateRange?.from || !isTransactionsLoaded) return [];
+    if (isAppHydrating || !isTransactionsLoaded) return [];
     
-    const filtered = locationTransfers.filter(lt => lt.date && isDateInFinancialYear(lt.date, financialYear) && new Date(lt.date) >= dateRange.from! && new Date(lt.date) <= (dateRange.to || new Date()));
+    const filtered = locationTransfers.filter(lt => lt.date && isDateInFinancialYear(lt.date, financialYear));
     
     const flatList: ExpandedTransferHistoryItem[] = [];
     filtered.forEach(transfer => {
@@ -182,7 +172,7 @@ export function LocationTransferClient() {
     });
 
     return flatList.sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [locationTransfers, financialYear, isAppHydrating, dateRange, isTransactionsLoaded]);
+  }, [locationTransfers, financialYear, isAppHydrating, isTransactionsLoaded]);
   
   const transferHistoryTotals = React.useMemo(() => {
     if (!expandedTransfers || expandedTransfers.length === 0) {
@@ -206,20 +196,6 @@ export function LocationTransferClient() {
     if (activeTab === 'transferHistory') return 'bg-teal-600 hover:bg-teal-700 text-white';
     return 'bg-primary hover:bg-primary/90';
   }, [activeTab]);
-
-  const setDatePreset = (preset: 'ytd' | '6m' | '3m' | '1m' | '1w' | 'today') => {
-    const to = endOfDay(new Date());
-    let from;
-    switch (preset) {
-        case 'ytd': from = startOfYear(to); break;
-        case '6m': from = startOfDay(subMonths(to, 6)); break;
-        case '3m': from = startOfDay(subMonths(to, 3)); break;
-        case '1m': from = startOfDay(subMonths(to, 1)); break;
-        case '1w': from = startOfDay(subWeeks(to, 1)); break;
-        case 'today': from = startOfDay(to); break;
-    }
-    setDateRange({ from, to });
-  };
 
   if (isAppHydrating || isInventoryLoading || !isTransactionsLoaded) {
     return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p className="text-lg text-muted-foreground">Loading data...</p></div>;
@@ -295,17 +271,6 @@ export function LocationTransferClient() {
           </TabsContent>
           <TabsContent value="transferHistory">
             <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-2 no-print">
-                <DatePickerWithRange date={dateRange} onDateChange={setDateRange} className="max-w-sm w-full"/>
-                 <div className="flex gap-1 ml-auto">
-                    <Button variant="outline" size="sm" onClick={() => setDatePreset('today')}>Today</Button>
-                    <Button variant="outline" size="sm" onClick={() => setDatePreset('1w')}>1W</Button>
-                    <Button variant="outline" size="sm" onClick={() => setDatePreset('1m')}>1M</Button>
-                    <Button variant="outline" size="sm" onClick={() => setDatePreset('3m')}>3M</Button>
-                    <Button variant="outline" size="sm" onClick={() => setDatePreset('6m')}>6M</Button>
-                    <Button variant="outline" size="sm" onClick={() => setDatePreset('ytd')}>YTD</Button>
-                </div>
-              </div>
               <ScrollArea className="h-[400px] border rounded-md print:h-auto print:overflow-visible">
                 <Table>
                   <TableHeader><TableRow>
@@ -411,5 +376,3 @@ export function LocationTransferClient() {
     </div>
   );
 }
-
-    

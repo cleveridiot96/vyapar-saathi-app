@@ -4,9 +4,7 @@ import type { MasterItem, Purchase, Sale, PurchaseReturn, SaleReturn, MasterItem
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
-import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
-import type { DateRange } from "react-day-picker";
-import { format, parseISO, startOfDay, endOfDay, isWithinInterval, subMonths, subWeeks, startOfYear, isBefore } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { BookUser, Printer, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -18,6 +16,7 @@ import { MasterForm } from "@/components/app/masters/MasterForm";
 import { useTransactions } from "@/hooks/useTransactions";
 import { Input } from "@/components/ui/input";
 import { useHydrated } from '@/hooks/useHydrated';
+import { isDateInFinancialYear } from "@/lib/utils";
 
 
 const initialLedgerData = {
@@ -63,7 +62,6 @@ export function LedgerClient() {
   } = useTransactions();
 
   const [selectedPartyId, setSelectedPartyId] = React.useState<string>("");
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
   const { financialYear: currentFinancialYearString } = useSettings();
 
   const [isMasterFormOpen, setIsMasterFormOpen] = React.useState(false);
@@ -80,28 +78,18 @@ export function LedgerClient() {
 
   React.useEffect(() => {
     if (isAppHydrating || !isHydrated) return;
-
-    if (!dateRange) {
-      const [startYearStr] = currentFinancialYearString.split('-');
-      const startYear = parseInt(startYearStr, 10);
-      if (!isNaN(startYear)) {
-        setDateRange({ from: new Date(startYear, 3, 1), to: endOfDay(new Date(startYear + 1, 2, 31)) });
-      } else {
-        setDateRange({ from: startOfDay(subMonths(new Date(), 1)), to: endOfDay(new Date()) });
-      }
-    }
     
     if (partyIdFromQuery && allMasters.some(m => m.id === partyIdFromQuery) && selectedPartyId !== partyIdFromQuery) {
       setSelectedPartyId(partyIdFromQuery);
     }
-  }, [isAppHydrating, isHydrated, currentFinancialYearString, partyIdFromQuery, dateRange, selectedPartyId, allMasters]);
+  }, [isAppHydrating, isHydrated, currentFinancialYearString, partyIdFromQuery, selectedPartyId, allMasters]);
 
   const partyOptions = React.useMemo(() => {
     return allMasters.map(p => ({ value: p.id, label: `${p.name} (${p.type})` }));
   }, [allMasters]);
 
   const ledgerData = React.useMemo(() => {
-    if (!selectedPartyId || !dateRange?.from || isAppHydrating) return initialLedgerData;
+    if (!selectedPartyId || isAppHydrating) return initialLedgerData;
 
     let openingStock = { bags: 0, kg: 0 };
     
@@ -113,7 +101,7 @@ export function LedgerClient() {
     ];
 
     allTransactions.forEach(tx => {
-        if (isBefore(parseISO(tx.date), startOfDay(dateRange.from!))) {
+        if (!isDateInFinancialYear(tx.date, currentFinancialYearString)) {
             if (tx.type === 'Purchase' && (tx.supplierId === selectedPartyId || tx.agentId === selectedPartyId)) {
                 openingStock.bags += tx.totalQuantity;
                 openingStock.kg += tx.totalNetWeight;
@@ -138,8 +126,7 @@ export function LedgerClient() {
 
     let debitTransactions: LedgerTransaction[] = [];
     let creditTransactions: LedgerTransaction[] = [];
-    const toDate = dateRange.to || dateRange.from;
-    const dateFilter = (date: string) => isWithinInterval(parseISO(date), { start: startOfDay(dateRange.from!), end: endOfDay(toDate) });
+    const dateFilter = (date: string) => isDateInFinancialYear(date, currentFinancialYearString);
     
     purchases.forEach(p => {
         if ((p.supplierId === selectedPartyId || p.agentId === selectedPartyId) && dateFilter(p.date)) {
@@ -203,7 +190,7 @@ export function LedgerClient() {
         kg: openingStock.kg + totals.debitKg - totals.creditKg
       }
     };
-  }, [selectedPartyId, dateRange, purchases, sales, purchaseReturns, saleReturns, isAppHydrating]);
+  }, [selectedPartyId, purchases, sales, purchaseReturns, saleReturns, isAppHydrating, currentFinancialYearString]);
 
    const filteredDebitTransactions = React.useMemo(() => {
     if (!debitSearch) return ledgerData.debitTransactions;
@@ -238,20 +225,6 @@ export function LedgerClient() {
     if (!selectedPartyId || allMasters.length === 0) return undefined;
     return allMasters.find(p => p.id === selectedPartyId);
   }, [selectedPartyId, allMasters]);
-
-  const setDatePreset = (preset: 'ytd' | '6m' | '3m' | '1m' | '1w' | 'today') => {
-    const to = endOfDay(new Date());
-    let from;
-    switch (preset) {
-        case 'ytd': from = startOfYear(to); break;
-        case '6m': from = startOfDay(subMonths(to, 6)); break;
-        case '3m': from = startOfDay(subMonths(to, 3)); break;
-        case '1m': from = startOfDay(subMonths(to, 1)); break;
-        case '1w': from = startOfDay(subWeeks(to, 1)); break;
-        case 'today': from = startOfDay(to); break;
-    }
-    setDateRange({ from, to });
-  };
   
   const handleEditParty = (partyId: string) => {
     const partyToEdit = allMasters.find(p => p.id === partyId);
@@ -287,15 +260,6 @@ export function LedgerClient() {
                         notFoundMessage="NO PARTY FOUND." className="h-9 text-base w-full sm:w-64"
                         onEdit={handleEditParty}
                     />
-                     <DatePickerWithRange date={dateRange} onDateChange={setDateRange} className="w-full sm:w-auto"/>
-                    <div className="flex gap-1">
-                      <Button variant="outline" size="sm" onClick={() => setDatePreset('today')}>Today</Button>
-                      <Button variant="outline" size="sm" onClick={() => setDatePreset('1w')}>1W</Button>
-                      <Button variant="outline" size="sm" onClick={() => setDatePreset('1m')}>1M</Button>
-                      <Button variant="outline" size="sm" onClick={() => setDatePreset('3m')}>3M</Button>
-                      <Button variant="outline" size="sm" onClick={() => setDatePreset('6m')}>6M</Button>
-                      <Button variant="outline" size="sm" onClick={() => setDatePreset('ytd')}>YTD</Button>
-                    </div>
                     <Button variant="outline" size="icon" onClick={() => window.print()} title="Print">
                         <Printer className="h-5 w-5" /><span className="sr-only">Print</span>
                     </Button>

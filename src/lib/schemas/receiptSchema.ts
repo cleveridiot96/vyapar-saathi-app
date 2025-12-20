@@ -9,7 +9,6 @@ export const receiptBillSchema = z.object({
 });
 
 export const receiptSchema = z.object({
-    date: z.date({ required_error: "Date is required."}),
     partyId: z.string().min(1, "Party must be selected."),
     amount: z.coerce.number().positive("Amount must be positive."),
     paymentMethod: z.enum(['Cash', 'Bank', 'UPI']),

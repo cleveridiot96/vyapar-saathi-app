@@ -13,7 +13,6 @@ export const saleSchema = (
     availableStock: AggregatedInventoryItem[],
     currentSaleIdToEdit?: string
 ) => z.object({
-  date: z.date({ required_error: "Sale date is required." }),
   billNumber: z.string().optional(),
   customerId: z.string().min(1, "Customer is required."),
   brokerId: z.string().optional(),

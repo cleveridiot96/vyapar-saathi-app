@@ -21,10 +21,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { LocationTransfer, MasterItem, ExpenseItem, MasterItemType } from "@/lib/types";
@@ -46,7 +44,6 @@ interface AddLocationTransferFormProps {
 }
 
 const locationTransferSchema = z.object({
-  date: z.date(),
   fromLocationId: z.string().min(1, "Source location is required."),
   toLocationId: z.string().min(1, "Destination location is required."),
   transporterId: z.string().optional(),
@@ -76,7 +73,6 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   const { availableStock } = useInventory(transferToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   const [isMasterFormOpen, setIsMasterFormOpen] = React.useState(false);
   const [masterFormItemType, setMasterFormItemType] = React.useState<MasterItemType | null>(null);
   const [masterItemToEdit, setMasterItemToEdit] = React.useState<MasterItem | null>(null);
@@ -85,7 +81,6 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
     resolver: zodResolver(locationTransferSchema),
     defaultValues: transferToEdit
       ? {
-          date: new Date(transferToEdit.date),
           fromLocationId: transferToEdit.fromLocationId,
           toLocationId: transferToEdit.toLocationId,
           transporterId: transferToEdit.transporterId || undefined,
@@ -100,7 +95,6 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
           notes: transferToEdit.notes || "",
         }
       : {
-          date: new Date(),
           items: [{ originalLotNumber: '', newLotNumber: '', quantity: 0, netWeight: 0, costOfGoods: 0 }],
           expenses: [],
         },
@@ -144,7 +138,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
 
     const transferData: LocationTransfer = {
       id: transferToEdit?.id || `lt-${Date.now()}`,
-      date: format(values.date, "yyyy-MM-dd"),
+      date: format(new Date(), "yyyy-MM-dd"),
       fromLocationId: values.fromLocationId,
       fromLocationName: fromLocation?.name || 'Unknown',
       toLocationId: values.toLocationId,
@@ -179,19 +173,6 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
           <FormProvider {...methods}>
             <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <FormField control={control} name="date" render={({ field }) => (
-                  <FormItem><FormLabel>Transfer Date</FormLabel>
-                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                      <PopoverTrigger asChild><FormControl>
-                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
-                        </Button>
-                      </FormControl></PopoverTrigger>
-                      <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={(d) => { if (d) field.onChange(d); setIsDatePickerOpen(false); }} initialFocus /></PopoverContent>
-                    </Popover><FormMessage />
-                  </FormItem>
-                )} />
                 <FormField control={control} name="fromLocationId" render={({ field }) => (
                   <FormItem><FormLabel>From Warehouse</FormLabel>
                     <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" onAddNew={() => handleOpenMasterForm("Warehouse")} onEdit={(id) => handleEditMasterItem(id)} {...field} />
@@ -313,5 +294,3 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
 };
 
 export const AddLocationTransferForm = React.memo(AddLocationTransferFormComponent);
-
-    
