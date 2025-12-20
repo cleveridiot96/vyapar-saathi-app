@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 import { CalendarPlus } from 'lucide-react';
+import { useHydrated } from '@/hooks/useHydrated';
+import { Skeleton } from '../ui/skeleton';
 
 export function FinancialYearToggle() {
   const { 
@@ -25,12 +27,15 @@ export function FinancialYearToggle() {
     getNextFinancialYear 
   } = useFinancialYear();
   const { toast } = useToast();
+  const isHydrated = useHydrated();
 
   const [buttonText, setButtonText] = useState(`FY ${financialYear}`);
 
   useEffect(() => {
-    setButtonText(`FY ${financialYear}`);
-  }, [financialYear]);
+    if (isHydrated) {
+      setButtonText(`FY ${financialYear}`);
+    }
+  }, [financialYear, isHydrated]);
   
   const handleAddNextFinancialYear = () => {
     const nextFy = getNextFinancialYear();
@@ -59,6 +64,9 @@ export function FinancialYearToggle() {
     return [...availableFinancialYears].sort((a,b) => b.localeCompare(a));
   }, [availableFinancialYears]);
 
+  if (!isHydrated) {
+    return <Skeleton className="h-9 w-[110px]" />;
+  }
 
   return (
     <div className="flex items-center">
