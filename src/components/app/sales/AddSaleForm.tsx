@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -420,7 +421,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                                 setValue(`items.${index}.netWeight`, undefined, { shouldValidate: true });
                               }}
                               options={stockOptionsForSale}
-                              placeholder="Select Lot from Mumbai"
+                              placeholder="Select Vakkal/Lot"
                               notFoundMessage="No stock in Mumbai."
                             />
                             <FormMessage />
