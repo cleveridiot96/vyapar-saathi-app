@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { format } from "date-fns";
+import { format, startOfToday } from "date-fns";
 import { Calendar as CalendarIcon, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -80,7 +80,7 @@ export function DatePicker({
           mode="single"
           selected={date}
           onSelect={handleSelect}
-          disabled={(d) => d > new Date() || d < new Date("1900-01-01")}
+          disabled={(d) => d < startOfToday()}
           initialFocus
           fromYear={2015}
           toYear={2035}
