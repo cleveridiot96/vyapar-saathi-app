@@ -155,16 +155,11 @@ export default function PurchasesPage() {
       
       const isEditing = !!purchaseToEdit;
       
-      // Log BEFORE setPurchases
-      console.log('🟢 About to call Zustand action');
-      
       if (isEditing) {
         updatePurchase(purchase);
       } else {
         addPurchase(purchase);
       }
-      
-      console.log('🔴 After Zustand action call');
       
       setPurchaseToEdit(null);
       setIsAddPurchaseFormOpen(false);
@@ -441,12 +436,11 @@ export default function PurchasesPage() {
           isOpen={isAddPurchaseFormOpen}
           onClose={() => setIsAddPurchaseFormOpen(false)}
           onSubmit={(purchase) => {
-            console.log('🎯 AddPurchaseForm onSubmit called with:', purchase);
             handleAddOrUpdatePurchase(purchase);
           }}
           purchaseToEdit={purchaseToEdit}
           masterData={masterData}
-          addOrUpdateMaster={handleMasterDataUpdate}
+          addOrUpdateMaster={addOrUpdateMaster}
           getAllMasters={getAllMasters}
         />
       )}

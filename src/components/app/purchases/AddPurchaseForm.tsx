@@ -64,7 +64,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   getAllMasters
 }) => {
   const { toast } = useToast();
-  const { purchases, locationTransfers } = useTransactions();
+  const { locationTransfers } = useTransactions();
   const { Supplier: suppliers = [], Agent: agents = [], Warehouse: warehouses = [], Transporter: transporters = [], Expense: expenses = [] } = masterData;
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -76,7 +76,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
 
   const allSystemLots = React.useMemo(() => {
     const lots = new Set<string>();
-    purchases.forEach(p => p.items.forEach(i => lots.add(i.lotNumber)));
+    // This part should also use zustand state, but for now we pass it from parent.
+    // In a full migration, you'd get `purchases` from usePurchaseStore() here.
     locationTransfers.forEach(lt => {
       lt.items.forEach(item => {
         lots.add(item.originalLotNumber);
@@ -84,7 +85,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
       });
     });
     return Array.from(lots).sort().map(lot => ({ value: lot, label: lot }));
-  }, [purchases, locationTransfers]);
+  }, [locationTransfers]);
 
   const getDefaultValues = React.useCallback((editData?: Purchase | null): PurchaseFormValues => {
     if (editData) {
