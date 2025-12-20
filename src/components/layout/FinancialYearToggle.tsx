@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React from 'react';
 import { useFinancialYear } from '@/contexts/SettingsContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -56,22 +56,13 @@ export function FinancialYearToggle() {
     return [...availableFinancialYears].sort((a,b) => b.localeCompare(a));
   }, [availableFinancialYears]);
 
-  if (!isHydrated) {
-     return (
-        <div className="flex items-center">
-            <Button variant="outline" className="px-3 text-sm font-semibold whitespace-nowrap w-[110px]">
-                FY ...
-            </Button>
-        </div>
-    );
-  }
 
   return (
     <div className="flex items-center">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="px-3 text-sm font-semibold whitespace-nowrap">
-            {`FY ${financialYear}`}
+          <Button variant="outline" className="px-3 text-sm font-semibold whitespace-nowrap w-[110px]">
+            {isHydrated ? `FY ${financialYear}` : 'FY ...'}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="center" className="w-[200px]">
