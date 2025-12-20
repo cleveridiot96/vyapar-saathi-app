@@ -120,12 +120,9 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                         <Edit className="mr-2 h-4 w-4" /> Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          onToggleLock(item);
-                        }}
                         onSelect={(e) => {
                           e.preventDefault();
+                          onToggleLock(item);
                         }}
                         disabled={isFixed}
                       >
