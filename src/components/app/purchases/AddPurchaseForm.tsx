@@ -435,14 +435,13 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                           render={({ field: itemField }) => (
                             <FormItem className="md:col-span-3">
                               <FormLabel>Vakkal/Lot No. <span className="text-destructive">*</span></FormLabel>
-                              <MasterDataCombobox
-                                value={itemField.value}
-                                onChange={(value) => handleLotNumberChange(index, value)}
-                                options={allSystemLots}
-                                placeholder="E.g., AV/5 or select"
-                                searchPlaceholder="Search existing lots..."
-                                notFoundMessage="No lot found."
-                              />
+                               <FormControl>
+                                <Input
+                                  placeholder="E.g., AV/5 or BU-5"
+                                  {...itemField}
+                                  onChange={(e) => handleLotNumberChange(index, e.target.value)}
+                                />
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -766,3 +765,5 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     </>
   );
 };
+
+    
