@@ -96,6 +96,7 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
               <TableRow key={item.id} className={cn("hover:bg-muted/50", isLocked && "bg-muted/30")}>
                 <TableCell className="font-medium">
                   {isLocked && <Lock className="h-3 w-3 inline-block mr-2 text-muted-foreground" />}
+                  {!isLocked && <Unlock className="h-3 w-3 inline-block mr-2 text-green-600" />}
                   <HighlightedText text={item.name} indices={nameMatch?.indices} />
                 </TableCell>
                 {isAllItemsTab && (
@@ -118,19 +119,31 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                       <DropdownMenuItem onClick={() => onEdit(item)} disabled={isLocked}>
                         <Edit className="mr-2 h-4 w-4" /> Edit
                       </DropdownMenuItem>
-                       <DropdownMenuItem 
-                        onClick={() => onToggleLock(item)}
-                        onSelect={(e) => e.preventDefault()}
+                      <DropdownMenuItem 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          onToggleLock(item);
+                        }}
+                        onSelect={(e) => {
+                          e.preventDefault();
+                        }}
                         disabled={isFixed}
-                       >
-                        {isLocked ? <Unlock className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
-                        {isLocked ? 'Unlock' : 'Lock'}
+                      >
+                        {isLocked ? (
+                          <>
+                            <Unlock className="mr-2 h-4 w-4" /> Unlock
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="mr-2 h-4 w-4" /> Lock
+                          </>
+                        )}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => onDelete(item)}
                         disabled={isLocked}
-                        className={cn("text-destructive focus:text-destructive focus:bg-destructive/10", isLocked && "cursor-not-allowed")}
+                        className={cn("text-destructive focus:text-destructive focus:bg-destructive/10", isLocked && "cursor-not-allowed opacity-50")}
                       >
                         <Trash2 className="mr-2 h-4 w-4" /> Delete
                       </DropdownMenuItem>
