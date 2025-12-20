@@ -34,6 +34,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DatePicker } from "@/components/ui/date-picker";
+import { useTransactions } from "@/hooks/useTransactions";
 
 interface AddPurchaseFormProps {
   isOpen: boolean;
@@ -63,6 +64,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   getAllMasters
 }) => {
   const { toast } = useToast();
+  const { purchases, locationTransfers } = useTransactions();
   const { Supplier: suppliers = [], Agent: agents = [], Warehouse: warehouses = [], Transporter: transporters = [], Expense: expenses = [] } = masterData;
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -71,6 +73,18 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   const [masterItemToEdit, setMasterItemToEdit] = React.useState<MasterItem | null>(null);
   const [manualNetWeight, setManualNetWeight] = React.useState<Record<number, boolean>>({});
   const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  const allSystemLots = React.useMemo(() => {
+    const lots = new Set<string>();
+    purchases.forEach(p => p.items.forEach(i => lots.add(i.lotNumber)));
+    locationTransfers.forEach(lt => {
+      lt.items.forEach(item => {
+        lots.add(item.originalLotNumber);
+        lots.add(item.newLotNumber);
+      });
+    });
+    return Array.from(lots).sort().map(lot => ({ value: lot, label: lot }));
+  }, [purchases, locationTransfers]);
 
   const getDefaultValues = React.useCallback((editData?: Purchase | null): PurchaseFormValues => {
     if (editData) {
@@ -202,7 +216,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     });
   }, [addOrUpdateMaster, setValue, toast]);
 
-  const handleLotNumberChange = React.useCallback((index: number, lotNumber: string) => {
+  const handleLotNumberChange = React.useCallback((index: number, lotNumber: string | undefined) => {
+    if (!lotNumber) return;
     setValue(`items.${index}.lotNumber`, lotNumber, { shouldValidate: true });
     
     const match = lotNumber.match(/[/\s\-.,;](\d+)$/);
@@ -419,13 +434,14 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                           render={({ field: itemField }) => (
                             <FormItem className="md:col-span-3">
                               <FormLabel>Vakkal/Lot No. <span className="text-destructive">*</span></FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="E.g., AB/6 or BU-5"
-                                  {...itemField}
-                                  onChange={(e) => handleLotNumberChange(index, e.target.value)}
-                                />
-                              </FormControl>
+                              <MasterDataCombobox
+                                value={itemField.value}
+                                onChange={(value) => handleLotNumberChange(index, value)}
+                                options={allSystemLots}
+                                placeholder="E.g., AV/5 or select"
+                                searchPlaceholder="Search existing lots..."
+                                notFoundMessage="No lot found."
+                              />
                               <FormMessage />
                             </FormItem>
                           )}
