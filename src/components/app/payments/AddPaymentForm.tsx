@@ -36,6 +36,7 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useInventory } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
+import { DatePicker } from "@/components/shared/DatePicker";
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
@@ -74,6 +75,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
     resolver: zodResolver(paymentSchema),
     defaultValues: paymentToEdit
       ? {
+          date: new Date(paymentToEdit.date),
           partyId: paymentToEdit.partyId,
           paymentType: paymentToEdit.paymentType || 'Cash',
           amount: paymentToEdit.paymentType === 'Cash' ? paymentToEdit.amount : undefined,
@@ -85,6 +87,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
           stockItems: paymentToEdit.stockItems || [],
         }
       : {
+          date: new Date(),
           partyId: undefined, 
           paymentType: 'Cash',
           amount: undefined,
@@ -195,7 +198,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
 
     const paymentData: Payment = {
       id: paymentToEdit?.id || `payment-${Date.now()}`,
-      date: format(new Date(), "yyyy-MM-dd"),
+      date: format(values.date, "yyyy-MM-dd"),
       partyId: values.partyId as string,
       partyName: selectedParty.name,
       partyType: selectedParty.type as MasterItemType,
@@ -271,7 +274,17 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
           <FormProvider {...methods}>
             <Form {...methods}>
               <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto p-1 pr-3">
-                
+                <FormField
+                  control={control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Payment Date</FormLabel>
+                      <DatePicker mode="single" date={field.value} onDateChange={field.onChange} />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={control}
                   name="paymentType"

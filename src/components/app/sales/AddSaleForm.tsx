@@ -41,6 +41,7 @@ import {
 import { useTransactions } from "@/hooks/useTransactions";
 import { useInventory } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
+import { DatePicker } from "@/components/shared/DatePicker";
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
@@ -78,6 +79,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
     resolver: zodResolver(saleSchema(existingSales, availableStock, saleToEdit?.id)),
     defaultValues: saleToEdit
       ? {
+          date: new Date(saleToEdit.date),
           billNumber: saleToEdit.billNumber || "",
           customerId: saleToEdit.customerId,
           brokerId: saleToEdit.brokerId || undefined,
@@ -94,6 +96,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
           balanceAmount: saleToEdit.balanceAmount || undefined,
         }
       : {
+          date: new Date(),
           billNumber: "",
           customerId: undefined,
           brokerId: undefined,
@@ -292,7 +295,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
 
     const saleData: Sale = {
       id: saleToEdit?.id || `sale-${Date.now()}`,
-      date: format(new Date(), "yyyy-MM-dd"),
+      date: format(values.date, "yyyy-MM-dd"),
       billNumber: values.billNumber,
       customerId: values.customerId,
       customerName: selectedCustomer?.name,
@@ -360,6 +363,17 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                   <div className="p-4 border rounded-md shadow-sm">
                     <h3 className="text-lg font-medium mb-3 text-primary">Sale Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                       <FormField
+                          control={control}
+                          name="date"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                              <FormLabel>Sale Date</FormLabel>
+                              <DatePicker mode="single" date={field.value} onDateChange={field.onChange} />
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                        <FormField control={control} name="billNumber" render={({ field }) => (
                         <FormItem><FormLabel>Bill Number (Optional)</FormLabel><FormControl><Input placeholder="e.g., INV-001" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                       <FormField control={control} name="customerId" render={({ field }) => (

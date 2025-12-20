@@ -28,8 +28,10 @@ import { Textarea } from '@/components/ui/textarea';
 import type { StockAdjustment, MasterItem } from '@/lib/types';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DatePicker } from '@/components/shared/DatePicker';
 
 const adjustmentSchema = z.object({
+  date: z.date({ required_error: "Adjustment date is required." }),
   lotNumber: z.string().min(1, "Lot number is required."),
   locationId: z.string().min(1, "Location is required."),
   type: z.enum(['Correction', 'Wastage', 'Theft', 'Initial Stock', 'Reversal'], { required_error: "Adjustment type is required." }),
@@ -54,7 +56,7 @@ interface AddAdjustmentFormProps {
 export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, availableLots }: AddAdjustmentFormProps) {
   const form = useForm<AdjustmentFormValues>({
     resolver: zodResolver(adjustmentSchema),
-    defaultValues: { bags: 0, weight: 0 },
+    defaultValues: { date: new Date(), bags: 0, weight: 0 },
   });
   const watchedType = form.watch("type");
 
@@ -70,7 +72,7 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
     const location = warehouses.find(w => w.id === values.locationId);
 
     onSubmit({
-      date: format(new Date(), 'yyyy-MM-dd'),
+      date: format(values.date, 'yyyy-MM-dd'),
       lotNumber: values.lotNumber,
       locationId: values.locationId,
       locationName: location?.name || values.locationId,
@@ -79,7 +81,7 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
       type: values.type,
       reason: values.reason,
     });
-    form.reset({ bags: 0, weight: 0 });
+    form.reset({ date: new Date(), bags: 0, weight: 0 });
     onClose();
   };
 
@@ -98,6 +100,17 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
         <ScrollArea className="flex-1 -mx-6 px-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(processSubmit)} className="space-y-4 pt-4">
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Adjustment Date</FormLabel>
+                  <DatePicker mode="single" date={field.value} onDateChange={field.onChange} />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="type" render={({ field }) => (
                 <FormItem><FormLabel>Adjustment Type</FormLabel>

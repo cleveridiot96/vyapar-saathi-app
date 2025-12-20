@@ -14,6 +14,7 @@ import type { Purchase, PurchaseReturn } from "@/lib/types";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { DatePicker } from "@/components/shared/DatePicker";
 
 interface AddPurchaseReturnFormProps {
   isOpen: boolean;
@@ -41,6 +42,7 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
     resolver: zodResolver(purchaseReturnSchema(purchases, existingPurchaseReturns)),
     defaultValues: purchaseReturnToEdit
       ? {
+          date: new Date(purchaseReturnToEdit.date),
           originalPurchaseId: purchaseReturnToEdit.originalPurchaseId,
           originalLotNumber: purchaseReturnToEdit.originalLotNumber,
           quantityReturned: purchaseReturnToEdit.quantityReturned,
@@ -49,6 +51,7 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
           notes: purchaseReturnToEdit.notes || "",
         }
       : {
+          date: new Date(),
           originalPurchaseId: undefined,
           originalLotNumber: undefined,
           quantityReturned: undefined,
@@ -67,6 +70,7 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
     if (isOpen) {
       const defaultVals = purchaseReturnToEdit
         ? {
+            date: new Date(purchaseReturnToEdit.date),
             originalPurchaseId: purchaseReturnToEdit.originalPurchaseId,
             originalLotNumber: purchaseReturnToEdit.originalLotNumber,
             quantityReturned: purchaseReturnToEdit.quantityReturned,
@@ -74,7 +78,7 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
             returnReason: purchaseReturnToEdit.returnReason || "",
             notes: purchaseReturnToEdit.notes || "",
           }
-        : { originalPurchaseId: undefined, originalLotNumber: undefined, quantityReturned: undefined, netWeightReturned: undefined, returnReason: "", notes: "" };
+        : { date: new Date(), originalPurchaseId: undefined, originalLotNumber: undefined, quantityReturned: undefined, netWeightReturned: undefined, returnReason: "", notes: "" };
       reset(defaultVals);
       setSelectedOriginalPurchase(purchaseReturnToEdit ? purchases.find(p => p.id === purchaseReturnToEdit.originalPurchaseId) || null : null);
       setNetWeightReturnedManuallySet(!!purchaseReturnToEdit?.netWeightReturned);
@@ -133,7 +137,7 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
 
     const purchaseReturnData: PurchaseReturn = {
       id: purchaseReturnToEdit?.id || `pr-${Date.now()}`,
-      date: format(new Date(), "yyyy-MM-dd"),
+      date: format(values.date, "yyyy-MM-dd"),
       originalPurchaseId: originalPurchase.id,
       originalLotNumber: values.originalLotNumber,
       originalSupplierId: originalPurchase.supplierId,
@@ -173,6 +177,17 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
         <FormProvider {...formMethods}>
           <Form {...formMethods}>
             <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1 pr-3">
+              <FormField
+                  control={control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Return Date</FormLabel>
+                      <DatePicker mode="single" date={field.value} onDateChange={field.onChange} />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               <FormField control={control} name="originalPurchaseId" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Original Purchase</FormLabel>

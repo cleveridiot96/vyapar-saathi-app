@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Sale, SaleReturn } from "@/lib/types";
 
 export const saleReturnSchema = (sales: Sale[], existingSaleReturns: SaleReturn[], currentReturnId?: string) => z.object({
+  date: z.date({ required_error: "Return date is required." }),
   originalSaleId: z.string().min(1, "Original sale must be selected."),
   originalLotNumber: z.string().min(1, "Original lot number must be selected."),
   quantityReturned: z.coerce.number().positive("Quantity must be positive."),

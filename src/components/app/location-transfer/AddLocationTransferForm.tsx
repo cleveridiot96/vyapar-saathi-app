@@ -35,6 +35,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MasterForm } from "@/components/app/masters/MasterForm";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DatePicker } from "@/components/shared/DatePicker";
 
 interface AddLocationTransferFormProps {
   isOpen: boolean;
@@ -44,6 +45,7 @@ interface AddLocationTransferFormProps {
 }
 
 const locationTransferSchema = z.object({
+  date: z.date({ required_error: "Transfer date is required." }),
   fromLocationId: z.string().min(1, "Source location is required."),
   toLocationId: z.string().min(1, "Destination location is required."),
   transporterId: z.string().optional(),
@@ -81,6 +83,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
     resolver: zodResolver(locationTransferSchema),
     defaultValues: transferToEdit
       ? {
+          date: new Date(transferToEdit.date),
           fromLocationId: transferToEdit.fromLocationId,
           toLocationId: transferToEdit.toLocationId,
           transporterId: transferToEdit.transporterId || undefined,
@@ -95,6 +98,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
           notes: transferToEdit.notes || "",
         }
       : {
+          date: new Date(),
           items: [{ originalLotNumber: '', newLotNumber: '', quantity: 0, netWeight: 0, costOfGoods: 0 }],
           expenses: [],
         },
@@ -138,7 +142,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
 
     const transferData: LocationTransfer = {
       id: transferToEdit?.id || `lt-${Date.now()}`,
-      date: format(new Date(), "yyyy-MM-dd"),
+      date: format(values.date, "yyyy-MM-dd"),
       fromLocationId: values.fromLocationId,
       fromLocationName: fromLocation?.name || 'Unknown',
       toLocationId: values.toLocationId,
@@ -172,6 +176,17 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
         <ScrollArea className="flex-1 -mx-6 px-6">
           <FormProvider {...methods}>
             <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 pt-4">
+               <FormField
+                  control={control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Transfer Date</FormLabel>
+                      <DatePicker mode="single" date={field.value} onDateChange={field.onChange} />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <FormField control={control} name="fromLocationId" render={({ field }) => (
                   <FormItem><FormLabel>From Warehouse</FormLabel>

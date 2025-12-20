@@ -33,6 +33,7 @@ import { MasterForm } from "@/components/app/masters/MasterForm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DatePicker } from "@/components/shared/DatePicker";
 
 interface AddPurchaseFormProps {
   isOpen: boolean;
@@ -314,7 +315,17 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                   <div className="p-4 border rounded-md shadow-sm">
                     <h3 className="text-lg font-medium mb-3 text-primary">Basic Details & Parties</h3>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                      
+                      <FormField
+                          control={control}
+                          name="date"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                              <FormLabel>Purchase Date</FormLabel>
+                              <DatePicker mode="single" date={field.value} onDateChange={field.onChange} />
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       <FormField 
                         control={control} 
                         name="supplierId" 
