@@ -4,43 +4,46 @@
 import React, { useState, useContext, createContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import type { Purchase, PurchaseReturn, Sale, SaleReturn, LocationTransfer, LedgerEntry, Payment, Receipt, MasterItem, MasterItemType, StockAdjustment, Customer, Supplier, Agent, Transporter, Warehouse, Broker, Expense } from '@/lib/types';
 import { FIXED_WAREHOUSES, FIXED_EXPENSES } from '@/lib/constants';
-import { useLocalStorageState } from './useLocalStorageState';
 
-interface TransactionsContextType {
+// Define a unified structure for all transactions and master data
+interface AppData {
   purchases: Purchase[];
-  setPurchases: React.Dispatch<React.SetStateAction<Purchase[]>>;
   purchaseReturns: PurchaseReturn[];
-  setPurchaseReturns: React.Dispatch<React.SetStateAction<PurchaseReturn[]>>;
   sales: Sale[];
-  setSales: React.Dispatch<React.SetStateAction<Sale[]>>;
   saleReturns: SaleReturn[];
-  setSaleReturns: React.Dispatch<React.SetStateAction<SaleReturn[]>>;
   locationTransfers: LocationTransfer[];
-  setLocationTransfers: React.Dispatch<React.SetStateAction<LocationTransfer[]>>;
   payments: Payment[];
-  setPayments: React.Dispatch<React.SetStateAction<Payment[]>>;
   receipts: Receipt[];
-  setReceipts: React.Dispatch<React.SetStateAction<Receipt[]>>;
   ledger: LedgerEntry[];
-  setLedger: React.Dispatch<React.SetStateAction<LedgerEntry[]>>;
   adjustments: StockAdjustment[];
-  setAdjustments: React.Dispatch<React.SetStateAction<StockAdjustment[]>>;
-  
   customers: Customer[];
-  setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
   suppliers: Supplier[];
-  setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
   agents: Agent[];
-  setAgents: React.Dispatch<React.SetStateAction<Agent[]>>;
   transporters: Transporter[];
-  setTransporters: React.Dispatch<React.SetStateAction<Transporter[]>>;
   warehouses: Warehouse[];
-  setWarehouses: React.Dispatch<React.SetStateAction<Warehouse[]>>;
   brokers: Broker[];
-  setBrokers: React.Dispatch<React.SetStateAction<Broker[]>>;
   expenses: Expense[];
-  setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
+}
 
+// Define the shape of the context, including setters
+interface TransactionsContextType extends AppData {
+  setPurchases: React.Dispatch<React.SetStateAction<Purchase[]>>;
+  setPurchaseReturns: React.Dispatch<React.SetStateAction<PurchaseReturn[]>>;
+  setSales: React.Dispatch<React.SetStateAction<Sale[]>>;
+  setSaleReturns: React.Dispatch<React.SetStateAction<SaleReturn[]>>;
+  setLocationTransfers: React.Dispatch<React.SetStateAction<LocationTransfer[]>>;
+  setPayments: React.Dispatch<React.SetStateAction<Payment[]>>;
+  setReceipts: React.Dispatch<React.SetStateAction<Receipt[]>>;
+  setLedger: React.Dispatch<React.SetStateAction<LedgerEntry[]>>;
+  setAdjustments: React.Dispatch<React.SetStateAction<StockAdjustment[]>>;
+  setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
+  setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
+  setAgents: React.Dispatch<React.SetStateAction<Agent[]>>;
+  setTransporters: React.Dispatch<React.SetStateAction<Transporter[]>>;
+  setWarehouses: React.Dispatch<React.SetStateAction<Warehouse[]>>;
+  setBrokers: React.Dispatch<React.SetStateAction<Broker[]>>;
+  setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
+  
   addLedgerEntry: (entries: LedgerEntry | LedgerEntry[]) => void;
   removeLedgerEntries: (relatedVoucherId: string) => void;
   addOrUpdateMaster: (item: MasterItem) => void;
@@ -60,28 +63,83 @@ interface TransactionsContextType {
 
 const TransactionsContext = createContext<TransactionsContextType | undefined>(undefined);
 
+const APP_DATA_STORAGE_KEY = 'vyapar-saathi-app-data';
+
 export function TransactionsProvider({ children }: { children: ReactNode }) {
-  const [purchases, setPurchases, pLoading] = useLocalStorageState<Purchase[]>('transactions_purchases', []);
-  const [purchaseReturns, setPurchaseReturns, prLoading] = useLocalStorageState<PurchaseReturn[]>('transactions_purchaseReturns', []);
-  const [sales, setSales, sLoading] = useLocalStorageState<Sale[]>('transactions_sales', []);
-  const [saleReturns, setSaleReturns, srLoading] = useLocalStorageState<SaleReturn[]>('transactions_saleReturns', []);
-  const [locationTransfers, setLocationTransfers, ltLoading] = useLocalStorageState<LocationTransfer[]>('transactions_locationTransfers', []);
-  const [payments, setPayments, payLoading] = useLocalStorageState<Payment[]>('transactions_payments', []);
-  const [receipts, setReceipts, recLoading] = useLocalStorageState<Receipt[]>('transactions_receipts', []);
-  const [ledger, setLedger, ldgLoading] = useLocalStorageState<LedgerEntry[]>('transactions_ledger', []);
-  const [adjustments, setAdjustments, adjLoading] = useLocalStorageState<StockAdjustment[]>('transactions_adjustments', []);
+  const [appData, setAppData] = useState<AppData>({
+    purchases: [],
+    purchaseReturns: [],
+    sales: [],
+    saleReturns: [],
+    locationTransfers: [],
+    payments: [],
+    receipts: [],
+    ledger: [],
+    adjustments: [],
+    customers: [],
+    suppliers: [],
+    agents: [],
+    transporters: [],
+    warehouses: [...FIXED_WAREHOUSES] as Warehouse[],
+    brokers: [],
+    expenses: [...FIXED_EXPENSES] as Expense[],
+  });
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load from localStorage on initial mount
+  useEffect(() => {
+    try {
+      const storedData = localStorage.getItem(APP_DATA_STORAGE_KEY);
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        // Ensure fixed warehouses/expenses are always present
+        parsedData.warehouses = [...(parsedData.warehouses || []).filter((w: Warehouse) => !FIXED_WAREHOUSES.some(fw => fw.id === w.id)), ...FIXED_WAREHOUSES];
+        parsedData.expenses = [...(parsedData.expenses || []).filter((e: Expense) => !FIXED_EXPENSES.some(fe => fe.id === e.id)), ...FIXED_EXPENSES];
+        setAppData(prev => ({ ...prev, ...parsedData }));
+      }
+    } catch (error) {
+      console.error("Failed to load data from localStorage", error);
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // Save to localStorage whenever data changes
+  useEffect(() => {
+    if (isLoaded) {
+      try {
+        const dataToStore = JSON.stringify(appData);
+        localStorage.setItem(APP_DATA_STORAGE_KEY, dataToStore);
+      } catch (error) {
+        console.error("Failed to save data to localStorage", error);
+      }
+    }
+  }, [appData, isLoaded]);
+
+  // Create individual setters for convenience, using functional updates
+  const createSetter = <K extends keyof AppData>(key: K) => 
+    (value: React.SetStateAction<AppData[K]>) => 
+      setAppData(prev => ({
+        ...prev,
+        [key]: typeof value === 'function' ? (value as (prevState: AppData[K]) => AppData[K])(prev[key]) : value,
+      }));
+
+  const setPurchases = createSetter('purchases');
+  const setPurchaseReturns = createSetter('purchaseReturns');
+  const setSales = createSetter('sales');
+  const setSaleReturns = createSetter('saleReturns');
+  const setLocationTransfers = createSetter('locationTransfers');
+  const setPayments = createSetter('payments');
+  const setReceipts = createSetter('receipts');
+  const setLedger = createSetter('ledger');
+  const setAdjustments = createSetter('adjustments');
+  const setCustomers = createSetter('customers');
+  const setSuppliers = createSetter('suppliers');
+  const setAgents = createSetter('agents');
+  const setTransporters = createSetter('transporters');
+  const setWarehouses = createSetter('warehouses');
+  const setBrokers = createSetter('brokers');
+  const setExpenses = createSetter('expenses');
   
-  const [customers, setCustomers, cLoading] = useLocalStorageState<Customer[]>('masters_customers', []);
-  const [suppliers, setSuppliers, supLoading] = useLocalStorageState<Supplier[]>('masters_suppliers', []);
-  const [agents, setAgents, aLoading] = useLocalStorageState<Agent[]>('masters_agents', []);
-  const [transporters, setTransporters, tLoading] = useLocalStorageState<Transporter[]>('masters_transporters', []);
-  const [warehouses, setWarehouses, wLoading] = useLocalStorageState<Warehouse[]>('masters_warehouses', [...FIXED_WAREHOUSES] as Warehouse[]);
-  const [brokers, setBrokers, bLoading] = useLocalStorageState<Broker[]>('masters_brokers', []);
-  const [expenses, setExpenses, eLoading] = useLocalStorageState<Expense[]>('masters_expenses', [...FIXED_EXPENSES] as Expense[]);
-
-  const isTransactionsLoaded = !pLoading && !prLoading && !sLoading && !srLoading && !ltLoading && !payLoading && !recLoading && !ldgLoading && !adjLoading;
-  const isMasterDataLoaded = !cLoading && !supLoading && !aLoading && !tLoading && !wLoading && !bLoading && !eLoading;
-
   const addOrUpdateMaster = useCallback((item: MasterItem) => {
     const setterMap: Record<MasterItemType, React.Dispatch<React.SetStateAction<any[]>>> = {
       Customer: setCustomers,
@@ -91,12 +149,12 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
       Warehouse: setWarehouses,
       Broker: setBrokers,
       Expense: setExpenses,
-      Product: () => {}, // No state for Product type
+      Product: () => {},
     };
       
     const setter = setterMap[item.type];
     if (setter) {
-        setter((prev) => {
+        setter(prev => {
             const existingIndex = prev.findIndex(i => i.id === item.id);
             if (existingIndex >= 0) {
                 const updated = [...prev];
@@ -109,70 +167,37 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
     }
   }, [setCustomers, setSuppliers, setAgents, setTransporters, setWarehouses, setBrokers, setExpenses]);
 
-
   const addLedgerEntry = useCallback((entries: LedgerEntry | LedgerEntry[]) => {
-    const entriesToAdd = Array.isArray(entries) ? entries : [entries];
-    setLedger(prev => [...prev, ...entriesToAdd]);
+    setLedger(prev => [...prev, ...(Array.isArray(entries) ? entries : [entries])]);
   }, [setLedger]);
 
   const removeLedgerEntries = useCallback((relatedVoucherId: string) => {
     setLedger(prev => prev.filter(entry => entry.relatedVoucher !== relatedVoucherId));
   }, [setLedger]);
   
-  const getAllMasters = useCallback(() => {
-    return [
-      ...customers,
-      ...suppliers,
-      ...agents,
-      ...transporters,
-      ...warehouses,
-      ...brokers,
-      ...expenses,
-    ];
-  }, [customers, suppliers, agents, transporters, warehouses, brokers, expenses]);
+  const getAllMasters = useCallback(() => [
+      ...appData.customers, ...appData.suppliers, ...appData.agents,
+      ...appData.transporters, ...appData.warehouses, ...appData.brokers,
+      ...appData.expenses,
+  ], [appData]);
 
   const masterData = useMemo(() => ({
-    Customer: customers,
-    Supplier: suppliers,
-    Agent: agents,
-    Transporter: transporters,
-    Warehouse: warehouses,
-    Broker: brokers,
-    Expense: expenses,
-  }), [customers, suppliers, agents, transporters, warehouses, brokers, expenses]);
-
+    Customer: appData.customers, Supplier: appData.suppliers, Agent: appData.agents,
+    Transporter: appData.transporters, Warehouse: appData.warehouses, Broker: appData.brokers,
+    Expense: appData.expenses,
+  }), [appData]);
 
   const contextValue = useMemo(() => ({
-    purchases, setPurchases,
-    purchaseReturns, setPurchaseReturns,
-    sales, setSales,
-    saleReturns, setSaleReturns,
-    locationTransfers, setLocationTransfers,
-    payments, setPayments,
-    receipts, setReceipts,
-    ledger, setLedger,
-    adjustments, setAdjustments,
-    customers, setCustomers,
-    suppliers, setSuppliers,
-    agents, setAgents,
-    transporters, setTransporters,
-    warehouses, setWarehouses,
-    brokers, setBrokers,
-    expenses, setExpenses,
-    addLedgerEntry, removeLedgerEntries,
-    addOrUpdateMaster,
-    isTransactionsLoaded,
-    isMasterDataLoaded,
+    ...appData,
+    setPurchases, setPurchaseReturns, setSales, setSaleReturns, setLocationTransfers,
+    setPayments, setReceipts, setLedger, setAdjustments,
+    setCustomers, setSuppliers, setAgents, setTransporters, setWarehouses, setBrokers, setExpenses,
+    addLedgerEntry, removeLedgerEntries, addOrUpdateMaster,
+    isTransactionsLoaded: isLoaded,
+    isMasterDataLoaded: isLoaded,
     getAllMasters,
     masterData,
-  }), [
-    purchases, sales, purchaseReturns, saleReturns, locationTransfers, payments, receipts, ledger, adjustments,
-    customers, suppliers, agents, transporters, warehouses, brokers, expenses,
-    isTransactionsLoaded, isMasterDataLoaded,
-    setPurchases, setPurchaseReturns, setSales, setSaleReturns, setLocationTransfers, setPayments, setReceipts, setLedger, setAdjustments,
-    setCustomers, setSuppliers, setAgents, setTransporters, setWarehouses, setBrokers, setExpenses,
-    addLedgerEntry, removeLedgerEntries, addOrUpdateMaster, getAllMasters, masterData
-  ]);
+  }), [appData, isLoaded, addOrUpdateMaster, addLedgerEntry, removeLedgerEntries, getAllMasters, masterData]);
 
   return (
     <TransactionsContext.Provider value={contextValue}>

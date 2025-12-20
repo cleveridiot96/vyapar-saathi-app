@@ -1,50 +1,34 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
-import { useHydrated } from './useHydrated';
 
 // A robust hook to manage state with persistence in localStorage.
 export function useLocalStorageState<T>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>, boolean] {
-  const isHydrated = useHydrated();
+  const [hydrated, setHydrated] = useState(false);
+  const [state, setState] = useState<T>(defaultValue);
 
-  const [state, setState] = useState<T>(() => {
-    // We can't access localStorage on the server, so we return default value.
-    if (typeof window === 'undefined') {
-      return defaultValue;
-    }
+  // Read from localStorage on initial client-side mount
+  useEffect(() => {
     try {
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : defaultValue;
+      if (item) {
+        setState(JSON.parse(item));
+      }
     } catch (error) {
       console.warn(`Error reading localStorage key “${key}”:`, error);
-      return defaultValue;
     }
-  });
-  
-  // This effect runs on the client after hydration to sync state with localStorage.
-  useEffect(() => {
-    if (isHydrated) {
-        try {
-            const item = window.localStorage.getItem(key);
-            if (item) {
-                setState(JSON.parse(item));
-            }
-        } catch (error) {
-            console.warn(`Error reading localStorage key “${key}” on mount:`, error);
-        }
-    }
-  }, [key, isHydrated]);
+    setHydrated(true);
+  }, [key]);
 
-
-  // This effect updates localStorage whenever the state changes.
+  // Write to localStorage whenever state changes
   useEffect(() => {
-    if (isHydrated) {
+    if (hydrated) {
       try {
         window.localStorage.setItem(key, JSON.stringify(state));
       } catch (error) {
         console.warn(`Error setting localStorage key “${key}”:`, error);
       }
     }
-  }, [key, state, isHydrated]);
+  }, [key, state, hydrated]);
 
-  return [state, setState, !isHydrated];
+  return [state, setState, !hydrated];
 }
