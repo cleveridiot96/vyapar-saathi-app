@@ -29,6 +29,7 @@ import { AddSaleReturnForm } from "@/components/app/sales/AddSaleReturnForm";
 import { SaleReturnTable } from "@/components/app/sales/SaleReturnTable";
 import { renderToStaticMarkup } from 'react-dom/server';
 import { useSaleStore } from '@/stores/saleStore';
+import { useZustandSync } from '@/hooks/useZustandSync';
 
 
 function openPrintWindow(htmlContent: string, title = "Document") {
@@ -85,6 +86,7 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 export function SalesClient() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
+  const { isSynced } = useZustandSync();
   
   // GET FROM ZUSTAND INSTEAD OF CONTEXT
   const sales = useSaleStore((state) => state.sales);
@@ -227,7 +229,7 @@ export function SalesClient() {
     return activeTab === 'sales' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-yellow-600 hover:bg-yellow-700 text-white';
   }, [activeTab]);
 
-  if (isAppHydrating || !isTransactionsLoaded) return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p className="text-lg text-muted-foreground">Loading sales data...</p></div>;
+  if (isAppHydrating || !isTransactionsLoaded || !isSynced) return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p className="text-lg text-muted-foreground">Loading sales data...</p></div>;
 
   return (
     <div className="space-y-2 print-area">

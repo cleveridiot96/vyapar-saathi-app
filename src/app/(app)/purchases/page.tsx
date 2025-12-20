@@ -30,6 +30,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePurchaseStore } from '@/stores/purchaseStore';
+import { useZustandSync } from '@/hooks/useZustandSync';
 
 function openPrintWindow(htmlContent: string, title = "Document") {
   const printWindow = window.open("", "_blank", "noopener,noreferrer");
@@ -89,6 +90,7 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 export default function PurchasesPage() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
+  const { isSynced } = useZustandSync();
   
   // GET PURCHASES FROM ZUSTAND (NOT CONTEXT)
   const purchases = usePurchaseStore((state) => state.purchases);
@@ -324,7 +326,7 @@ export default function PurchasesPage() {
     return "bg-primary hover:bg-primary/90"; // Fallback
   }, [activeTab]);
 
-  if (isAppHydrating || !isTransactionsLoaded || !isMasterDataLoaded)
+  if (isAppHydrating || !isTransactionsLoaded || !isMasterDataLoaded || !isSynced)
     return (
        <div className="space-y-4 p-4">
         <div className="flex justify-between items-center">
