@@ -61,6 +61,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   const getDefaultValues = React.useCallback((editData?: Purchase | null): PurchaseFormValues => {
     if (editData) {
       return {
+        date: new Date(editData.date),
         locationId: editData.locationId,
         supplierId: editData.supplierId,
         agentId: editData.agentId || undefined,
@@ -75,6 +76,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
       };
     }
     return {
+      date: new Date(),
       locationId: undefined,
       supplierId: undefined,
       agentId: undefined,
@@ -230,7 +232,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
 
       const purchaseData: Purchase = {
         id: purchaseToEdit?.id || `purchase-${Date.now()}`,
-        date: format(new Date(), "yyyy-MM-dd"),
+        date: format(values.date, "yyyy-MM-dd"),
         locationId: values.locationId as string,
         locationName: warehouses.find(w => w.id === values.locationId)?.name || 'Unknown Location',
         supplierId: values.supplierId as string,

@@ -4,19 +4,18 @@ import type { DaybookEntry } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Printer, ShoppingCart, Receipt as ReceiptIcon, ArrowRightCircle, ArrowLeftCircle, ArrowRightLeft, FileText, BookMarked } from "lucide-react";
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/SettingsContext";
 import { DataTableColumnHeader } from '@/components/shared/DataTableColumnHeader';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, DateRange } from '@tanstack/react-table';
 import { DataTable } from '@/components/shared/DataTable';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useHydrated } from '@/hooks/useHydrated';
-import { isDateInFinancialYear } from '@/lib/utils';
-
+import { DatePicker } from "@/components/shared/DatePicker";
 
 const typeToIconMap: Record<DaybookEntry['type'], React.ElementType> = {
     Purchase: ShoppingCart,
@@ -46,54 +45,61 @@ const typeToRowClassMap: Record<DaybookEntry['type'], string> = {
 
 
 export function DaybookClient() {
-  const { financialYear } = useSettings();
   const isHydrated = useHydrated();
   const router = useRouter();
 
   // Data states from central hook
   const { purchases, sales, receipts, payments, locationTransfers, ledger: ledgerData, isTransactionsLoaded } = useTransactions();
+  
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+      from: startOfDay(new Date()),
+      to: endOfDay(new Date()),
+  });
 
   const allDaybookEntries = useMemo((): DaybookEntry[] => {
-    if (!isTransactionsLoaded) return [];
+    if (!isTransactionsLoaded || !dateRange?.from) return [];
     
     const entries: DaybookEntry[] = [];
+    const toDate = dateRange.to || dateRange.from;
 
-    purchases.filter(p => isDateInFinancialYear(p.date, financialYear)).forEach(p => entries.push({
+    const filterByDate = (date: string) => isWithinInterval(parseISO(date), { start: startOfDay(dateRange.from!), end: endOfDay(toDate) });
+
+    purchases.filter(p => filterByDate(p.date)).forEach(p => entries.push({
       id: `pur-${p.id}`, date: p.date, type: 'Purchase', voucherNo: p.id.slice(-6).toUpperCase(),
       party: p.supplierName || 'UNKNOWN', debit: p.totalAmount, credit: 0,
       narration: `PURCHASE OF ${p.items.map(i=>i.lotNumber).join(', ')}`, href: `/purchases#${p.id}`,
       Icon: typeToIconMap['Purchase'], colorClass: typeToColorMap['Purchase'],
     }));
 
-    sales.filter(s => isDateInFinancialYear(s.date, financialYear)).forEach(s => entries.push({
+    sales.filter(s => filterByDate(s.date)).forEach(s => entries.push({
       id: `sal-${s.id}`, date: s.date, type: 'Sale', voucherNo: s.billNumber || s.id.slice(-6).toUpperCase(),
       party: s.customerName || 'UNKNOWN', debit: 0, credit: s.billedAmount,
       narration: `SALE OF ${s.items.map(i=>i.lotNumber).join(', ')}`, href: `/sales#${s.id}`,
       Icon: typeToIconMap['Sale'], colorClass: typeToColorMap['Sale'],
     }));
 
-    payments.filter(p => isDateInFinancialYear(p.date, financialYear)).forEach(p => entries.push({
+    payments.filter(p => filterByDate(p.date)).forEach(p => entries.push({
       id: `pay-${p.id}`, date: p.date, type: 'Payment', voucherNo: p.id.slice(-6).toUpperCase(),
       party: p.partyName || 'UNKNOWN', debit: 0, credit: p.amount,
       narration: `PAYMENT VIA ${p.paymentMethod || 'CASH'}`, href: `/payments#${p.id}`,
       Icon: typeToIconMap['Payment'], colorClass: typeToColorMap['Payment'],
     }));
 
-    receipts.filter(r => isDateInFinancialYear(r.date, financialYear)).forEach(r => entries.push({
+    receipts.filter(r => filterByDate(r.date)).forEach(r => entries.push({
       id: `rec-${r.id}`, date: r.date, type: 'Receipt', voucherNo: r.id.slice(-6).toUpperCase(),
       party: r.partyName || 'UNKNOWN', debit: r.amount, credit: 0,
       narration: `RECEIPT VIA ${r.paymentMethod}`, href: `/receipts#${r.id}`,
       Icon: typeToIconMap['Receipt'], colorClass: typeToColorMap['Receipt'],
     }));
 
-    locationTransfers.filter(t => isDateInFinancialYear(t.date, financialYear)).forEach(t => entries.push({
+    locationTransfers.filter(t => filterByDate(t.date)).forEach(t => entries.push({
       id: `trn-${t.id}`, date: t.date, type: 'Transfer', voucherNo: t.id.slice(-6).toUpperCase(),
       party: 'INTERNAL TRANSFER', debit: 0, credit: 0,
       narration: `FROM ${t.fromLocationName} TO ${t.toLocationName}`, href: `/location-transfer#${t.id}`,
       Icon: typeToIconMap['Transfer'], colorClass: typeToColorMap['Transfer'],
     }));
     
-    ledgerData.filter(l => l.type === 'Expense' && isDateInFinancialYear(l.date, financialYear)).forEach(l => {
+    ledgerData.filter(l => l.type === 'Expense' && filterByDate(l.date)).forEach(l => {
         let href = '/payments'; // Default fallback
         if(l.linkedTo?.voucherId) {
             if(l.linkedTo?.voucherType === 'Purchase') href = `/purchases#${l.linkedTo.voucherId}`;
@@ -110,7 +116,7 @@ export function DaybookClient() {
     });
 
     return entries.sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [isTransactionsLoaded, purchases, sales, payments, receipts, locationTransfers, ledgerData, financialYear]);
+  }, [isTransactionsLoaded, purchases, sales, payments, receipts, locationTransfers, ledgerData, dateRange]);
   
   const columns: ColumnDef<DaybookEntry>[] = useMemo(() => [
     {
@@ -174,11 +180,14 @@ export function DaybookClient() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
             <div>
                 <CardTitle className="text-2xl flex items-center gap-3">
-                    <BookMarked className="h-7 w-7 text-primary"/> DAYBOOK / JOURNAL (FY {financialYear})
+                    <BookMarked className="h-7 w-7 text-primary"/> DAYBOOK / JOURNAL
                 </CardTitle>
                 <CardDescription>A CHRONOLOGICAL VIEW OF ALL BUSINESS TRANSACTIONS.</CardDescription>
             </div>
-            <Button variant="outline" size="icon" onClick={() => window.print()} className="no-print"><Printer className="h-5 w-5"/></Button>
+            <div className="flex items-center gap-2">
+                <DatePicker mode="range" date={dateRange} onDateChange={setDateRange} />
+                <Button variant="outline" size="icon" onClick={() => window.print()} className="no-print"><Printer className="h-5 w-5"/></Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
