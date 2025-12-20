@@ -56,6 +56,7 @@ interface MasterListProps {
 
 export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, onToggleLock, fixedItemIds = [], searchActive }: MasterListProps) {
   const { tableData, handleSort, sortConfig } = useSortableTable(data.map(d => d.item), { key: 'name', direction: 'ascending' });
+  const [openDropdownId, setOpenDropdownId] = React.useState<string | null>(null);
 
   const getFuseResult = (item: MasterItem) => data.find(d => d.item.id === item.id);
   
@@ -109,7 +110,7 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                   {item.details?.openingBalance ? ` | OB: ${item.details.openingBalance} ${item.details.openingBalanceType}` : ''}
                 </TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu>
+                  <DropdownMenu open={openDropdownId === item.id} onOpenChange={(open) => setOpenDropdownId(open ? item.id : null)}>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
                         <MoreVertical className="h-4 w-4" />
