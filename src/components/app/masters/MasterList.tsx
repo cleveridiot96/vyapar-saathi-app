@@ -89,7 +89,9 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
           {tableData.map((item) => {
             const fuseResult = getFuseResult(item);
             const nameMatch = fuseResult?.matches?.find(m => m.key === 'name');
-            const isLocked = item.locked || fixedItemIds.includes(item.id);
+            const isFixed = fixedItemIds.includes(item.id);
+            const isLocked = item.locked || isFixed;
+
             return (
               <TableRow key={item.id} className={cn("hover:bg-muted/50", isLocked && "bg-muted/30")}>
                 <TableCell className="font-medium">
@@ -119,6 +121,7 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                        <DropdownMenuItem 
                         onClick={() => onToggleLock(item)}
                         onSelect={(e) => e.preventDefault()}
+                        disabled={isFixed}
                        >
                         {isLocked ? <Unlock className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
                         {isLocked ? 'Unlock' : 'Lock'}
