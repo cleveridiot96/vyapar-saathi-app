@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns"
+import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, addWeeks, addMonths } from "date-fns"
 import { Calendar as CalendarIcon, X } from "lucide-react"
 import { type DateRange, type SelectRangeEventHandler, DayPicker } from "react-day-picker"
 
@@ -24,13 +24,12 @@ interface DatePickerProps {
 }
 
 const PRESETS = [
-    { label: "Today", range: { from: new Date(), to: new Date() } },
-    { label: "Yesterday", range: { from: subDays(new Date(), 1), to: subDays(new Date(), 1) } },
-    { label: "Last 7 Days", range: { from: subDays(new Date(), 6), to: new Date() } },
-    { label: "This Week", range: { from: startOfWeek(new Date()), to: endOfWeek(new Date()) } },
-    { label: "This Month", range: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) } },
-    { label: "This Year", range: { from: startOfYear(new Date()), to: endOfYear(new Date()) } },
+    { label: "Today", range: () => ({ from: new Date(), to: new Date() }) },
+    { label: "Tomorrow", range: () => ({ from: addDays(new Date(), 1), to: addDays(new Date(), 1) }) },
+    { label: "This weekend", range: () => ({ from: startOfWeek(new Date(), { weekStartsOn: 6 }), to: endOfWeek(new Date(), { weekStartsOn: 6 }) }) },
+    { label: "Next week", range: () => ({ from: addWeeks(new Date(), 1), to: addWeeks(new Date(), 1) }) },
 ];
+
 
 export function DatePicker({
   className,
@@ -48,9 +47,11 @@ export function DatePicker({
     }
   }
 
-  const handlePresetClick = (range: DateRange) => {
-    onDateChange(range);
-    setOpen(false);
+  const handlePresetClick = (getRange: () => DateRange) => {
+    onDateChange(getRange());
+    if (mode === 'single') {
+        setOpen(false);
+    }
   }
 
   const handleClear = (e: React.MouseEvent) => {
@@ -94,16 +95,12 @@ export function DatePicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0 flex" align="start">
-          {mode === 'range' && (
-              <>
-                <div className="flex flex-col space-y-1 p-2 border-r">
-                    {PRESETS.map(({label, range}) => (
-                        <Button key={label} variant="ghost" className="justify-start" onClick={() => handlePresetClick(range)}>{label}</Button>
-                    ))}
-                </div>
-                <Separator orientation="vertical" className="h-auto"/>
-              </>
-          )}
+            <div className="flex flex-col space-y-1 p-2 border-r">
+                {PRESETS.map(({label, range}) => (
+                    <Button key={label} variant="ghost" className="justify-start" onClick={() => handlePresetClick(range)}>{label}</Button>
+                ))}
+            </div>
+            <Separator orientation="vertical" className="h-auto"/>
           <Calendar
             initialFocus
             mode={mode as "single" | "range"}

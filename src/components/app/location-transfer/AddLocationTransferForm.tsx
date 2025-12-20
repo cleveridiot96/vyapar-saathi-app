@@ -301,7 +301,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
           onClose={() => setIsMasterFormOpen(false)}
           onSubmit={handleMasterFormSubmit}
           initialData={masterItemToEdit}
-          itemTypeFromButton={masterFormItemType!}
+          itemTypeFromButton={masterItemToEdit?.type || "Warehouse"}
         />
       )}
     </>
