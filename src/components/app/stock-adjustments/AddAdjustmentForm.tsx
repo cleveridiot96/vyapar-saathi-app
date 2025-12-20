@@ -28,7 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { StockAdjustment, MasterItem } from '@/lib/types';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { DatePicker } from '@/components/shared/DatePicker';
+import { DatePicker } from "@/components/ui/date-picker";
 
 const adjustmentSchema = z.object({
   date: z.date({ required_error: "Adjustment date is required." }),
@@ -106,7 +106,10 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Adjustment Date</FormLabel>
-                  <DatePicker mode="single" date={field.value} onDateChange={field.onChange} />
+                  <DatePicker
+                    date={field.value}
+                    onDateChange={field.onChange}
+                  />
                   <FormMessage />
                 </FormItem>
               )}

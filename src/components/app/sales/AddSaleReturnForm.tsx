@@ -14,7 +14,7 @@ import type { Sale, SaleReturn } from "@/lib/types";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { DatePicker } from "@/components/shared/DatePicker";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface AddSaleReturnFormProps {
   isOpen: boolean;
@@ -180,7 +180,10 @@ export const AddSaleReturnForm: React.FC<AddSaleReturnFormProps> = ({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Return Date</FormLabel>
-                      <DatePicker mode="single" date={field.value} onDateChange={field.onChange} />
+                      <DatePicker
+                        date={field.value}
+                        onDateChange={field.onChange}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}

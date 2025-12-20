@@ -41,7 +41,7 @@ import {
 import { useTransactions } from "@/hooks/useTransactions";
 import { useInventory } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
-import { DatePicker } from "@/components/shared/DatePicker";
+import { DatePicker } from "@/components/ui/date-picker";
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
@@ -370,7 +370,6 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                             <FormItem className="flex flex-col">
                               <FormLabel>Sale Date</FormLabel>
                               <DatePicker
-                                mode="single"
                                 date={field.value}
                                 onDateChange={field.onChange}
                               />

@@ -35,7 +35,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MasterForm } from "@/components/app/masters/MasterForm";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DatePicker } from "@/components/shared/DatePicker";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface AddLocationTransferFormProps {
   isOpen: boolean;
@@ -182,7 +182,10 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Transfer Date</FormLabel>
-                      <DatePicker mode="single" date={field.value} onDateChange={field.onChange} />
+                      <DatePicker
+                        date={field.value}
+                        onDateChange={field.onChange}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}

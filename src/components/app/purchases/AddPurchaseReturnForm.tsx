@@ -14,7 +14,7 @@ import type { Purchase, PurchaseReturn } from "@/lib/types";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { DatePicker } from "@/components/shared/DatePicker";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface AddPurchaseReturnFormProps {
   isOpen: boolean;
@@ -183,7 +183,10 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Return Date</FormLabel>
-                      <DatePicker mode="single" date={field.value} onDateChange={field.onChange} />
+                       <DatePicker
+                          date={field.value}
+                          onDateChange={field.onChange}
+                        />
                       <FormMessage />
                     </FormItem>
                   )}

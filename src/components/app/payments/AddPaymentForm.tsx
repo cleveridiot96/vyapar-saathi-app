@@ -37,7 +37,7 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useInventory } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
-import { DatePicker } from "@/components/shared/DatePicker";
+import { DatePicker } from "@/components/ui/date-picker";
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
@@ -281,7 +281,10 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Payment Date</FormLabel>
-                      <DatePicker mode="single" date={field.value} onDateChange={field.onChange} />
+                      <DatePicker
+                        date={field.value}
+                        onDateChange={field.onChange}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
