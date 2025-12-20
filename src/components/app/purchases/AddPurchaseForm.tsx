@@ -26,7 +26,6 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { purchaseSchema, type PurchaseFormValues } from "@/lib/schemas/purchaseSchema";
 import type { MasterItem, Purchase, MasterItemType, Agent, ExpenseItem } from "@/lib/types";
-import { useTransactions } from "@/hooks/useTransactions";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { useToast } from "@/hooks/use-toast";
 import { MasterForm } from "@/components/app/masters/MasterForm";
@@ -40,6 +39,17 @@ interface AddPurchaseFormProps {
   onClose: () => void;
   onSubmit: (purchase: Purchase) => void;
   purchaseToEdit?: Purchase | null;
+  masterData: {
+      Customer: MasterItem[];
+      Supplier: MasterItem[];
+      Agent: MasterItem[];
+      Transporter: MasterItem[];
+      Warehouse: MasterItem[];
+      Broker: MasterItem[];
+      Expense: MasterItem[];
+  };
+  addOrUpdateMaster: (item: MasterItem) => void;
+  getAllMasters: () => MasterItem[];
 }
 
 export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
@@ -47,9 +57,11 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   onClose,
   onSubmit,
   purchaseToEdit,
+  masterData,
+  addOrUpdateMaster,
+  getAllMasters
 }) => {
   const { toast } = useToast();
-  const { masterData, addOrUpdateMaster, getAllMasters } = useTransactions();
   const { Supplier: suppliers = [], Agent: agents = [], Warehouse: warehouses = [], Transporter: transporters = [], Expense: expenses = [] } = masterData;
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);

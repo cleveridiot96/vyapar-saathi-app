@@ -97,7 +97,10 @@ export default function PurchasesPage() {
     addLedgerEntry,
     removeLedgerEntries,
     isTransactionsLoaded,
-    isMasterDataLoaded
+    isMasterDataLoaded,
+    masterData,
+    addOrUpdateMaster,
+    getAllMasters,
   } = useTransactions();
 
   const [isAddPurchaseFormOpen, setIsAddPurchaseFormOpen] =
@@ -440,6 +443,9 @@ export default function PurchasesPage() {
           onClose={() => setIsAddPurchaseFormOpen(false)}
           onSubmit={handleAddOrUpdatePurchase}
           purchaseToEdit={purchaseToEdit}
+          masterData={masterData}
+          addOrUpdateMaster={addOrUpdateMaster}
+          getAllMasters={getAllMasters}
         />
       )}
       {isAddPurchaseReturnFormOpen && (
