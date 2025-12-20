@@ -116,7 +116,10 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                       <DropdownMenuItem onClick={() => onEdit(item)} disabled={isLocked}>
                         <Edit className="mr-2 h-4 w-4" /> Edit
                       </DropdownMenuItem>
-                       <DropdownMenuItem onClick={() => onToggleLock(item)}>
+                       <DropdownMenuItem 
+                        onClick={() => onToggleLock(item)}
+                        onSelect={(e) => e.preventDefault()}
+                       >
                         {isLocked ? <Unlock className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
                         {isLocked ? 'Unlock' : 'Lock'}
                       </DropdownMenuItem>
