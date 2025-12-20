@@ -156,30 +156,37 @@ export default function PurchasesPage() {
   }, [purchaseReturns, financialYear, isAppHydrating, isTransactionsLoaded]);
 
   const handleAddOrUpdatePurchase = React.useCallback(
-    (purchase: Purchase) => {
-      // Check if we're editing by seeing if purchaseToEdit exists, not by checking the array
-      const isEditing = !!purchaseToEdit;
-      
-      setPurchases((prev) => {
-        if (isEditing) {
-          // Update existing purchase
-          return prev.map((p) => (p.id === purchase.id ? purchase : p));
-        } else {
-          // Add new purchase at the beginning
-          return [purchase, ...prev];
-        }
-      });
-  
-      setPurchaseToEdit(null);
-      setIsAddPurchaseFormOpen(false);
-      toast({
-        title: "Success!",
-        description: isEditing ? "Purchase updated successfully." : "Purchase added successfully.",
-      });
+  (purchase: Purchase) => {
+    const isEditing = !!purchaseToEdit;
+    
+    setPurchases((prevPurchases) => {
+      if (isEditing) {
+        const updated = prevPurchases.map((p) => 
+          p.id === purchase.id ? purchase : p
+        );
+        console.log('Purchase UPDATED:', purchase.id, updated.length);
+        return updated;
+      } else {
+        const newArray = [purchase, ...prevPurchases];
+        console.log('Purchase ADDED:', purchase.id, newArray.length);
+        return newArray;
+      }
+    });
+
+    setPurchaseToEdit(null);
+    setIsAddPurchaseFormOpen(false);
+    
+    toast({
+      title: "Success!",
+      description: isEditing ? "Purchase updated successfully." : "Purchase added successfully.",
+    });
+    
+    setTimeout(() => {
       window.dispatchEvent(new CustomEvent("reindex-search"));
-    },
-    [setPurchases, purchaseToEdit, toast]
-  );
+    }, 100);
+  },
+  [purchaseToEdit, setPurchases, toast]
+);
   
   const handleMasterDataUpdate = (item: MasterItem) => {
     addOrUpdateMaster(item);

@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -125,14 +126,38 @@ export function SalesClient() {
     return saleReturns.filter(sr => sr && sr.date && isDateInFinancialYear(sr.date, financialYear));
   }, [saleReturns, financialYear, isAppHydrating, isTransactionsLoaded]);
 
-  const handleAddOrUpdateSale = React.useCallback((sale: Sale) => {
-    const isEditing = sales.some(s => s.id === sale.id);
-    setSales(prev => isEditing ? prev.map(s => s.id === sale.id ? sale : s) : [{...sale, id: sale.id || `sale-${Date.now()}`}, ...prev]);
+  const handleAddOrUpdateSale = React.useCallback(
+  (sale: Sale) => {
+    const isEditing = !!saleToEdit;
+    
+    setSales((prevSales) => {
+      if (isEditing) {
+        const updated = prevSales.map((s) => 
+          s.id === sale.id ? sale : s
+        );
+        console.log('Sale UPDATED:', sale.id, updated.length);
+        return updated;
+      } else {
+        const newArray = [sale, ...prevSales];
+        console.log('Sale ADDED:', sale.id, newArray.length);
+        return newArray;
+      }
+    });
+
     setSaleToEdit(null);
     setIsAddSaleFormOpen(false);
-    toast({ title: "Success!", description: isEditing ? "Sale updated successfully." : "Sale added successfully." });
-    window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [sales, setSales, toast]);
+    
+    toast({
+      title: "Success!",
+      description: isEditing ? "Sale updated successfully." : "Sale added successfully.",
+    });
+    
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("reindex-search"));
+    }, 100);
+  },
+  [saleToEdit, setSales, toast]
+);
 
   const handleEditSale = React.useCallback((sale: Sale) => {
     setSaleToEdit(sale);
