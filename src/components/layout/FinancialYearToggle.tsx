@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -59,7 +60,7 @@ export function FinancialYearToggle() {
     <div className="flex items-center">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="px-3 text-sm font-semibold whitespace-nowrap w-[110px]" suppressHydrationWarning>
+          <Button variant="outline" className="px-3 text-sm font-semibold whitespace-nowrap w-[110px]">
             FY {isHydrated ? financialYear : '...'}
           </Button>
         </DropdownMenuTrigger>
