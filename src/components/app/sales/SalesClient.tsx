@@ -128,9 +128,9 @@ export function SalesClient() {
   }, [activeTab]);
 
   const filteredSales = React.useMemo(() => {
-    if (isAppHydrating || !isTransactionsLoaded) return [];
+    if (isAppHydrating) return [];
     return sales.filter(sale => sale && sale.date && isDateInFinancialYear(sale.date, financialYear) && !sale.isStockPaymentSale);
-  }, [sales, financialYear, isAppHydrating, isTransactionsLoaded]);
+  }, [sales, financialYear, isAppHydrating]);
 
   const filteredSaleReturns = React.useMemo(() => {
     if (isAppHydrating || !isTransactionsLoaded) return [];
@@ -229,7 +229,7 @@ export function SalesClient() {
     return activeTab === 'sales' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-yellow-600 hover:bg-yellow-700 text-white';
   }, [activeTab]);
 
-  if (isAppHydrating || !isTransactionsLoaded || !isSynced) return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p className="text-lg text-muted-foreground">Loading sales data...</p></div>;
+  if (isAppHydrating || !isSynced) return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p className="text-lg text-muted-foreground">Loading sales data...</p></div>;
 
   return (
     <div className="space-y-2 print-area">

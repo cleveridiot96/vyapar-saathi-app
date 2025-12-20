@@ -148,11 +148,6 @@ export default function PurchasesPage() {
 
   const handleAddOrUpdatePurchase = React.useCallback(
     (purchase: Purchase) => {
-      console.log('🔵 handleAddOrUpdatePurchase CALLED');
-      console.log('📦 Purchase object received:', purchase);
-      console.log('📊 Current purchases array length:', purchases.length);
-      console.log('✏️ Is editing?', !!purchaseToEdit);
-      
       const isEditing = !!purchaseToEdit;
       
       if (isEditing) {
@@ -171,16 +166,9 @@ export default function PurchasesPage() {
       
       window.dispatchEvent(new CustomEvent("reindex-search"));
     },
-    [purchaseToEdit, addPurchase, updatePurchase, toast, purchases.length]
+    [purchaseToEdit, addPurchase, updatePurchase, toast]
   );
     
-  React.useEffect(() => {
-    console.log('===============================');
-    console.log('PURCHASES ZUSTAND STATE:', purchases.length);
-    console.log('Purchases:', purchases.map(p => ({ id: p.id, supplier: p.supplierName })));
-    console.log('===============================');
-  }, [purchases]);
-
   const handleMasterDataUpdate = (item: MasterItem) => {
     addOrUpdateMaster(item);
     toast({ title: `Master list updated for ${item.type}.`});
@@ -313,15 +301,15 @@ export default function PurchasesPage() {
     return "bg-primary hover:bg-primary/90"; // Fallback
   }, [activeTab]);
 
-    const filteredPurchases = React.useMemo(() => {
-    if (isAppHydrating || !isTransactionsLoaded) return [];
+  const filteredPurchases = React.useMemo(() => {
+    if (isAppHydrating) return [];
     return purchases.filter(
       (purchase) =>
         purchase &&
         purchase.date &&
         isDateInFinancialYear(purchase.date, financialYear)
     );
-  }, [purchases, financialYear, isAppHydrating, isTransactionsLoaded]);
+  }, [purchases, financialYear, isAppHydrating]);
 
   const filteredPurchaseReturns = React.useMemo(() => {
     if (isAppHydrating || !isTransactionsLoaded) return [];
@@ -331,7 +319,7 @@ export default function PurchasesPage() {
   }, [purchaseReturns, financialYear, isAppHydrating, isTransactionsLoaded]);
 
 
-  if (isAppHydrating || !isTransactionsLoaded || !isMasterDataLoaded || !isSynced)
+  if (isAppHydrating || !isMasterDataLoaded || !isSynced)
     return (
        <div className="space-y-4 p-4">
         <div className="flex justify-between items-center">
@@ -435,9 +423,7 @@ export default function PurchasesPage() {
           key={purchaseToEdit ? purchaseToEdit.id : "new-purchase"}
           isOpen={isAddPurchaseFormOpen}
           onClose={() => setIsAddPurchaseFormOpen(false)}
-          onSubmit={(purchase) => {
-            handleAddOrUpdatePurchase(purchase);
-          }}
+          onSubmit={handleAddOrUpdatePurchase}
           purchaseToEdit={purchaseToEdit}
           masterData={masterData}
           addOrUpdateMaster={addOrUpdateMaster}
