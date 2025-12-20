@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -277,10 +278,6 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
       };
       
       onSubmit(purchaseData);
-      toast({ 
-        title: "Success", 
-        description: purchaseToEdit ? "Purchase updated successfully!" : "Purchase added successfully!" 
-      });
       onClose();
     } catch (error) {
       console.error("Error submitting purchase:", error);

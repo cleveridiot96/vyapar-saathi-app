@@ -1,9 +1,10 @@
+
 "use client";
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, ListCollapse, RotateCcw } from "lucide-react";
-import type { Purchase, PurchaseReturn, LedgerEntry } from "@/lib/types";
+import type { Purchase, PurchaseReturn, MasterItem } from "@/lib/types";
 import { PurchaseTable } from "@/components/app/purchases/PurchaseTable";
 import { AddPurchaseForm } from "@/components/app/purchases/AddPurchaseForm";
 import { PurchaseChittiPrint } from "@/components/app/purchases/PurchaseChittiPrint";
@@ -94,8 +95,6 @@ export default function PurchasesPage() {
     setPurchaseReturns,
     sales,
     locationTransfers,
-    addLedgerEntry,
-    removeLedgerEntries,
     isTransactionsLoaded,
     isMasterDataLoaded,
     masterData,
@@ -159,44 +158,12 @@ export default function PurchasesPage() {
   const handleAddOrUpdatePurchase = React.useCallback(
     (purchase: Purchase) => {
       const isEditing = purchases.some((p) => p.id === purchase.id);
-      setPurchases((prevPurchases) => {
+      
+      setPurchases((prev) => {
         return isEditing
-          ? prevPurchases.map((p) => (p.id === purchase.id ? purchase : p))
-          : [
-              { ...purchase, id: purchase.id || `purchase-${Date.now()}` },
-              ...prevPurchases,
-            ];
+          ? prev.map((p) => (p.id === purchase.id ? purchase : p))
+          : [purchase, ...prev];
       });
-
-      removeLedgerEntries(purchase.id);
-      if (purchase.expenses && purchase.expenses.length > 0) {
-        const newLedgerEntries = purchase.expenses
-          .filter((exp) => exp.amount > 0)
-          .map((exp) => ({
-            id: `ledger-${purchase.id}-${(exp.account || "exp").replace(
-              /\\s/g,
-              ""
-            )}`,
-            date: purchase.date,
-            type: "Expense" as const,
-            account: exp.account,
-            debit: exp.amount,
-            credit: 0,
-            paymentMode: exp.paymentMode,
-            party: exp.partyName || "Self",
-            partyId: exp.partyId,
-            relatedVoucher: purchase.id,
-            linkedTo: {
-              voucherType: "Purchase" as const,
-              voucherId: purchase.id,
-            },
-            remarks: `Expense for purchase from ${purchase.supplierName}`,
-          } as LedgerEntry));
-
-        if (newLedgerEntries.length > 0) {
-          addLedgerEntry(newLedgerEntries);
-        }
-      }
 
       setPurchaseToEdit(null);
       setIsAddPurchaseFormOpen(false);
@@ -206,8 +173,13 @@ export default function PurchasesPage() {
       });
       window.dispatchEvent(new CustomEvent("reindex-search"));
     },
-    [setPurchases, purchases, addLedgerEntry, removeLedgerEntries, toast]
+    [setPurchases, purchases, toast]
   );
+  
+  const handleMasterDataUpdate = (item: MasterItem) => {
+    addOrUpdateMaster(item);
+    toast({ title: `Master list updated for ${item.type}.`});
+  };
 
   const handleEditPurchase = (purchase: Purchase) => {
     setPurchaseToEdit(purchase);
@@ -262,7 +234,6 @@ export default function PurchasesPage() {
     if (itemToDelete) {
       if (itemToDelete.type === "purchase") {
         setPurchases((prev) => prev.filter((p) => p.id !== itemToDelete.id));
-        removeLedgerEntries(itemToDelete.id);
         toast({
           title: "Deleted!",
           description: "Purchase record removed.",
@@ -281,7 +252,7 @@ export default function PurchasesPage() {
       setItemToDelete(null);
       window.dispatchEvent(new CustomEvent("reindex-search"));
     }
-  }, [itemToDelete, setPurchases, setPurchaseReturns, removeLedgerEntries, toast]);
+  }, [itemToDelete, setPurchases, setPurchaseReturns, toast]);
 
   const handleAddOrUpdatePurchaseReturn = React.useCallback(
     (prData: PurchaseReturn) => {
@@ -444,7 +415,7 @@ export default function PurchasesPage() {
           onSubmit={handleAddOrUpdatePurchase}
           purchaseToEdit={purchaseToEdit}
           masterData={masterData}
-          addOrUpdateMaster={addOrUpdateMaster}
+          addOrUpdateMaster={handleMasterDataUpdate}
           getAllMasters={getAllMasters}
         />
       )}
