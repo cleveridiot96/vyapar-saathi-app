@@ -157,36 +157,51 @@ export default function PurchasesPage() {
 
   const handleAddOrUpdatePurchase = React.useCallback(
   (purchase: Purchase) => {
+    console.log('🔵 handleAddOrUpdatePurchase CALLED');
+    console.log('📦 Purchase object received:', purchase);
+    console.log('📊 Current purchases array length:', purchases.length);
+    console.log('✏️ Is editing?', !!purchaseToEdit);
+    
     const isEditing = !!purchaseToEdit;
     
+    // Log BEFORE setPurchases
+    console.log('🟢 About to call setPurchases');
+    
     setPurchases((prevPurchases) => {
-      if (isEditing) {
-        const updated = prevPurchases.map((p) => 
-          p.id === purchase.id ? purchase : p
-        );
-        console.log('Purchase UPDATED:', purchase.id, updated.length);
-        return updated;
-      } else {
-        const newArray = [purchase, ...prevPurchases];
-        console.log('Purchase ADDED:', purchase.id, newArray.length);
-        return newArray;
-      }
+      console.log('🟡 INSIDE setPurchases callback');
+      console.log('📊 Previous purchases length:', prevPurchases.length);
+      
+      const newArray = isEditing
+        ? prevPurchases.map((p) => p.id === purchase.id ? purchase : p)
+        : [purchase, ...prevPurchases];
+      
+      console.log('📊 New purchases length:', newArray.length);
+      console.log('✅ New array:', newArray);
+      
+      return newArray;
     });
-
+    
+    console.log('🔴 After setPurchases (may be async)');
+    
     setPurchaseToEdit(null);
     setIsAddPurchaseFormOpen(false);
     
     toast({
       title: "Success!",
-      description: isEditing ? "Purchase updated successfully." : "Purchase added successfully.",
+      description: isEditing ? "Purchase updated." : "Purchase added.",
     });
     
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("reindex-search"));
-    }, 100);
+    window.dispatchEvent(new CustomEvent("reindex-search"));
   },
-  [purchaseToEdit, setPurchases, toast]
+  [purchaseToEdit, setPurchases, purchases.length, toast]
 );
+
+    React.useEffect(() => {
+        console.log('🔄 PURCHASES ARRAY CHANGED');
+        console.log('📊 New length:', purchases.length);
+        console.log('📦 Purchases:', purchases);
+    }, [purchases]);
+
   
   const handleMasterDataUpdate = (item: MasterItem) => {
     addOrUpdateMaster(item);
@@ -424,7 +439,10 @@ export default function PurchasesPage() {
           key={purchaseToEdit ? purchaseToEdit.id : "new-purchase"}
           isOpen={isAddPurchaseFormOpen}
           onClose={() => setIsAddPurchaseFormOpen(false)}
-          onSubmit={handleAddOrUpdatePurchase}
+          onSubmit={(purchase) => {
+            console.log('🎯 AddPurchaseForm onSubmit called with:', purchase);
+            handleAddOrUpdatePurchase(purchase);
+          }}
           purchaseToEdit={purchaseToEdit}
           masterData={masterData}
           addOrUpdateMaster={handleMasterDataUpdate}
