@@ -239,7 +239,6 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
 
   const processSubmit = React.useCallback((values: PurchaseFormValues) => {
     setIsSubmitting(true);
-    
     try {
       const totalAmount = Math.round(summary.totalAmount);
       const effectiveRate = summary.totalNetWeight > 0 ? totalAmount / summary.totalNetWeight : 0;
@@ -277,10 +276,13 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
         effectiveRate,
       };
       
+      console.log('🔵 FORM: About to call onSubmit with:', purchaseData);
       onSubmit(purchaseData);
+      console.log('🟢 FORM: onSubmit called successfully');
+
       onClose();
     } catch (error) {
-      console.error("Error submitting purchase:", error);
+      console.error('🔴 FORM ERROR:', error);
       toast({ 
         title: "Error", 
         description: "Failed to save purchase. Please try again.",

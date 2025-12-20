@@ -146,54 +146,46 @@ export default function PurchasesPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeTab]);
 
-
-  const filteredPurchases = React.useMemo(() => {
-    if (isAppHydrating || !isTransactionsLoaded) return [];
-    return purchases.filter(
-      (purchase) =>
-        purchase &&
-        purchase.date &&
-        isDateInFinancialYear(purchase.date, financialYear)
-    );
-  }, [purchases, financialYear, isAppHydrating, isTransactionsLoaded]);
-
-  const filteredPurchaseReturns = React.useMemo(() => {
-    if (isAppHydrating || !isTransactionsLoaded) return [];
-    return purchaseReturns.filter(
-      (pr) => pr && pr.date && isDateInFinancialYear(pr.date, financialYear)
-    );
-  }, [purchaseReturns, financialYear, isAppHydrating, isTransactionsLoaded]);
-
   const handleAddOrUpdatePurchase = React.useCallback(
     (purchase: Purchase) => {
-      console.log('🚀 handleAddOrUpdatePurchase called', purchase);
+      console.log('🔵 handleAddOrUpdatePurchase CALLED');
+      console.log('📦 Purchase object received:', purchase);
+      console.log('📊 Current purchases array length:', purchases.length);
+      console.log('✏️ Is editing?', !!purchaseToEdit);
       
       const isEditing = !!purchaseToEdit;
       
+      // Log BEFORE setPurchases
+      console.log('🟢 About to call Zustand action');
+      
       if (isEditing) {
         updatePurchase(purchase);
-        toast({
-          title: "Success!",
-          description: "Purchase updated successfully.",
-        });
       } else {
         addPurchase(purchase);
-        toast({
-          title: "Success!",
-          description: "Purchase added successfully.",
-        });
       }
+      
+      console.log('🔴 After Zustand action call');
       
       setPurchaseToEdit(null);
       setIsAddPurchaseFormOpen(false);
       
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent("reindex-search"));
-      }, 100);
+      toast({
+        title: "Success!",
+        description: isEditing ? "Purchase updated." : "Purchase added.",
+      });
+      
+      window.dispatchEvent(new CustomEvent("reindex-search"));
     },
-    [purchaseToEdit, addPurchase, updatePurchase, toast]
+    [purchaseToEdit, addPurchase, updatePurchase, toast, purchases.length]
   );
     
+  React.useEffect(() => {
+    console.log('===============================');
+    console.log('PURCHASES ZUSTAND STATE:', purchases.length);
+    console.log('Purchases:', purchases.map(p => ({ id: p.id, supplier: p.supplierName })));
+    console.log('===============================');
+  }, [purchases]);
+
   const handleMasterDataUpdate = (item: MasterItem) => {
     addOrUpdateMaster(item);
     toast({ title: `Master list updated for ${item.type}.`});
@@ -326,6 +318,24 @@ export default function PurchasesPage() {
     return "bg-primary hover:bg-primary/90"; // Fallback
   }, [activeTab]);
 
+    const filteredPurchases = React.useMemo(() => {
+    if (isAppHydrating || !isTransactionsLoaded) return [];
+    return purchases.filter(
+      (purchase) =>
+        purchase &&
+        purchase.date &&
+        isDateInFinancialYear(purchase.date, financialYear)
+    );
+  }, [purchases, financialYear, isAppHydrating, isTransactionsLoaded]);
+
+  const filteredPurchaseReturns = React.useMemo(() => {
+    if (isAppHydrating || !isTransactionsLoaded) return [];
+    return purchaseReturns.filter(
+      (pr) => pr && pr.date && isDateInFinancialYear(pr.date, financialYear)
+    );
+  }, [purchaseReturns, financialYear, isAppHydrating, isTransactionsLoaded]);
+
+
   if (isAppHydrating || !isTransactionsLoaded || !isMasterDataLoaded || !isSynced)
     return (
        <div className="space-y-4 p-4">
@@ -430,7 +440,10 @@ export default function PurchasesPage() {
           key={purchaseToEdit ? purchaseToEdit.id : "new-purchase"}
           isOpen={isAddPurchaseFormOpen}
           onClose={() => setIsAddPurchaseFormOpen(false)}
-          onSubmit={handleAddOrUpdatePurchase}
+          onSubmit={(purchase) => {
+            console.log('🎯 AddPurchaseForm onSubmit called with:', purchase);
+            handleAddOrUpdatePurchase(purchase);
+          }}
           purchaseToEdit={purchaseToEdit}
           masterData={masterData}
           addOrUpdateMaster={handleMasterDataUpdate}
