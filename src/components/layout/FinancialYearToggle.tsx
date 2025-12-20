@@ -29,14 +29,6 @@ export function FinancialYearToggle() {
   const { toast } = useToast();
   const isHydrated = useHydrated();
 
-  const [buttonText, setButtonText] = useState(`FY ${financialYear}`);
-
-  useEffect(() => {
-    if (isHydrated) {
-      setButtonText(`FY ${financialYear}`);
-    }
-  }, [financialYear, isHydrated]);
-  
   const handleAddNextFinancialYear = () => {
     const nextFy = getNextFinancialYear();
     if (!availableFinancialYears.includes(nextFy)) {
@@ -65,7 +57,13 @@ export function FinancialYearToggle() {
   }, [availableFinancialYears]);
 
   if (!isHydrated) {
-    return <Skeleton className="h-9 w-[110px]" />;
+     return (
+        <div className="flex items-center">
+            <Button variant="outline" className="px-3 text-sm font-semibold whitespace-nowrap w-[110px]">
+                FY ...
+            </Button>
+        </div>
+    );
   }
 
   return (
@@ -73,7 +71,7 @@ export function FinancialYearToggle() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="px-3 text-sm font-semibold whitespace-nowrap">
-            {buttonText}
+            {`FY ${financialYear}`}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="center" className="w-[200px]">
