@@ -7,7 +7,7 @@ interface SaleStore {
   addSale: (sale: Sale) => void;
   updateSale: (sale: Sale) => void;
   deleteSale: (id: string) => void;
-  setSales: (sales: Sale[]) => void;
+  initializeSales: (sales: Sale[]) => void;
 }
 
 export const useSaleStore = create<SaleStore>()(
@@ -16,27 +16,31 @@ export const useSaleStore = create<SaleStore>()(
       sales: [],
       
       addSale: (sale) => {
-        set((state) => {
-          const newSales = [sale, ...state.sales];
-          console.log('✅ Sale added to store:', sale.id, 'Total:', newSales.length);
-          return { sales: newSales };
-        });
+        set((state) => ({
+          sales: [sale, ...state.sales]
+        }));
+        console.log('✅ Sale added:', sale.id);
       },
       
       updateSale: (sale) => {
         set((state) => ({
-          sales: state.sales.map((s) => (s.id === sale.id ? sale : s))
+          sales: state.sales.map((s) => 
+            s.id === sale.id ? sale : s
+          )
         }));
+        console.log('✅ Sale updated:', sale.id);
       },
       
       deleteSale: (id) => {
         set((state) => ({
           sales: state.sales.filter((s) => s.id !== id)
         }));
+        console.log('✅ Sale deleted:', id);
       },
       
-      setSales: (sales) => {
+      initializeSales: (sales) => {
         set({ sales });
+        console.log('✅ Sales initialized:', sales.length);
       },
     }),
     {

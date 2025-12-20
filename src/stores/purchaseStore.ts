@@ -7,7 +7,7 @@ interface PurchaseStore {
   addPurchase: (purchase: Purchase) => void;
   updatePurchase: (purchase: Purchase) => void;
   deletePurchase: (id: string) => void;
-  setPurchases: (purchases: Purchase[]) => void;
+  initializePurchases: (purchases: Purchase[]) => void;
 }
 
 export const usePurchaseStore = create<PurchaseStore>()(
@@ -16,31 +16,31 @@ export const usePurchaseStore = create<PurchaseStore>()(
       purchases: [],
       
       addPurchase: (purchase) => {
-        set((state) => {
-          const newPurchases = [purchase, ...state.purchases];
-          console.log('✅ Purchase added to store:', purchase.id, 'Total:', newPurchases.length);
-          return { purchases: newPurchases };
-        });
+        set((state) => ({
+          purchases: [purchase, ...state.purchases]
+        }));
+        console.log('✅ Purchase added:', purchase.id);
       },
       
       updatePurchase: (purchase) => {
-        set((state) => {
-          const updated = state.purchases.map((p) => 
+        set((state) => ({
+          purchases: state.purchases.map((p) => 
             p.id === purchase.id ? purchase : p
-          );
-          console.log('✅ Purchase updated in store:', purchase.id);
-          return { purchases: updated };
-        });
+          )
+        }));
+        console.log('✅ Purchase updated:', purchase.id);
       },
       
       deletePurchase: (id) => {
         set((state) => ({
           purchases: state.purchases.filter((p) => p.id !== id)
         }));
+        console.log('✅ Purchase deleted:', id);
       },
       
-      setPurchases: (purchases) => {
+      initializePurchases: (purchases) => {
         set({ purchases });
+        console.log('✅ Purchases initialized:', purchases.length);
       },
     }),
     {

@@ -86,11 +86,11 @@ export function SalesClient() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
   
-  // Zustand store for sales
+  // GET FROM ZUSTAND INSTEAD OF CONTEXT
   const sales = useSaleStore((state) => state.sales);
   const addSale = useSaleStore((state) => state.addSale);
   const updateSale = useSaleStore((state) => state.updateSale);
-  const deleteSale = useSaleStore((state) => state.deleteSale);
+  const deleteSaleFromStore = useSaleStore((state) => state.deleteSale);
 
   // useTransactions for other data
   const { saleReturns, setSaleReturns, isTransactionsLoaded, addOrUpdateMaster } = useTransactions();
@@ -158,7 +158,7 @@ export function SalesClient() {
       
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent("reindex-search"));
-      }, 50);
+      }, 100);
     },
     [saleToEdit, addSale, updateSale, toast]
   );
@@ -182,7 +182,7 @@ export function SalesClient() {
             setItemToDelete(null);
             return;
         }
-      deleteSale(itemToDelete.id);
+      deleteSaleFromStore(itemToDelete.id);
       toast({ title: "Deleted!", description: "Sale record removed.", variant: "destructive" });
     } else {
       setSaleReturns(prev => prev.filter(sr => sr.id !== itemToDelete.id));
@@ -191,16 +191,21 @@ export function SalesClient() {
 
     setItemToDelete(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [itemToDelete, deleteSale, setSaleReturns, toast, saleReturns]);
+  }, [itemToDelete, deleteSaleFromStore, setSaleReturns, toast, saleReturns]);
   
   const handleAddOrUpdateSaleReturn = React.useCallback((srData: SaleReturn) => {
-    const isEditing = saleReturns.some(sr => sr.id === srData.id);
-    setSaleReturns(prev => isEditing ? prev.map(sr => sr.id === srData.id ? srData : sr) : [{...srData, id: srData.id || `sr-${Date.now()}`}, ...prev]);
+    setSaleReturns(prev => {
+      const isEditing = prev.some(sr => sr.id === srData.id);
+      if (isEditing) {
+          return prev.map(sr => sr.id === srData.id ? srData : sr)
+      }
+      return [{...srData, id: srData.id || `sr-${Date.now()}`}, ...prev];
+    });
     setSaleReturnToEdit(null);
     setIsAddSaleReturnFormOpen(false);
-    toast({ title: "Success!", description: isEditing ? "Sale return updated." : "Sale return added." });
+    toast({ title: "Success!", description: "Sale return updated." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [saleReturns, setSaleReturns, toast]);
+  }, [setSaleReturns, toast]);
 
   const handleEditSaleReturn = React.useCallback((sr: SaleReturn) => {
     setSaleReturnToEdit(sr);

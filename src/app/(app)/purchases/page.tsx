@@ -90,13 +90,13 @@ export default function PurchasesPage() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
   
-  // Zustand store for purchases
+  // GET PURCHASES FROM ZUSTAND (NOT CONTEXT)
   const purchases = usePurchaseStore((state) => state.purchases);
   const addPurchase = usePurchaseStore((state) => state.addPurchase);
   const updatePurchase = usePurchaseStore((state) => state.updatePurchase);
-  const deletePurchase = usePurchaseStore((state) => state.deletePurchase);
+  const deletePurchaseFromStore = usePurchaseStore((state) => state.deletePurchase);
   
-  // useTransactions for other data and master data updates
+  // STILL USE CONTEXT FOR OTHER DATA (master data, sales, transfers, etc.)
   const {
     purchaseReturns,
     setPurchaseReturns,
@@ -164,7 +164,7 @@ export default function PurchasesPage() {
 
   const handleAddOrUpdatePurchase = React.useCallback(
     (purchase: Purchase) => {
-      console.log('🚀 NUCLEAR HANDLER CALLED', purchase);
+      console.log('🚀 handleAddOrUpdatePurchase called', purchase);
       
       const isEditing = !!purchaseToEdit;
       
@@ -185,10 +185,9 @@ export default function PurchasesPage() {
       setPurchaseToEdit(null);
       setIsAddPurchaseFormOpen(false);
       
-      // Force reindex
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent("reindex-search"));
-      }, 50);
+      }, 100);
     },
     [purchaseToEdit, addPurchase, updatePurchase, toast]
   );
@@ -250,7 +249,7 @@ export default function PurchasesPage() {
   const confirmDelete = React.useCallback(() => {
     if (itemToDelete) {
       if (itemToDelete.type === "purchase") {
-        deletePurchase(itemToDelete.id);
+        deletePurchaseFromStore(itemToDelete.id);
         toast({
           title: "Deleted!",
           description: "Purchase record removed.",
@@ -269,7 +268,7 @@ export default function PurchasesPage() {
       setItemToDelete(null);
       window.dispatchEvent(new CustomEvent("reindex-search"));
     }
-  }, [itemToDelete, deletePurchase, setPurchaseReturns, toast]);
+  }, [itemToDelete, deletePurchaseFromStore, setPurchaseReturns, toast]);
 
   const handleAddOrUpdatePurchaseReturn = React.useCallback(
     (prData: PurchaseReturn) => {
