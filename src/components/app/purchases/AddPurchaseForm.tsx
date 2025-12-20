@@ -34,7 +34,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useTransactions } from "@/hooks/useTransactions";
 
 interface AddPurchaseFormProps {
   isOpen: boolean;
@@ -64,7 +63,6 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   getAllMasters
 }) => {
   const { toast } = useToast();
-  const { locationTransfers } = useTransactions();
   const { Supplier: suppliers = [], Agent: agents = [], Warehouse: warehouses = [], Transporter: transporters = [], Expense: expenses = [] } = masterData;
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -73,20 +71,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   const [masterItemToEdit, setMasterItemToEdit] = React.useState<MasterItem | null>(null);
   const [manualNetWeight, setManualNetWeight] = React.useState<Record<number, boolean>>({});
   const [isRefreshing, setIsRefreshing] = React.useState(false);
-
-  const allSystemLots = React.useMemo(() => {
-    const lots = new Set<string>();
-    // This part should also use zustand state, but for now we pass it from parent.
-    // In a full migration, you'd get `purchases` from usePurchaseStore() here.
-    locationTransfers.forEach(lt => {
-      lt.items.forEach(item => {
-        lots.add(item.originalLotNumber);
-        lots.add(item.newLotNumber);
-      });
-    });
-    return Array.from(lots).sort().map(lot => ({ value: lot, label: lot }));
-  }, [locationTransfers]);
-
+  
   const getDefaultValues = React.useCallback((editData?: Purchase | null): PurchaseFormValues => {
     if (editData) {
       return {
@@ -292,16 +277,14 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
         effectiveRate,
       };
       
-      console.log('🔵 FORM: About to call onSubmit with:', purchaseData);
       onSubmit(purchaseData);
-      console.log('🟢 FORM: onSubmit called successfully');
 
       onClose();
     } catch (error) {
-      console.error('🔴 FORM ERROR:', error);
+      console.error('Error in processSubmit:', error);
       toast({ 
         title: "Error", 
-        description: "Failed to save purchase. Please try again.",
+        description: "Failed to save purchase. Please check console for details.",
         variant: "destructive"
       });
     } finally {
@@ -765,5 +748,3 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     </>
   );
 };
-
-    

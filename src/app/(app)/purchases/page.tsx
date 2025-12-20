@@ -29,8 +29,6 @@ import { cn } from "@/lib/utils";
 import { useTransactions } from "@/hooks/useTransactions";
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePurchaseStore } from '@/stores/purchaseStore';
-import { useZustandSync } from '@/hooks/useZustandSync';
 
 function openPrintWindow(htmlContent: string, title = "Document") {
   const printWindow = window.open("", "_blank", "noopener,noreferrer");
@@ -90,16 +88,10 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 export default function PurchasesPage() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
-  const { isSynced } = useZustandSync();
   
-  // GET PURCHASES FROM ZUSTAND (NOT CONTEXT)
-  const purchases = usePurchaseStore((state) => state.purchases);
-  const addPurchase = usePurchaseStore((state) => state.addPurchase);
-  const updatePurchase = usePurchaseStore((state) => state.updatePurchase);
-  const deletePurchaseFromStore = usePurchaseStore((state) => state.deletePurchase);
-  
-  // STILL USE CONTEXT FOR OTHER DATA (master data, sales, transfers, etc.)
   const {
+    purchases,
+    setPurchases,
     purchaseReturns,
     setPurchaseReturns,
     sales,
@@ -150,11 +142,12 @@ export default function PurchasesPage() {
     (purchase: Purchase) => {
       const isEditing = !!purchaseToEdit;
       
-      if (isEditing) {
-        updatePurchase(purchase);
-      } else {
-        addPurchase(purchase);
-      }
+      setPurchases((prev) => {
+        if (isEditing) {
+          return prev.map((p) => (p.id === purchase.id ? purchase : p));
+        }
+        return [purchase, ...prev];
+      });
       
       setPurchaseToEdit(null);
       setIsAddPurchaseFormOpen(false);
@@ -164,9 +157,11 @@ export default function PurchasesPage() {
         description: isEditing ? "Purchase updated." : "Purchase added.",
       });
       
-      window.dispatchEvent(new CustomEvent("reindex-search"));
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("reindex-search"));
+      }, 100);
     },
-    [purchaseToEdit, addPurchase, updatePurchase, toast]
+    [purchaseToEdit, setPurchases, toast]
   );
     
   const handleMasterDataUpdate = (item: MasterItem) => {
@@ -226,7 +221,7 @@ export default function PurchasesPage() {
   const confirmDelete = React.useCallback(() => {
     if (itemToDelete) {
       if (itemToDelete.type === "purchase") {
-        deletePurchaseFromStore(itemToDelete.id);
+        setPurchases((prev) => prev.filter((p) => p.id !== itemToDelete.id));
         toast({
           title: "Deleted!",
           description: "Purchase record removed.",
@@ -245,7 +240,7 @@ export default function PurchasesPage() {
       setItemToDelete(null);
       window.dispatchEvent(new CustomEvent("reindex-search"));
     }
-  }, [itemToDelete, deletePurchaseFromStore, setPurchaseReturns, toast]);
+  }, [itemToDelete, setPurchases, setPurchaseReturns, toast]);
 
   const handleAddOrUpdatePurchaseReturn = React.useCallback(
     (prData: PurchaseReturn) => {
@@ -302,14 +297,14 @@ export default function PurchasesPage() {
   }, [activeTab]);
 
   const filteredPurchases = React.useMemo(() => {
-    if (isAppHydrating) return [];
+    if (isAppHydrating || !isTransactionsLoaded) return [];
     return purchases.filter(
       (purchase) =>
         purchase &&
         purchase.date &&
         isDateInFinancialYear(purchase.date, financialYear)
     );
-  }, [purchases, financialYear, isAppHydrating]);
+  }, [purchases, financialYear, isAppHydrating, isTransactionsLoaded]);
 
   const filteredPurchaseReturns = React.useMemo(() => {
     if (isAppHydrating || !isTransactionsLoaded) return [];
@@ -319,7 +314,7 @@ export default function PurchasesPage() {
   }, [purchaseReturns, financialYear, isAppHydrating, isTransactionsLoaded]);
 
 
-  if (isAppHydrating || !isMasterDataLoaded || !isSynced)
+  if (isAppHydrating || !isMasterDataLoaded || !isTransactionsLoaded)
     return (
        <div className="space-y-4 p-4">
         <div className="flex justify-between items-center">

@@ -28,9 +28,6 @@ import { SaleChittiPrint } from "@/components/app/sales/SaleChittiPrint";
 import { AddSaleReturnForm } from "@/components/app/sales/AddSaleReturnForm";
 import { SaleReturnTable } from "@/components/app/sales/SaleReturnTable";
 import { renderToStaticMarkup } from 'react-dom/server';
-import { useSaleStore } from '@/stores/saleStore';
-import { useZustandSync } from '@/hooks/useZustandSync';
-
 
 function openPrintWindow(htmlContent: string, title = "Document") {
   const printWindow = window.open("", "_blank", "noopener,noreferrer");
@@ -86,16 +83,15 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 export function SalesClient() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
-  const { isSynced } = useZustandSync();
   
-  // GET FROM ZUSTAND INSTEAD OF CONTEXT
-  const sales = useSaleStore((state) => state.sales);
-  const addSale = useSaleStore((state) => state.addSale);
-  const updateSale = useSaleStore((state) => state.updateSale);
-  const deleteSaleFromStore = useSaleStore((state) => state.deleteSale);
-
-  // useTransactions for other data
-  const { saleReturns, setSaleReturns, isTransactionsLoaded, addOrUpdateMaster } = useTransactions();
+  const { 
+    sales, 
+    setSales, 
+    saleReturns, 
+    setSaleReturns, 
+    isTransactionsLoaded, 
+    addOrUpdateMaster 
+  } = useTransactions();
 
   const [isAddSaleFormOpen, setIsAddSaleFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
@@ -128,9 +124,9 @@ export function SalesClient() {
   }, [activeTab]);
 
   const filteredSales = React.useMemo(() => {
-    if (isAppHydrating) return [];
+    if (isAppHydrating || !isTransactionsLoaded) return [];
     return sales.filter(sale => sale && sale.date && isDateInFinancialYear(sale.date, financialYear) && !sale.isStockPaymentSale);
-  }, [sales, financialYear, isAppHydrating]);
+  }, [sales, financialYear, isAppHydrating, isTransactionsLoaded]);
 
   const filteredSaleReturns = React.useMemo(() => {
     if (isAppHydrating || !isTransactionsLoaded) return [];
@@ -141,28 +137,26 @@ export function SalesClient() {
     (sale: Sale) => {
       const isEditing = !!saleToEdit;
       
-      if (isEditing) {
-        updateSale(sale);
-        toast({
-          title: "Success!",
-          description: "Sale updated successfully.",
-        });
-      } else {
-        addSale(sale);
-        toast({
-          title: "Success!",
-          description: "Sale added successfully.",
-        });
-      }
+      setSales((prev) => {
+        if (isEditing) {
+          return prev.map((s) => (s.id === sale.id ? sale : s));
+        }
+        return [sale, ...prev];
+      });
       
       setSaleToEdit(null);
       setIsAddSaleFormOpen(false);
+      
+      toast({
+        title: "Success!",
+        description: isEditing ? "Sale updated." : "Sale added.",
+      });
       
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent("reindex-search"));
       }, 100);
     },
-    [saleToEdit, addSale, updateSale, toast]
+    [saleToEdit, setSales, toast]
   );
 
   const handleEditSale = React.useCallback((sale: Sale) => {
@@ -184,7 +178,7 @@ export function SalesClient() {
             setItemToDelete(null);
             return;
         }
-      deleteSaleFromStore(itemToDelete.id);
+      setSales(prev => prev.filter(s => s.id !== itemToDelete.id));
       toast({ title: "Deleted!", description: "Sale record removed.", variant: "destructive" });
     } else {
       setSaleReturns(prev => prev.filter(sr => sr.id !== itemToDelete.id));
@@ -193,7 +187,7 @@ export function SalesClient() {
 
     setItemToDelete(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [itemToDelete, deleteSaleFromStore, setSaleReturns, toast, saleReturns]);
+  }, [itemToDelete, setSales, setSaleReturns, toast, saleReturns]);
   
   const handleAddOrUpdateSaleReturn = React.useCallback((srData: SaleReturn) => {
     setSaleReturns(prev => {
@@ -229,7 +223,7 @@ export function SalesClient() {
     return activeTab === 'sales' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-yellow-600 hover:bg-yellow-700 text-white';
   }, [activeTab]);
 
-  if (isAppHydrating || !isSynced) return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p className="text-lg text-muted-foreground">Loading sales data...</p></div>;
+  if (isAppHydrating || !isTransactionsLoaded) return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p className="text-lg text-muted-foreground">Loading sales data...</p></div>;
 
   return (
     <div className="space-y-2 print-area">
