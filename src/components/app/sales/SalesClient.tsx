@@ -28,6 +28,7 @@ import { SaleChittiPrint } from "@/components/app/sales/SaleChittiPrint";
 import { AddSaleReturnForm } from "@/components/app/sales/AddSaleReturnForm";
 import { SaleReturnTable } from "@/components/app/sales/SaleReturnTable";
 import { renderToStaticMarkup } from 'react-dom/server';
+import { useSaleStore } from '@/stores/saleStore';
 
 
 function openPrintWindow(htmlContent: string, title = "Document") {
@@ -84,7 +85,15 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 export function SalesClient() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
-  const { sales, saleReturns, setSales, setSaleReturns, isTransactionsLoaded, addOrUpdateMaster } = useTransactions();
+  
+  // Zustand store for sales
+  const sales = useSaleStore((state) => state.sales);
+  const addSale = useSaleStore((state) => state.addSale);
+  const updateSale = useSaleStore((state) => state.updateSale);
+  const deleteSale = useSaleStore((state) => state.deleteSale);
+
+  // useTransactions for other data
+  const { saleReturns, setSaleReturns, isTransactionsLoaded, addOrUpdateMaster } = useTransactions();
 
   const [isAddSaleFormOpen, setIsAddSaleFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
@@ -127,37 +136,32 @@ export function SalesClient() {
   }, [saleReturns, financialYear, isAppHydrating, isTransactionsLoaded]);
 
   const handleAddOrUpdateSale = React.useCallback(
-  (sale: Sale) => {
-    const isEditing = !!saleToEdit;
-    
-    setSales((prevSales) => {
+    (sale: Sale) => {
+      const isEditing = !!saleToEdit;
+      
       if (isEditing) {
-        const updated = prevSales.map((s) => 
-          s.id === sale.id ? sale : s
-        );
-        console.log('Sale UPDATED:', sale.id, updated.length);
-        return updated;
+        updateSale(sale);
+        toast({
+          title: "Success!",
+          description: "Sale updated successfully.",
+        });
       } else {
-        const newArray = [sale, ...prevSales];
-        console.log('Sale ADDED:', sale.id, newArray.length);
-        return newArray;
+        addSale(sale);
+        toast({
+          title: "Success!",
+          description: "Sale added successfully.",
+        });
       }
-    });
-
-    setSaleToEdit(null);
-    setIsAddSaleFormOpen(false);
-    
-    toast({
-      title: "Success!",
-      description: isEditing ? "Sale updated successfully." : "Sale added successfully.",
-    });
-    
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("reindex-search"));
-    }, 100);
-  },
-  [saleToEdit, setSales, toast]
-);
+      
+      setSaleToEdit(null);
+      setIsAddSaleFormOpen(false);
+      
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("reindex-search"));
+      }, 50);
+    },
+    [saleToEdit, addSale, updateSale, toast]
+  );
 
   const handleEditSale = React.useCallback((sale: Sale) => {
     setSaleToEdit(sale);
@@ -178,7 +182,7 @@ export function SalesClient() {
             setItemToDelete(null);
             return;
         }
-      setSales(prev => prev.filter(s => s.id !== itemToDelete.id));
+      deleteSale(itemToDelete.id);
       toast({ title: "Deleted!", description: "Sale record removed.", variant: "destructive" });
     } else {
       setSaleReturns(prev => prev.filter(sr => sr.id !== itemToDelete.id));
@@ -187,7 +191,7 @@ export function SalesClient() {
 
     setItemToDelete(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [itemToDelete, setSales, setSaleReturns, toast, saleReturns]);
+  }, [itemToDelete, deleteSale, setSaleReturns, toast, saleReturns]);
   
   const handleAddOrUpdateSaleReturn = React.useCallback((srData: SaleReturn) => {
     const isEditing = saleReturns.some(sr => sr.id === srData.id);

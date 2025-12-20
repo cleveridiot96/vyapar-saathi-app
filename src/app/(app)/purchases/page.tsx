@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { useTransactions } from "@/hooks/useTransactions";
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePurchaseStore } from '@/stores/purchaseStore';
 
 function openPrintWindow(htmlContent: string, title = "Document") {
   const printWindow = window.open("", "_blank", "noopener,noreferrer");
@@ -88,9 +89,15 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 export default function PurchasesPage() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
+  
+  // Zustand store for purchases
+  const purchases = usePurchaseStore((state) => state.purchases);
+  const addPurchase = usePurchaseStore((state) => state.addPurchase);
+  const updatePurchase = usePurchaseStore((state) => state.updatePurchase);
+  const deletePurchase = usePurchaseStore((state) => state.deletePurchase);
+  
+  // useTransactions for other data
   const {
-    purchases,
-    setPurchases,
     purchaseReturns,
     setPurchaseReturns,
     sales,
@@ -156,53 +163,36 @@ export default function PurchasesPage() {
   }, [purchaseReturns, financialYear, isAppHydrating, isTransactionsLoaded]);
 
   const handleAddOrUpdatePurchase = React.useCallback(
-  (purchase: Purchase) => {
-    console.log('🔵 handleAddOrUpdatePurchase CALLED');
-    console.log('📦 Purchase object received:', purchase);
-    console.log('📊 Current purchases array length:', purchases.length);
-    console.log('✏️ Is editing?', !!purchaseToEdit);
-    
-    const isEditing = !!purchaseToEdit;
-    
-    // Log BEFORE setPurchases
-    console.log('🟢 About to call setPurchases');
-    
-    setPurchases((prevPurchases) => {
-      console.log('🟡 INSIDE setPurchases callback');
-      console.log('📊 Previous purchases length:', prevPurchases.length);
+    (purchase: Purchase) => {
+      console.log('🚀 NUCLEAR HANDLER CALLED', purchase);
       
-      const newArray = isEditing
-        ? prevPurchases.map((p) => p.id === purchase.id ? purchase : p)
-        : [purchase, ...prevPurchases];
+      const isEditing = !!purchaseToEdit;
       
-      console.log('📊 New purchases length:', newArray.length);
-      console.log('✅ New array:', newArray);
+      if (isEditing) {
+        updatePurchase(purchase);
+        toast({
+          title: "Success!",
+          description: "Purchase updated successfully.",
+        });
+      } else {
+        addPurchase(purchase);
+        toast({
+          title: "Success!",
+          description: "Purchase added successfully.",
+        });
+      }
       
-      return newArray;
-    });
+      setPurchaseToEdit(null);
+      setIsAddPurchaseFormOpen(false);
+      
+      // Force reindex
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("reindex-search"));
+      }, 50);
+    },
+    [purchaseToEdit, addPurchase, updatePurchase, toast]
+  );
     
-    console.log('🔴 After setPurchases (may be async)');
-    
-    setPurchaseToEdit(null);
-    setIsAddPurchaseFormOpen(false);
-    
-    toast({
-      title: "Success!",
-      description: isEditing ? "Purchase updated." : "Purchase added.",
-    });
-    
-    window.dispatchEvent(new CustomEvent("reindex-search"));
-  },
-  [purchaseToEdit, setPurchases, purchases.length, toast]
-);
-
-    React.useEffect(() => {
-        console.log('🔄 PURCHASES ARRAY CHANGED');
-        console.log('📊 New length:', purchases.length);
-        console.log('📦 Purchases:', purchases);
-    }, [purchases]);
-
-  
   const handleMasterDataUpdate = (item: MasterItem) => {
     addOrUpdateMaster(item);
     toast({ title: `Master list updated for ${item.type}.`});
@@ -260,7 +250,7 @@ export default function PurchasesPage() {
   const confirmDelete = React.useCallback(() => {
     if (itemToDelete) {
       if (itemToDelete.type === "purchase") {
-        setPurchases((prev) => prev.filter((p) => p.id !== itemToDelete.id));
+        deletePurchase(itemToDelete.id);
         toast({
           title: "Deleted!",
           description: "Purchase record removed.",
@@ -279,7 +269,7 @@ export default function PurchasesPage() {
       setItemToDelete(null);
       window.dispatchEvent(new CustomEvent("reindex-search"));
     }
-  }, [itemToDelete, setPurchases, setPurchaseReturns, toast]);
+  }, [itemToDelete, deletePurchase, setPurchaseReturns, toast]);
 
   const handleAddOrUpdatePurchaseReturn = React.useCallback(
     (prData: PurchaseReturn) => {
@@ -439,10 +429,7 @@ export default function PurchasesPage() {
           key={purchaseToEdit ? purchaseToEdit.id : "new-purchase"}
           isOpen={isAddPurchaseFormOpen}
           onClose={() => setIsAddPurchaseFormOpen(false)}
-          onSubmit={(purchase) => {
-            console.log('🎯 AddPurchaseForm onSubmit called with:', purchase);
-            handleAddOrUpdatePurchase(purchase);
-          }}
+          onSubmit={handleAddOrUpdatePurchase}
           purchaseToEdit={purchaseToEdit}
           masterData={masterData}
           addOrUpdateMaster={handleMasterDataUpdate}
@@ -459,7 +446,7 @@ export default function PurchasesPage() {
           isOpen={isAddPurchaseReturnFormOpen}
           onClose={() => setIsAddPurchaseReturnFormOpen(false)}
           onSubmit={handleAddOrUpdatePurchaseReturn}
-          purchases={filteredPurchases}
+          purchases={purchases}
           existingPurchaseReturns={purchaseReturns}
           purchaseReturnToEdit={purchaseReturnToEdit}
         />
