@@ -14,16 +14,22 @@ import { Label } from "../ui/label";
 import { LowStockThresholdSetting } from './LowStockThresholdSetting';
 import { FormatButton } from './FormatButton';
 import { FinancialYearToggle } from './FinancialYearToggle';
+import { useHydrated } from "@/hooks/useHydrated";
 
 
 export function AppHeaderContentInternal() {
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const router = useRouter();
   const { fontSize, setFontSize } = useSettings();
+  const isHydrated = useHydrated();
 
   const handleLogout = () => {
     // In a real app, this would involve clearing tokens, etc.
     router.push('/');
+  }
+
+  if (!isHydrated) {
+    return null; // or a placeholder/skeleton
   }
 
   return (
