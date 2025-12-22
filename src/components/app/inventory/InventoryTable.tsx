@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import type { AggregatedInventoryItem } from '@/hooks/useInventory';
 import { cn } from '@/lib/utils';
 import { useSortableTable } from '@/hooks/useSortableTable';
+import { format, parseISO } from 'date-fns';
 
 interface InventoryTableProps {
   items: AggregatedInventoryItem[];
