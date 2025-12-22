@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Users, Truck, UserCheck, Handshake, PlusCircle, List, Building, DollarSign, Search, ChevronDown, Lock, Unlock } from "lucide-react";
@@ -68,7 +69,7 @@ export default function MastersPage() {
   const { toast } = useToast();
   const { getAllMasters, addOrUpdateMaster, masterData, isLoaded } = useAppState();
   const { Warehouse: warehouses, Expense: expenses } = masterData;
-  const isHydrated = useHydrated();
+  const hydrated = useHydrated();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MasterItem | null>(null);
@@ -229,7 +230,7 @@ export default function MastersPage() {
   }, [getMasterDataStateForTab, fuseInstances, searchQuery]);
 
 
-  if (!isHydrated || !isLoaded) {
+  if (!hydrated || !isLoaded) {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
             <p className="text-lg text-muted-foreground">Loading master data...</p>
@@ -364,3 +365,5 @@ export default function MastersPage() {
     </div>
   );
 }
+
+    

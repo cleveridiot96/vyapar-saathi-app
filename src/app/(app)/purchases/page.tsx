@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -26,10 +27,12 @@ import { cn } from "@/lib/utils";
 import { useAppState } from "@/hooks/useAppState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ListCollapse, RotateCcw } from "lucide-react";
+import { useHydrated } from "@/hooks/useHydrated";
 
 export default function PurchasesPage() {
   const { toast } = useToast();
-  const { financialYear, isAppHydrating } = useSettings();
+  const { financialYear } = useSettings();
+  const hydrated = useHydrated();
 
   // GET FROM UNIFIED ZUSTAND STORE
   const {
@@ -175,22 +178,22 @@ export default function PurchasesPage() {
   }, []);
 
   const filteredPurchases = React.useMemo(() => {
-    if (isAppHydrating || !isLoaded) return [];
+    if (!isLoaded || !hydrated) return [];
     return purchases.filter(
       (purchase) =>
         purchase &&
         purchase.date &&
         isDateInFinancialYear(purchase.date, financialYear)
     );
-  }, [purchases, financialYear, isAppHydrating, isLoaded]);
+  }, [purchases, financialYear, isLoaded, hydrated]);
 
 
   const filteredPurchaseReturns = React.useMemo(() => {
-    if (isAppHydrating || !isLoaded) return [];
+    if (!isLoaded || !hydrated) return [];
     return purchaseReturns.filter(
       (pr) => pr && pr.date && isDateInFinancialYear(pr.date, financialYear)
     );
-  }, [purchaseReturns, financialYear, isAppHydrating, isLoaded]);
+  }, [purchaseReturns, financialYear, isLoaded, hydrated]);
 
   const handleEditPurchase = (purchase: Purchase) => {
     setPurchaseToEdit(purchase);
@@ -224,7 +227,7 @@ export default function PurchasesPage() {
     console.log('===============================');
   }, [purchases]);
 
-  if (isAppHydrating || !isLoaded) {
+  if (!hydrated || !isLoaded) {
     return (
       <div className="space-y-4 p-4">
         <Skeleton className="h-10 w-64" />
@@ -370,3 +373,5 @@ export default function PurchasesPage() {
     </div>
   );
 }
+
+    
