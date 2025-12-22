@@ -126,5 +126,5 @@ export const useFinancialYear = () => {
         availableFinancialYears: context.availableFinancialYears,
         setAvailableFinancialYears: context.setAvailableFinancialYears,
         getNextFinancialYear: context.getNextFinancialYear,
-    }), [context.financialYear, context.setFinancialYear, context.availableFinancialYears, context.setAvailableFinancialYears]);
+    }), [context.financialYear, context.setFinancialYear, context.availableFinancialYears, context.setAvailableFinancialYears, context.getNextFinancialYear]);
 }

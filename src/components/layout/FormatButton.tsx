@@ -19,14 +19,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useAppState } from '@/hooks/useAppState';
 import { format } from 'date-fns';
 
 export function FormatButton() {
   const { printSettings, setPrintSettings } = useSettings();
   const { toast } = useToast();
   const [isFormatting, setIsFormatting] = useState(false);
-  const allTransactions = useTransactions();
+  const appState = useAppState();
   const { financialYear } = useFinancialYear();
 
   const handleToggle = (key: keyof typeof printSettings) => {
@@ -40,31 +40,9 @@ export function FormatButton() {
     setIsFormatting(true);
     
     try {
-      // 1. Create backup data
+      // 1. Create backup data from events
       const dataToBackup = {
-        ...allTransactions,
-        // We only want the data, not the functions from the hook
-        setPurchases: undefined,
-        setSales: undefined,
-        setPurchaseReturns: undefined,
-        setSaleReturns: undefined,
-        setLocationTransfers: undefined,
-        setPayments: undefined,
-        setReceipts: undefined,
-        setLedger: undefined,
-        setAdjustments: undefined,
-        setCustomers: undefined,
-        setSuppliers: undefined,
-        setAgents: undefined,
-        setTransporters: undefined,
-        setWarehouses: undefined,
-        setBrokers: undefined,
-        setExpenses: undefined,
-        addLedgerEntry: undefined,
-        removeLedgerEntries: undefined,
-        addOrUpdateMaster: undefined,
-        getAllMasters: undefined,
-        masterData: undefined,
+        events: appState.events,
       };
 
       const blob = new Blob([JSON.stringify(dataToBackup, null, 2)], { type: "application/json" });
@@ -87,17 +65,43 @@ export function FormatButton() {
 
       // 3. Proceed with format after a short delay
       setTimeout(() => {
-        localStorage.clear();
+        // Clear IndexedDB by deleting the database
+        const deleteRequest = indexedDB.deleteDatabase('InventoryDB');
         
-        toast({
-          title: "Format Complete",
-          description: "All application data has been wiped. The app will now reload.",
-          duration: 4000,
-        });
+        deleteRequest.onsuccess = () => {
+            console.log("Database deleted successfully");
 
-        setTimeout(() => {
-          window.location.reload();
-        }, 4000);
+            toast({
+              title: "Format Complete",
+              description: "All application data has been wiped. The app will now reload.",
+              duration: 4000,
+            });
+
+            setTimeout(() => {
+              window.location.reload();
+            }, 4000);
+        };
+        
+        deleteRequest.onerror = (event) => {
+          console.error("Error deleting database:", event);
+           toast({
+            title: "Format Error",
+            description: "Could not delete database. Please clear site data manually.",
+            variant: "destructive",
+          });
+          setIsFormatting(false);
+        };
+
+        deleteRequest.onblocked = () => {
+            console.warn("Database deletion is blocked. Please close other tabs of this app.");
+            toast({
+                title: "Action Blocked",
+                description: "Please close any other open tabs of this application and try again.",
+                variant: "destructive",
+            });
+            setIsFormatting(false);
+        };
+
       }, 1000);
 
     } catch (error) {
