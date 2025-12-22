@@ -29,23 +29,23 @@ interface AppState {
   isLoaded: boolean;
   
   // Actions
-  setPurchases: (purchases: Purchase[] | ((prev: Purchase[]) => Purchase[])) => void;
+  setPurchases: (updater: Purchase[] | ((prev: Purchase[]) => Purchase[])) => void;
   addPurchase: (purchase: Purchase) => void;
   updatePurchase: (purchase: Purchase) => void;
   deletePurchase: (id: string) => void;
   
-  setSales: (sales: Sale[] | ((prev: Sale[]) => Sale[])) => void;
+  setSales: (updater: Sale[] | ((prev: Sale[]) => Sale[])) => void;
   addSale: (sale: Sale) => void;
   updateSale: (sale: Sale) => void;
   deleteSale: (id: string) => void;
   
-  setPurchaseReturns: (returns: PurchaseReturn[] | ((prev: PurchaseReturn[]) => PurchaseReturn[])) => void;
-  setSaleReturns: (returns: SaleReturn[] | ((prev: SaleReturn[]) => SaleReturn[])) => void;
-  setLocationTransfers: (transfers: LocationTransfer[] | ((prev: LocationTransfer[]) => LocationTransfer[])) => void;
-  setPayments: (payments: Payment[] | ((prev: Payment[]) => Payment[])) => void;
-  setReceipts: (receipts: Receipt[] | ((prev: Receipt[]) => Receipt[])) => void;
-  setAdjustments: (adjustments: StockAdjustment[] | ((prev: StockAdjustment[]) => StockAdjustment[])) => void;
-  setLedger: (ledger: LedgerEntry[] | ((prev: LedgerEntry[]) => LedgerEntry[])) => void;
+  setPurchaseReturns: (updater: PurchaseReturn[] | ((prev: PurchaseReturn[]) => PurchaseReturn[])) => void;
+  setSaleReturns: (updater: SaleReturn[] | ((prev: SaleReturn[]) => SaleReturn[])) => void;
+  setLocationTransfers: (updater: LocationTransfer[] | ((prev: LocationTransfer[]) => LocationTransfer[])) => void;
+  setPayments: (updater: Payment[] | ((prev: Payment[]) => Payment[])) => void;
+  setReceipts: (updater: Receipt[] | ((prev: Receipt[]) => Receipt[])) => void;
+  setAdjustments: (updater: StockAdjustment[] | ((prev: StockAdjustment[]) => StockAdjustment[])) => void;
+  setLedger: (updater: LedgerEntry[] | ((prev: LedgerEntry[]) => LedgerEntry[])) => void;
 
   addOrUpdateMaster: (item: MasterItem) => void;
   getAllMasters: () => MasterItem[];
@@ -134,7 +134,7 @@ export const useAppState = create<AppState>()(
       setLoaded: (loaded) => set({ isLoaded: loaded }),
     }),
     {
-      name: 'vyapar-saathi-app-state-v2', // Changed name to force a state reset if old version exists
+      name: 'vyapar-saathi-app-state-v2',
       version: 1,
       onRehydrateStorage: () => (state) => {
         if (state) {

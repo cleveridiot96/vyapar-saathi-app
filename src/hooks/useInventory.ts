@@ -1,10 +1,10 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
 import { useTransactions } from './useTransactions';
 import type { AggregatedInventoryItem } from '@/lib/types';
 import { calculateInventory } from '@/lib/inventoryEngine';
-import { useHydrated } from './useHydrated';
 
 export function useInventory(saleIdToExclude?: string) {
     const { 
@@ -12,13 +12,11 @@ export function useInventory(saleIdToExclude?: string) {
         isLoaded: isTransactionsLoaded 
     } = useTransactions();
     
-    const isHydrated = useHydrated();
     const [isLoading, setIsLoading] = useState(true);
     const [allAggregatedInventory, setAllAggregatedInventory] = useState<AggregatedInventoryItem[]>([]);
 
     useEffect(() => {
-        // Only proceed if the app state is loaded and the client has hydrated.
-        if (isTransactionsLoaded && isHydrated) {
+        if (isTransactionsLoaded) {
             setIsLoading(true);
             
             const timer = setTimeout(() => {
@@ -40,13 +38,9 @@ export function useInventory(saleIdToExclude?: string) {
             }, 50); // A small timeout to prevent blocking the render thread.
 
             return () => clearTimeout(timer);
-        } else if (!isTransactionsLoaded || !isHydrated) {
+        } else {
             // If dependencies are not ready, ensure we are in a loading state.
             setIsLoading(true);
-        } else {
-            // This is the crucial fix: If dependencies are resolved but the effect doesn't run
-            // for some other reason, ensure we exit the loading state.
-            setIsLoading(false);
         }
     }, [
         purchases,
@@ -56,7 +50,6 @@ export function useInventory(saleIdToExclude?: string) {
         purchaseReturns,
         saleReturns,
         isTransactionsLoaded,
-        isHydrated,
         saleIdToExclude
     ]);
 
