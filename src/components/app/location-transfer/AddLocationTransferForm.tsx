@@ -35,7 +35,6 @@ import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useAppState, useAppDispatch } from "@/hooks/useAppState";
-import { useMasterData } from "@/hooks/useMasterData";
 
 interface AddLocationTransferFormProps {
   isOpen: boolean;
@@ -53,7 +52,7 @@ const locationTransferSchema = z.object({
     newLotNumber: z.string().min(1, "New Lot number is required."),
     quantity: z.coerce.number().positive("Quantity must be positive."),
     netWeight: z.coerce.number().positive("Net weight must be positive."),
-    costOfGoods: z.coerce.number().positive("Cost of goods must be positive."),
+    costOfGoods: z.coerce.number().min(0, "Cost of goods must be a positive number."),
   })).min(1, "At least one item is required."),
   expenses: z.array(z.object({
     id: z.string(),
@@ -69,10 +68,12 @@ type LocationTransferFormValues = z.infer<typeof locationTransferSchema>;
 
 const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> = ({ isOpen, onClose, transferToEdit }) => {
   const { toast } = useToast();
-  const { masterData, addOrUpdateMaster, getAllMasters } = useMasterData();
-  const { Warehouse: warehouses = [], Transporter: transporters = [], Expense: expenseAccounts = [] } = masterData;
   const appState = useAppState();
   const dispatch = useAppDispatch();
+  
+  const { masterData } = appState;
+  const { Warehouse: warehouses = [], Transporter: transporters = [], Expense: expenseAccounts = [] } = masterData;
+  const allMasters = [...warehouses, ...transporters, ...expenseAccounts];
   
   const availableStock = React.useMemo(() => 
     appState.inventory.filter(item => item.currentBags > 0.01)
@@ -121,20 +122,19 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   }, []);
   
   const handleEditMasterItem = React.useCallback((id: string) => {
-    const allMasters = getAllMasters();
     const itemToEdit = allMasters.find(i => i.id === id) || null;
     if (itemToEdit) {
       setMasterItemToEdit(itemToEdit);
       setMasterFormItemType(itemToEdit.type);
       setIsMasterFormOpen(true);
     }
-  }, [getAllMasters]);
+  }, [allMasters]);
 
   const handleMasterFormSubmit = React.useCallback((newItem: MasterItem) => {
-      addOrUpdateMaster(newItem);
+      dispatch.addOrUpdateMaster(newItem);
       toast({ title: "Success", description: `${newItem.type} added/updated.` });
       setIsMasterFormOpen(false);
-  }, [addOrUpdateMaster, toast]);
+  }, [dispatch, toast]);
 
   const processSubmit = (values: LocationTransferFormValues) => {
     setIsSubmitting(true);
@@ -223,8 +223,8 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                                 if(stock) {
                                   setValue(`items.${index}.newLotNumber`, `${stock.lotNumber}-TR`);
                                   setValue(`items.${index}.quantity`, stock.currentBags);
-                                  setValue(`items.${index}.netWeight`, stock.currentBags * stock.averageWeightPerBag);
-                                  setValue(`items.${index}.costOfGoods`, stock.currentBags * stock.averageWeightPerBag * stock.effectiveRate);
+                                  setValue(`items.${index}.netWeight`, stock.currentWeight);
+                                  setValue(`items.${index}.costOfGoods`, stock.cogs);
                                 }
                             }}
                           />
@@ -309,6 +309,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
           onSubmit={handleMasterFormSubmit}
           initialData={masterItemToEdit}
           itemTypeFromButton={masterItemToEdit?.type || "Warehouse"}
+          fixedIds={[]}
         />
       )}
     </>

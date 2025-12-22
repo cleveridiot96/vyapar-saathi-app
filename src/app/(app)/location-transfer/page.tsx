@@ -5,9 +5,9 @@ import { useAppState } from "@/hooks/useAppState";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function LocationTransferPage() {
-  const { isLoaded: isInitialized } = useAppState();
+  const { isLoaded } = useAppState();
 
-  if (!isInitialized) {
+  if (!isLoaded) {
     return (
       <div className="space-y-4 p-4">
         <div className="flex justify-between items-center">

@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import AppExitHandler from '@/components/layout/AppExitHandler';
-import { AppStateProvider } from '@/hooks/useAppState';
 
 export const metadata: Metadata = {
   title: 'Vyapar Saathi',
@@ -31,13 +30,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("antialiased", poppins.variable, sourceCodePro.variable)} suppressHydrationWarning>
-        <AppStateProvider>
           <SettingsProvider>
               {children}
               <Toaster />
               <AppExitHandler />
           </SettingsProvider>
-        </AppStateProvider>
       </body>
     </html>
   );

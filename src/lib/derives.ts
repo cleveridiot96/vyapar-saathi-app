@@ -5,9 +5,31 @@ import type { TransactionEvent } from './eventStore';
 import type { Purchase, Sale, StockAdjustment, LocationTransfer, PurchaseReturn, SaleReturn, Payment, Receipt, LedgerEntry, MasterItem, MasterItemType } from './types';
 import { FIXED_WAREHOUSES, FIXED_EXPENSES } from './constants';
 
+export interface DerivedTransactions {
+  purchases: Purchase[];
+  sales: Sale[];
+  adjustments: StockAdjustment[];
+  locationTransfers: LocationTransfer[];
+  purchaseReturns: PurchaseReturn[];
+  saleReturns: SaleReturn[];
+  payments: Payment[];
+  receipts: Receipt[];
+  ledger: LedgerEntry[];
+  masterData: {
+      Customer: MasterItem[];
+      Supplier: MasterItem[];
+      Agent: MasterItem[];
+      Transporter: MasterItem[];
+      Warehouse: MasterItem[];
+      Broker: MasterItem[];
+      Expense: MasterItem[];
+      Product: MasterItem[];
+  };
+}
 
-export function deriveAllTransactions(events: TransactionEvent[]) {
-  const masterData: { [key in MasterItemType]: MasterItem[] } = {
+
+export function deriveAllTransactions(events: TransactionEvent[]): Omit<DerivedTransactions, 'inventory'> {
+  const masterData: DerivedTransactions['masterData'] = {
     Customer: [], Supplier: [], Agent: [], Broker: [], Transporter: [],
     Warehouse: [...FIXED_WAREHOUSES],
     Expense: [...FIXED_EXPENSES],
