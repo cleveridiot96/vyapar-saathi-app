@@ -1,200 +1,408 @@
 "use client";
 
 import * as React from "react";
-import { useTransactions } from "@/hooks/useTransactions";
-import { useInventory } from '@/hooks/useInventory';
-import { useState, useEffect } from 'react';
+import type { LocationTransfer, LedgerEntry } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
-import { PlusCircle, Printer, RotateCcw, GitMerge, FileText } from "lucide-react";
+import { PlusCircle, ArrowRightLeft, ListChecks, Boxes, Printer, Trash2, Edit, Download, MoreVertical } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddLocationTransferForm } from "./AddLocationTransferForm";
 import { LocationTransferSlipPrint } from "./LocationTransferSlipPrint";
-import type { LocationTransfer } from "@/lib/types";
-import { renderToStaticMarkup } from 'react-dom/server';
 import { useToast } from "@/hooks/use-toast";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format, parseISO } from "date-fns";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { format as formatDateFn, parseISO, subDays, startOfDay, endOfDay } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { useHydrated } from "@/hooks/useHydrated";
+import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
+import { cn } from "@/lib/utils";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useInventory } from '@/hooks/useInventory';
+import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
+import type { DateRange } from "react-day-picker";
+import { renderToStaticMarkup } from 'react-dom/server';
+
+const KEY_SEPARATOR = '_$_';
+
+interface ExpandedTransferHistoryItem extends LocationTransfer {
+  item: LocationTransfer['items'][0];
+}
+
+function openPrintWindow(htmlContent: string, title = "Document") {
+  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+  if (! printWindow) {
+    alert("Please allow pop-ups to print this document.");
+    return;
+  }
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>${title}</title>
+        <style>
+          @media print {
+            @page {
+              size: A5 portrait;
+              margin: 10mm;
+            }
+            body {
+              background:  white ! important;
+              color: black !important;
+              font-size: 10pt !important;
+            }
+            .print-chitti-styles { font-family: sans-serif; line-height: 1.4; }
+            .print-chitti-styles h1, .print-chitti-styles h2, .print-chitti-styles h3 { margin-top: 0. 5em; margin-bottom: 0.25em; }
+            .print-chitti-styles table { width: 100%; border-collapse:  collapse; margin-top: 10px; margin-bottom: 10px; }
+            .print-chitti-styles th, .print-chitti-styles td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; }
+            .print-chitti-styles th { background-color: #f0f0f0; -webkit-print-color-adjust:  exact ! important; print-color-adjust: exact !important;}
+            .print-chitti-styles . text-right { text-align: right; }
+            .print-chitti-styles .font-bold { font-weight: bold; }
+            .print-chitti-styles .mt-4 { margin-top: 16px; }
+            .print-chitti-styles .mb-2 { margin-bottom: 8px; }
+            .print-chitti-styles .flex-between { display: flex; justify-content: space-between; }
+          }
+        </style>
+      </head>
+      <body>
+        ${htmlContent}
+        <script>
+          setTimeout(function() {
+            window.print();
+            window.close();
+          }, 250);
+        </script>
+      </body>
+    </html>
+  `);
+  printWindow. document.close();
+}
+
 
 export function LocationTransferClient() {
-  const { 
-    locationTransfers, 
-    setLocationTransfers, 
-    addLedgerEntry, 
-    removeLedgerEntries, 
-    masterData, 
-    isLoaded 
-  } = useTransactions();
-  
   const { toast } = useToast();
-  const { financialYear } = useSettings();
-  const isHydrated = useHydrated();
+  const { financialYear, isAppHydrating } = useSettings();
+  const { locationTransfers, setLocationTransfers, addLedgerEntry, removeLedgerEntries } = useTransactions();
   
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [transferToEdit, setTransferToEdit] = useState<LocationTransfer | null>(null);
-  const [itemToDelete, setItemToDelete] = useState<LocationTransfer | null>(null);
+  const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
+  const [transferToEdit, setTransferToEdit] = React.useState<LocationTransfer | null>(null);
+  const [itemToDelete, setItemToDelete] = React.useState<LocationTransfer | null>(null);
 
-  const openPrintWindow = (htmlContent: string) => {
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      printWindow.print();
+  const [activeTab, setActiveTab] = React. useState('stockOverview');
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
+  
+  const { availableStock, isLoading: isInventoryLoading } = useInventory(transferToEdit?.id);
+
+  React.useEffect(() => {
+    if (! dateRange) {
+        const today = new Date();
+        setDateRange({ from: startOfDay(subDays(today, 30)), to: endOfDay(today) });
     }
-  };
+  }, [dateRange]);
 
-  const handlePrint = (transfer: LocationTransfer) => {
-    const slipContent = renderToStaticMarkup(<LocationTransferSlipPrint transfer={transfer} />);
-    const slipHtml = `<html><head><title>Transfer Slip</title><style>.print-chitti-styles { font-family: sans-serif; line-height: 1.4; width: 550px; margin: auto; } h1, h2 { margin: 0.5em 0; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 4px; } .text-right { text-align: right; } .font-bold { font-weight: bold; } .mt-4 { margin-top: 1rem; } .mb-2 { margin-bottom: 0.5rem; } .flex-between { display: flex; justify-content: space-between; }</style></head><body>${slipContent}</body></html>`;
-    openPrintWindow(slipHtml);
-  };
-  
-  const handleAddOrUpdateTransfer = (transfer: LocationTransfer) => {
+  const handleAddOrUpdateTransfer = React.useCallback((transfer: LocationTransfer) => {
+    const isEditing = locationTransfers.some(t => t.id === transfer.id);
     setLocationTransfers(prev => {
-      const existing = prev.find(t => t.id === transfer.id);
-      if (existing) {
-        // Remove old ledger entries before adding new ones
-        removeLedgerEntries(existing.id);
-      }
-      const newTransfers = existing 
-        ? prev.map(t => t.id === transfer.id ? transfer : t) 
-        : [transfer, ...prev];
-
-      // Add new ledger entries
-      if (transfer.expenses) {
-        const newLedgerEntries = transfer.expenses.map(exp => ({
-          id: `ledger-${exp.id}-${transfer.id}`,
-          date: transfer.date,
-          type: 'Expense' as const,
-          account: exp.account,
-          debit: exp.amount,
-          credit: 0,
-          paymentMode: exp.paymentMode,
-          party: exp.partyName || 'N/A',
-          partyId: exp.partyId,
-          relatedVoucher: transfer.id,
-          linkedTo: { voucherType: 'Transfer' as const, voucherId: transfer.id },
-          remarks: `Transfer from ${transfer.fromLocationName} to ${transfer.toLocationName}`,
-        }));
-        addLedgerEntry(newLedgerEntries);
-      }
-
-      return newTransfers;
+      return isEditing ?  prev.map(t => (t.id === transfer.id ?  transfer : t)) : [{ ...transfer, id: transfer.id || `lt-${Date.now()}` }, ...prev];
     });
-    toast({ title: transferToEdit ? 'Transfer Updated' : 'Transfer Created' });
-    setIsFormOpen(false);
-    setTransferToEdit(null);
-  };
+    
+    removeLedgerEntries(transfer. id);
+    if (transfer.expenses && transfer.expenses.length > 0) {
+        const newLedgerEntries = transfer.expenses.filter(exp => exp.amount > 0).map(exp => ({
+            id: `ledger-${transfer.id}-${(exp.account || 'exp').replace(/\s/g, '')}`,
+            date: transfer.date,
+            type: 'Expense' as const,
+            account: exp.account,
+            debit: exp.amount,
+            credit: 0,
+            paymentMode: exp.paymentMode,
+            party: exp.partyName || 'Self',
+            partyId: exp.partyId,
+            relatedVoucher: transfer.id,
+            linkedTo: { voucherType: 'Transfer' as const, voucherId: transfer.id },
+            remarks: `Expense for transfer from ${transfer.fromLocationName} to ${transfer.toLocationName}`
+        }));
 
-  const handleEditTransfer = (transfer: LocationTransfer) => {
-    setTransferToEdit(transfer);
-    setIsFormOpen(true);
-  };
-
-  const handleDeleteTransferAttempt = (transfer: LocationTransfer) => {
-    setItemToDelete(transfer);
-  };
-
-  const confirmDeleteTransfer = () => {
-    if (itemToDelete) {
-      setLocationTransfers(prev => prev.filter(t => t.id !== itemToDelete.id));
-      removeLedgerEntries(itemToDelete.id);
-      toast({ title: 'Transfer Deleted', variant: 'destructive' });
-      setItemToDelete(null);
+        if (newLedgerEntries. length > 0) {
+            addLedgerEntry(newLedgerEntries as LedgerEntry[]);
+        }
     }
-  };
+
+    toast({ title: isEditing ? "Transfer Updated" : "Transfer Created", description: isEditing ? "Location transfer details saved." : "New location transfer recorded successfully." });
+    setTransferToEdit(null);
+    window.dispatchEvent(new CustomEvent('reindex-search'));
+  }, [locationTransfers, setLocationTransfers, addLedgerEntry, removeLedgerEntries, toast]);
+
+  const handleEditTransfer = React.useCallback((transfer: LocationTransfer) => { setTransferToEdit(transfer); setIsAddFormOpen(true); }, []);
+  const handleDeleteTransferAttempt = React.useCallback((transfer: LocationTransfer) => { setItemToDelete(transfer); }, []);
+
+  const confirmDeleteTransfer = React.useCallback(() => {
+    if (itemToDelete) {
+      setLocationTransfers(prev => prev.filter(t => t.id !== itemToDelete! .id));
+      removeLedgerEntries(itemToDelete. id);
+      toast({ title:  "Transfer Deleted", description: "Record removed.", variant: "destructive" });
+      setItemToDelete(null);
+      window.dispatchEvent(new CustomEvent('reindex-search'));
+    }
+  }, [itemToDelete, setLocationTransfers, removeLedgerEntries, toast]);
+
+  const triggerDownloadTransferPdf = React.useCallback((transfer: LocationTransfer) => {
+    const slipHtml = renderToStaticMarkup(<LocationTransferSlipPrint transfer={transfer} />);
+    openPrintWindow(slipHtml, `TransferSlip_${transfer.id. slice(-4)}`);
+  }, []);
+
+  const expandedTransfers = React.useMemo(() => {
+    if (isAppHydrating || !dateRange?. from) return [];
+    
+    const filtered = locationTransfers.filter(lt => isDateInFinancialYear(lt.date, financialYear) && new Date(lt.date) >= dateRange.from!  && new Date(lt.date) <= (dateRange. to || new Date()));
+    
+    const flatList:  ExpandedTransferHistoryItem[] = [];
+    filtered.forEach(transfer => {
+      if (transfer.items && transfer.items.length > 0) {
+        transfer.items.forEach(item => {
+          flatList.push({ ...transfer, item:  item });
+        });
+      }
+    });
+
+    return flatList. sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+  }, [locationTransfers, financialYear, isAppHydrating, dateRange]);
   
-  const filteredTransfers = React.useMemo(() => {
-    if (!isLoaded || !isHydrated) return [];
-    return locationTransfers.filter(lt => isDateInFinancialYear(lt.date, financialYear))
-      .sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [locationTransfers, financialYear, isLoaded, isHydrated]);
+  const transferHistoryTotals = React.useMemo(() => {
+    if (! expandedTransfers || expandedTransfers.length === 0) {
+        return { totalBags: 0, totalWeight: 0, totalValue: 0, weightedAverageLandedCost: 0 };
+    }
+    let totalBags = 0, totalWeight = 0, totalValue = 0;
+    expandedTransfers.forEach(transfer => {
+        totalBags += transfer.item.quantity;
+        totalWeight += transfer.item.netWeight;
+        const totalWeightForCalc = transfer.totalNetWeight || transfer.items.reduce((sum, i) => sum + i.netWeight, 0);
+        const perKgExpense = (transfer.totalTransferCost && totalWeightForCalc > 0) ? transfer.totalTransferCost / totalWeightForCalc : 0;
+        const finalLandedCost = (transfer.item as any).preTransferLandedCost || 0 + perKgExpense;
+        totalValue += finalLandedCost * transfer.item.netWeight;
+    });
+    const weightedAverageLandedCost = totalWeight > 0 ? totalValue / totalWeight :  0;
+    return { totalBags, totalWeight, totalValue, weightedAverageLandedCost };
+  }, [expandedTransfers]);
+  
+  const addButtonDynamicClass = React.useMemo(() => {
+    if (activeTab === 'stockOverview') return 'bg-sky-600 hover:bg-sky-700 text-white';
+    if (activeTab === 'transferHistory') return 'bg-teal-600 hover:bg-teal-700 text-white';
+    return 'bg-primary hover:bg-primary/90';
+  }, [activeTab]);
 
+  const setDateQuickFilter = (preset: 'today' | 'yesterday' | 'dayBeforeYesterday') => {
+    const today = new Date();
+    let from, to;
+    switch (preset) {
+      case 'today':  from = startOfDay(today); to = endOfDay(today); break;
+      case 'yesterday': from = startOfDay(subDays(today, 1)); to = endOfDay(subDays(today, 1)); break;
+      case 'dayBeforeYesterday': from = startOfDay(subDays(today, 2)); to = endOfDay(subDays(today, 2)); break;
+    }
+    setDateRange({ from, to });
+  };
 
-  if (!isLoaded || !isHydrated) {
-      return (
-          <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
-              <p className="text-lg text-muted-foreground">Loading transfer data...</p>
-          </div>
-      );
+  if (isAppHydrating || isInventoryLoading) {
+    return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p className="text-lg text-muted-foreground">Loading data...</p></div>;
   }
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader className="flex flex-row justify-between items-center">
-            <div>
-              <CardTitle className="text-2xl font-bold flex items-center gap-2"><Truck/> Location Transfers</CardTitle>
-              <CardDescription>Move stock between your warehouses.</CardDescription>
-            </div>
-            <Button onClick={() => { setTransferToEdit(null); setIsFormOpen(true); }} size="lg">
-                <PlusCircle className="mr-2"/> New Transfer
+    <div className="space-y-8 print-area">
+      <PrintHeaderSymbol className="hidden print: block text-center text-lg font-semibold mb-4" />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print">
+        <h1 className="text-3xl font-bold text-foreground flex items-center">
+            <ArrowRightLeft className="mr-3 h-8 w-8 text-primary" /> Location Transfers (FY {financialYear})
+        </h1>
+        <div className="flex items-center gap-2">
+            <Button onClick={() => { setTransferToEdit(null); setIsAddFormOpen(true); }} size="lg" className={cn("text-base py-3 px-6 shadow-md", addButtonDynamicClass)}>
+                <PlusCircle className="mr-2 h-5 w-5" /> New Transfer
             </Button>
-        </CardHeader>
-        <CardContent>
-            <ScrollArea className="h-[65vh] border rounded-md">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>From</TableHead>
-                            <TableHead>To</TableHead>
-                            <TableHead>Lots Transferred</TableHead>
-                            <TableHead className="text-right">Total Cost</TableHead>
-                            <TableHead className="text-center">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredTransfers.length === 0 ? (
-                            <TableRow><TableCell colSpan={6} className="text-center h-32 text-muted-foreground">No transfers recorded yet.</TableCell></TableRow>
-                        ) : (
-                            filteredTransfers.map(t => (
-                                <TableRow key={t.id}>
-                                    <TableCell>{format(parseISO(t.date), 'dd-MM-yyyy')}</TableCell>
-                                    <TableCell>{t.fromLocationName}</TableCell>
-                                    <TableCell>{t.toLocationName}</TableCell>
-                                    <TableCell>{t.items.map(i => i.newLotNumber).join(', ')}</TableCell>
-                                    <TableCell className="text-right font-medium">₹{t.totalTransferCost.toLocaleString('en-IN')}</TableCell>
-                                    <TableCell className="text-center">
-                                        <Button variant="ghost" size="icon" onClick={() => handlePrint(t)}><Printer className="h-4 w-4"/></Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleEditTransfer(t)}><FileText className="h-4 w-4"/></Button>
+            <Button variant="outline" size="icon" onClick={() => window.print()}> <Printer className="h-5 w-5" /> <span className="sr-only">Print</span></Button>
+        </div>
+      </div>
+
+      <Card className="shadow-xl">
+      <TooltipProvider>
+        <Tabs defaultValue="stockOverview" className="w-full" onValueChange={(value) => setActiveTab(value)}>
+          <CardHeader className="p-0">
+            <TabsList className="grid w-full grid-cols-2 rounded-t-lg rounded-b-none no-print p-1 bg-muted gap-1">
+              <TabsTrigger value="stockOverview" className="py-3 text-base text-white bg-sky-600 hover:bg-sky-700 data-[state=active]:bg-sky-700 data-[state=active]: text-white data-[state=active]:shadow-lg rounded-md">
+                <Boxes className="mr-2 h-5 w-5"/>Stock Overview
+              </TabsTrigger>
+              <TabsTrigger value="transferHistory" className="py-3 text-base text-white bg-teal-600 hover:bg-teal-700 data-[state=active]: bg-teal-700 data-[state=active]:text-white data-[state=active]: shadow-lg rounded-md">
+                <ListChecks className="mr-2 h-5 w-5"/>Transfer History
+              </TabsTrigger>
+            </TabsList>
+          </CardHeader>
+          <TabsContent value="stockOverview">
+            <CardContent className="pt-6">
+                <CardDescription className="mb-4 text-sm no-print">Current stock levels for FY {financialYear}.  Hover over landed rate for cost breakdown.</CardDescription>
+                <ScrollArea className="h-[400px] border rounded-md print:h-auto print:overflow-visible">
+                    <Table size="sm"><TableHeader><TableRow>
+                        <TableHead>WAREHOUSE</TableHead>
+                        <TableHead>VAKKAL/LOT</TableHead>
+                        <TableHead className="text-right">BAGS</TableHead>
+                        <TableHead className="text-right">WEIGHT (KG)</TableHead>
+                        <TableHead className="text-right">LANDED RATE (₹/KG)</TableHead>
+                    </TableRow></TableHeader>
+                        <TableBody>
+                            {availableStock.length === 0 && <TableRow><TableCell colSpan={5} className="text-center h-24">No stock for FY {financialYear}.</TableCell></TableRow>}
+                            {availableStock. map(item => (
+                                <TableRow key={`${item.locationId}${KEY_SEPARATOR}${item.lotNumber}`} className="uppercase">
+                                    <TableCell><Tooltip><TooltipTrigger asChild><span className="truncate max-w-[150px] inline-block">{item.locationName || item.locationId}</span></TooltipTrigger><TooltipContent><p>{item.locationName || item.locationId}</p></TooltipContent></Tooltip></TableCell>
+                                    <TableCell><Tooltip><TooltipTrigger asChild><span className="truncate max-w-[150px] inline-block">{item. lotNumber}</span></TooltipTrigger><TooltipContent><p>{item.lotNumber}</p></TooltipContent></Tooltip></TableCell>
+                                    <TableCell className="text-right font-medium">{Math.round(item.currentBags).toLocaleString()}</TableCell>
+                                    <TableCell className="text-right">{item.averageWeightPerBag ?  (item.currentBags * item.averageWeightPerBag).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}) : 'N/A'}</TableCell>
+                                    <TableCell className="text-right font-semibold text-primary">
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="cursor-help underline decoration-dashed">
+                                                    {Math.round(item.effectiveRate).toLocaleString('en-IN')}
+                                                </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Base:  ₹{item.costBreakdown.baseRate.toFixed(2)}</p>
+                                                <p>Purchase Exp: ₹{item.costBreakdown.purchaseExpenses.toFixed(2)}</p>
+                                                <p>Transfer Exp: ₹{item.costBreakdown.transferExpenses.toFixed(2)}</p>
+                                            </TooltipContent>
+                                        </Tooltip>
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </ScrollArea>
+            </CardContent>
+          </TabsContent>
+          <TabsContent value="transferHistory">
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-2 no-print">
+                <DatePickerWithRange date={dateRange} onDateChange={setDateRange} className="max-w-sm w-full"/>
+                 <div className="flex gap-1 ml-auto">
+                    <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('today')}>Today</Button>
+                    <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('yesterday')}>Yesterday</Button>
+                    <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('dayBeforeYesterday')}>
+                        {formatDateFn(subDays(new Date(), 2), 'EEEE')}
+                    </Button>
+                </div>
+              </div>
+              <ScrollArea className="h-[400px] border rounded-md print:h-auto print:overflow-visible">
+                <Table size="sm">
+                  <TableHeader><TableRow>
+                    <TableHead>DATE</TableHead>
+                    <TableHead>FROM</TableHead>
+                    <TableHead>TO</TableHead>
+                    <TableHead>VAKKAL</TableHead>
+                    <TableHead className="text-right">BAGS</TableHead>
+                    <TableHead className="text-right">WEIGHT</TableHead>
+                    <TableHead className="text-right">FINAL LANDED COST (₹/KG)</TableHead>
+                    <TableHead className="text-right">TOTAL VALUE (₹)</TableHead>
+                    <TableHead className="text-center no-print">ACTIONS</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {expandedTransfers.length === 0 && <TableRow><TableCell colSpan={9} className="text-center h-24">No transfers in the selected period.</TableCell></TableRow>}
+                    {expandedTransfers.map(transfer => {
+                       const totalWeightForCalc = transfer.totalNetWeight || transfer.items. reduce((sum, i) => sum + i.netWeight, 0);
+                       const perKgExpense = (transfer.totalTransferCost && totalWeightForCalc > 0) ? transfer.totalTransferCost / totalWeightForCalc : 0;
+                       const finalLandedCost = ((transfer.item as any).preTransferLandedCost || 0) + perKgExpense;
+                       const totalValue = finalLandedCost * transfer.item.netWeight;
+                       return (
+                      <TableRow key={`${transfer.id}${KEY_SEPARATOR}${transfer.item.originalLotNumber}`} className="uppercase">
+                        <TableCell>{formatDateFn(parseISO(transfer.date), "dd/MM/yy")}</TableCell>
+                        <TableCell><Tooltip><TooltipTrigger asChild><span className="truncate max-w-[150px] inline-block">{transfer.fromLocationName || transfer.fromLocationId}</span></TooltipTrigger><TooltipContent><p>{transfer.fromLocationName || transfer.fromLocationId}</p></TooltipContent></Tooltip></TableCell>
+                        <TableCell><Tooltip><TooltipTrigger asChild><span className="truncate max-w-[150px] inline-block">{transfer.toLocationName || transfer.toLocationId}</span></TooltipTrigger><TooltipContent><p>{transfer.toLocationName || transfer.toLocationId}</p></TooltipContent></Tooltip></TableCell>
+                        <TableCell>
+                          <Tooltip><TooltipTrigger asChild>
+                            <span className="truncate max-w-[200px] inline-block">{transfer.item.newLotNumber}</span>
+                          </TooltipTrigger>
+                            <TooltipContent><p>Original:  {transfer.item.originalLotNumber}</p></TooltipContent>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell className="text-right">{Math.round(transfer.item.quantity)}</TableCell>
+                        <TableCell className="text-right">{transfer.item.netWeight}</TableCell>
+                        <TableCell className="text-right font-bold text-primary">
+                          {finalLandedCost > 0 ? `₹${Math.round(finalLandedCost).toLocaleString()}` : 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {totalValue > 0 ? `₹${Math.round(totalValue).toLocaleString()}` : 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-center no-print">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild><Button variant="outline" size="sm" className="h-8 px-2"><MoreVertical className="h-4 w-4" /><span className="sr-only">Actions for {transfer.id}</span></Button></DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEditTransfer(transfer)}><Edit className="mr-2 h-4 w-4" /> Edit Full Transfer</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => triggerDownloadTransferPdf(transfer)}><Download className="mr-2 h-4 w-4" /> Download Slip</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleDeleteTransferAttempt(transfer)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4" /> Delete Full Transfer</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                       );
+                    })}
+                  </TableBody>
+                  <TableFooter>
+                      <TableRow className="font-bold bg-muted">
+                          <TableCell colSpan={4}>GRAND TOTALS</TableCell>
+                          <TableCell className="text-right">{Math.round(transferHistoryTotals.totalBags).toLocaleString()}</TableCell>
+                          <TableCell className="text-right">{transferHistoryTotals.totalWeight.toLocaleString(undefined, {minimumFractionDigits: 2})}</TableCell>
+                          <TableCell className="text-right font-semibold text-primary">
+                              {transferHistoryTotals.weightedAverageLandedCost > 0 ? `~ ₹${Math.round(transferHistoryTotals.weightedAverageLandedCost).toLocaleString()}` : ''}
+                          </TableCell>
+                          <TableCell className="text-right font-bold text-primary">
+                              {Math.round(transferHistoryTotals.totalValue).toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits:  0})}
+                          </TableCell>
+                          <TableCell></TableCell>
+                      </TableRow>
+                  </TableFooter>
                 </Table>
-            </ScrollArea>
-        </CardContent>
+              </ScrollArea>
+            </CardContent>
+          </TabsContent>
+        </Tabs>
+        </TooltipProvider>
       </Card>
-      
-      {isFormOpen && (
+
+      {isAddFormOpen && (
         <AddLocationTransferForm
-          isOpen={isFormOpen}
-          onClose={() => { setIsFormOpen(false); setTransferToEdit(null); }}
+          key={transferToEdit ?  transferToEdit.id : 'new-transfer'}
+          isOpen={isAddFormOpen}
+          onClose={() => {
+            setIsAddFormOpen(false);
+            setTransferToEdit(null);
+          }}
+          onSubmit={handleAddOrUpdateTransfer}
           transferToEdit={transferToEdit}
         />
       )}
 
       {itemToDelete && (
-         <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>This will permanently delete transfer record {itemToDelete.id.slice(-6).toUpperCase()}.</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmDeleteTransfer} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-         </AlertDialog>
+        <AlertDialog open={!! itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader><AlertDialogTitle>Delete Transfer Record? </AlertDialogTitle>
+              <AlertDialogDescription>Are you sure you want to delete this record?  This action cannot be undone and will not automatically revert stock changes.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter><AlertDialogCancel onClick={() => setItemToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteTransfer} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   );
