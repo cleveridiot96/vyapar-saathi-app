@@ -58,8 +58,8 @@ export function InventoryTable({ items, onArchive, onUnarchive, isArchivedView, 
   return (
     <TooltipProvider>
       <div className="h-[calc(100vh-26rem)] overflow-auto border rounded-md">
-        <Table stickyHeader>
-          <TableHeader>
+        <Table>
+          <TableHeader className="sticky top-0 bg-background z-10">
             <TableRow>
               <TableHead padding="checkbox">
                   <Checkbox checked={isAllSelected} onCheckedChange={handleSelectAll} aria-label="Select all rows"/>
