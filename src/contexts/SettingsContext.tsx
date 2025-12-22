@@ -1,107 +1,102 @@
 "use client";
-import React, { createContext, useContext, ReactNode, useCallback, useState, useMemo } from 'react';
+
+import React, { createContext, useContext, useMemo } from 'react';
 import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 
 interface PrintSettings {
   showProfitOnSaleChitti: boolean;
 }
 
-// Separating FinancialYear context
-interface FinancialYearContextType {
+interface SettingsContextType {
+  // Font Size
+  fontSize: number;
+  setFontSize: React.Dispatch<React.SetStateAction<number>>;
+  
+  // Financial Year
   financialYear: string;
-  setFinancialYear: (year: string) => void;
+  setFinancialYear: React.Dispatch<React.SetStateAction<string>>;
   availableFinancialYears: string[];
   setAvailableFinancialYears: React.Dispatch<React.SetStateAction<string[]>>;
-  getPreviousFinancialYear: () => string;
   getNextFinancialYear: () => string;
-}
 
-const FinancialYearContext = createContext<FinancialYearContextType | undefined>(undefined);
-
-export function FinancialYearProvider({ children }: { children: ReactNode }) {
-  const [financialYear, setFinancialYear] = useLocalStorageState('financialYear', '2023-2024');
-  const [availableFinancialYears, setAvailableFinancialYears] = useLocalStorageState<string[]>('availableFinancialYears', ['2023-2024']);
-  
-  const getFinancialYearParts = (fy: string) => {
-    const parts = fy.split('-').map(Number);
-    return parts.length === 2 && !isNaN(parts[0]) ? { startYear: parts[0] } : { startYear: new Date().getFullYear() - 1 };
-  }
-
-  const getPreviousFinancialYear = useCallback(() => {
-    const { startYear } = getFinancialYearParts(financialYear);
-    return `${startYear - 1}-${startYear}`;
-  }, [financialYear]);
-
-  const getNextFinancialYear = useCallback(() => {
-    const { startYear } = getFinancialYearParts(financialYear);
-    return `${startYear + 1}-${startYear + 2}`;
-  }, [financialYear]);
-
-  const value = useMemo(() => ({
-    financialYear,
-    setFinancialYear,
-    availableFinancialYears,
-    setAvailableFinancialYears,
-    getPreviousFinancialYear,
-    getNextFinancialYear
-  }), [financialYear, setFinancialYear, availableFinancialYears, setAvailableFinancialYears, getPreviousFinancialYear, getNextFinancialYear]);
-
-  return (
-    <FinancialYearContext.Provider value={value}>
-      {children}
-    </FinancialYearContext.Provider>
-  );
-}
-
-export function useFinancialYear() {
-  const context = useContext(FinancialYearContext);
-  if (context === undefined) {
-    throw new Error('useFinancialYear must be used within a FinancialYearProvider');
-  }
-  return context;
-}
-
-
-// General Settings Context
-interface SettingsContextType {
-  isAppHydrating: boolean;
+  // Stock Threshold
   lowStockThreshold: number;
-  setLowStockThreshold: (threshold: number) => void;
-  fontSize: number;
-  setFontSize: (size: number) => void;
+  setLowStockThreshold: React.Dispatch<React.SetStateAction<number>>;
+
+  // Print Settings
   printSettings: PrintSettings;
-  setPrintSettings: (settings: PrintSettings | ((prev: PrintSettings) => PrintSettings)) => void;
+  setPrintSettings: React.Dispatch<React.SetStateAction<PrintSettings>>;
+
+  // App Hydration Status
+  isAppHydrating: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [lowStockThreshold, setLowStockThreshold, isThresholdHydrating] = useLocalStorageState('lowStockThreshold', 10);
-  const [fontSize, setFontSize, isFontSizeHydrating] = useLocalStorageState('fontSize', 16);
-  const [printSettings, setPrintSettings, isPrintSettingsHydrating] = useLocalStorageState<PrintSettings>('printSettings', { showProfitOnSaleChitti: false });
+function generateInitialFinancialYears() {
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth(); // 0-11
   
-  const isAppHydrating = isThresholdHydrating || isFontSizeHydrating || isPrintSettingsHydrating;
+  // If we are in Jan, Feb, March, the current FY is (last year)-(current year)
+  // Otherwise, it's (current year)-(next year)
+  const endYear = currentMonth < 3 ? currentYear : currentYear + 1;
+  const startYear = endYear - 1;
+  
+  const currentFY = `${startYear}-${endYear}`;
+  
+  // Generate a few past years for initial setup
+  const years = [currentFY];
+  for (let i = 1; i <= 3; i++) {
+    years.push(`${startYear - i}-${endYear - i}`);
+  }
+  return years.sort((a,b) => b.localeCompare(a));
+}
+
+
+export const SettingsProvider = ({ children }: { children: React.ReactNode }) => {
+  const [fontSize, setFontSize, isFontSizeHydrating] = useLocalStorageState<number>('app-font-size', 16);
+  
+  const [financialYear, setFinancialYear, isFyHydrating] = useLocalStorageState<string>('app-financial-year', () => {
+      const years = generateInitialFinancialYears();
+      return years[0];
+  });
+  
+  const [availableFinancialYears, setAvailableFinancialYears, isAvailFyHydrating] = useLocalStorageState<string[]>('app-available-financial-years', generateInitialFinancialYears);
+
+  const [lowStockThreshold, setLowStockThreshold, isThresholdHydrating] = useLocalStorageState<number>('app-low-stock-threshold', 50);
+
+  const [printSettings, setPrintSettings, isPrintSettingsHydrating] = useLocalStorageState<PrintSettings>('app-print-settings', {
+    showProfitOnSaleChitti: false,
+  });
+
+  const isAppHydrating = isFontSizeHydrating || isFyHydrating || isAvailFyHydrating || isThresholdHydrating || isPrintSettingsHydrating;
 
   React.useEffect(() => {
-    document.documentElement.style.fontSize = `${fontSize}px`;
     document.documentElement.style.setProperty('--font-size', `${fontSize}px`);
   }, [fontSize]);
 
-  const handleSetFontSize = useCallback((size: number) => {
-    setFontSize(size);
-  }, [setFontSize]);
+  const getNextFinancialYear = () => {
+    const latestYear = availableFinancialYears.sort((a, b) => b.localeCompare(a))[0];
+    const [startYearStr] = latestYear.split('-');
+    const startYear = parseInt(startYearStr, 10);
+    return `${startYear + 1}-${startYear + 2}`;
+  };
 
   const value = useMemo(() => ({
+    fontSize, setFontSize,
+    financialYear, setFinancialYear,
+    availableFinancialYears, setAvailableFinancialYears,
+    getNextFinancialYear,
+    lowStockThreshold, setLowStockThreshold,
+    printSettings, setPrintSettings,
     isAppHydrating,
-    lowStockThreshold,
-    setLowStockThreshold,
-    fontSize,
-    setFontSize: handleSetFontSize,
-    printSettings,
-    setPrintSettings,
   }), [
-    isAppHydrating, lowStockThreshold, setLowStockThreshold, fontSize, handleSetFontSize,
-    printSettings, setPrintSettings
+    fontSize, setFontSize,
+    financialYear, setFinancialYear,
+    availableFinancialYears, setAvailableFinancialYears,
+    lowStockThreshold, setLowStockThreshold,
+    printSettings, setPrintSettings,
+    isAppHydrating,
   ]);
 
   return (
@@ -109,12 +104,27 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       {children}
     </SettingsContext.Provider>
   );
-}
+};
 
-export function useSettings() {
+export const useSettings = () => {
   const context = useContext(SettingsContext);
   if (context === undefined) {
     throw new Error('useSettings must be used within a SettingsProvider');
   }
   return context;
+};
+
+// A specific hook for Financial Year to avoid unnecessary re-renders in components that don't need the whole settings context
+export const useFinancialYear = () => {
+    const context = useContext(SettingsContext);
+    if (context === undefined) {
+        throw new Error('useFinancialYear must be used within a SettingsProvider');
+    }
+    return useMemo(() => ({
+        financialYear: context.financialYear,
+        setFinancialYear: context.setFinancialYear,
+        availableFinancialYears: context.availableFinancialYears,
+        setAvailableFinancialYears: context.setAvailableFinancialYears,
+        getNextFinancialYear: context.getNextFinancialYear,
+    }), [context.financialYear, context.setFinancialYear, context.availableFinancialYears, context.setAvailableFinancialYears]);
 }

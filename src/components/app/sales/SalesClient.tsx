@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -20,7 +19,7 @@ import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useTransactions } from "@/hooks/useTransactions";
+import { useAppState } from "@/hooks/useAppState";
 import type { Sale, SaleReturn, MasterItem } from "@/lib/types";
 import { SaleTable } from "@/components/app/sales/SaleTable";
 import { AddSaleForm } from "@/components/app/sales/AddSaleForm";
@@ -28,6 +27,7 @@ import { SaleChittiPrint } from "@/components/app/sales/SaleChittiPrint";
 import { AddSaleReturnForm } from "@/components/app/sales/AddSaleReturnForm";
 import { SaleReturnTable } from "@/components/app/sales/SaleReturnTable";
 import { renderToStaticMarkup } from 'react-dom/server';
+
 
 function openPrintWindow(htmlContent: string, title = "Document") {
   const printWindow = window.open("", "_blank", "noopener,noreferrer");
@@ -86,12 +86,15 @@ export function SalesClient() {
   
   const { 
     sales, 
-    setSales, 
+    addSale,
+    updateSale,
+    deleteSale,
     saleReturns, 
     setSaleReturns, 
-    isTransactionsLoaded, 
+    isLoaded, 
     addOrUpdateMaster 
-  } = useTransactions();
+  } = useAppState();
+
 
   const [isAddSaleFormOpen, setIsAddSaleFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
@@ -124,25 +127,30 @@ export function SalesClient() {
   }, [activeTab]);
 
   const filteredSales = React.useMemo(() => {
-    if (isAppHydrating || !isTransactionsLoaded) return [];
-    return sales.filter(sale => sale && sale.date && isDateInFinancialYear(sale.date, financialYear) && !sale.isStockPaymentSale);
-  }, [sales, financialYear, isAppHydrating, isTransactionsLoaded]);
+    if (isAppHydrating || !isLoaded) return [];
+    
+    return sales.filter(
+      sale => sale && 
+      sale.date && 
+      isDateInFinancialYear(sale.date, financialYear) && 
+      !sale.isStockPaymentSale
+    );
+  }, [sales, financialYear, isAppHydrating, isLoaded]);
 
   const filteredSaleReturns = React.useMemo(() => {
-    if (isAppHydrating || !isTransactionsLoaded) return [];
+    if (isAppHydrating || !isLoaded) return [];
     return saleReturns.filter(sr => sr && sr.date && isDateInFinancialYear(sr.date, financialYear));
-  }, [saleReturns, financialYear, isAppHydrating, isTransactionsLoaded]);
+  }, [saleReturns, financialYear, isAppHydrating, isLoaded]);
 
   const handleAddOrUpdateSale = React.useCallback(
     (sale: Sale) => {
       const isEditing = !!saleToEdit;
       
-      setSales((prev) => {
-        if (isEditing) {
-          return prev.map((s) => (s.id === sale.id ? sale : s));
-        }
-        return [sale, ...prev];
-      });
+      if (isEditing) {
+        updateSale(sale);
+      } else {
+        addSale(sale);
+      }
       
       setSaleToEdit(null);
       setIsAddSaleFormOpen(false);
@@ -156,7 +164,7 @@ export function SalesClient() {
         window.dispatchEvent(new CustomEvent("reindex-search"));
       }, 100);
     },
-    [saleToEdit, setSales, toast]
+    [saleToEdit, addSale, updateSale, toast]
   );
 
   const handleEditSale = React.useCallback((sale: Sale) => {
@@ -178,7 +186,7 @@ export function SalesClient() {
             setItemToDelete(null);
             return;
         }
-      setSales(prev => prev.filter(s => s.id !== itemToDelete.id));
+      deleteSale(itemToDelete.id);
       toast({ title: "Deleted!", description: "Sale record removed.", variant: "destructive" });
     } else {
       setSaleReturns(prev => prev.filter(sr => sr.id !== itemToDelete.id));
@@ -187,21 +195,20 @@ export function SalesClient() {
 
     setItemToDelete(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [itemToDelete, setSales, setSaleReturns, toast, saleReturns]);
+  }, [itemToDelete, deleteSale, setSaleReturns, toast, saleReturns]);
   
   const handleAddOrUpdateSaleReturn = React.useCallback((srData: SaleReturn) => {
-    setSaleReturns(prev => {
-      const isEditing = prev.some(sr => sr.id === srData.id);
-      if (isEditing) {
-          return prev.map(sr => sr.id === srData.id ? srData : sr)
-      }
-      return [{...srData, id: srData.id || `sr-${Date.now()}`}, ...prev];
-    });
+      const isEditing = saleReturns.some(sr => sr.id === srData.id);
+      setSaleReturns(prev => {
+        return isEditing
+          ? prev.map(sr => sr.id === srData.id ? srData : sr)
+          : [{...srData, id: srData.id || `sr-${Date.now()}`}, ...prev]
+      });
     setSaleReturnToEdit(null);
     setIsAddSaleReturnFormOpen(false);
     toast({ title: "Success!", description: "Sale return updated." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [setSaleReturns, toast]);
+  }, [setSaleReturns, saleReturns, toast]);
 
   const handleEditSaleReturn = React.useCallback((sr: SaleReturn) => {
     setSaleReturnToEdit(sr);
@@ -223,7 +230,9 @@ export function SalesClient() {
     return activeTab === 'sales' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-yellow-600 hover:bg-yellow-700 text-white';
   }, [activeTab]);
 
-  if (isAppHydrating || !isTransactionsLoaded) return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p className="text-lg text-muted-foreground">Loading sales data...</p></div>;
+  if (isAppHydrating || !isLoaded) {
+    return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p className="text-lg text-muted-foreground">Loading sales data...</p></div>;
+  }
 
   return (
     <div className="space-y-2 print-area">

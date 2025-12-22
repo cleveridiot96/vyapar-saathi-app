@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -240,6 +239,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
 
   const processSubmit = React.useCallback((values: PurchaseFormValues) => {
     setIsSubmitting(true);
+    console.log('🔵 FORM: About to call onSubmit with:', values);
     try {
       const totalAmount = Math.round(summary.totalAmount);
       const effectiveRate = summary.totalNetWeight > 0 ? totalAmount / summary.totalNetWeight : 0;
@@ -278,10 +278,11 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
       };
       
       onSubmit(purchaseData);
+      console.log('🟢 FORM: onSubmit called successfully');
 
       onClose();
     } catch (error) {
-      console.error('Error in processSubmit:', error);
+      console.error('🔴 FORM ERROR:', error);
       toast({ 
         title: "Error", 
         description: "Failed to save purchase. Please check console for details.",
@@ -420,7 +421,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                               <FormLabel>Vakkal/Lot No. <span className="text-destructive">*</span></FormLabel>
                                <FormControl>
                                 <Input
-                                  placeholder="E.g., AV/5 or BU-5"
+                                  placeholder="E.g., AV/5"
                                   {...itemField}
                                   onChange={(e) => handleLotNumberChange(index, e.target.value)}
                                 />

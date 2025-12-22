@@ -3,6 +3,8 @@ import { Poppins, Source_Code_Pro } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
+import { SettingsProvider } from '@/contexts/SettingsContext';
+import AppExitHandler from '@/components/layout/AppExitHandler';
 
 export const metadata: Metadata = {
   title: 'Vyapar Saathi',
@@ -28,8 +30,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("antialiased", poppins.variable, sourceCodePro.variable)} suppressHydrationWarning>
-        {children}
-        <Toaster />
+        <SettingsProvider>
+            {children}
+            <Toaster />
+            <AppExitHandler />
+        </SettingsProvider>
       </body>
     </html>
   );
