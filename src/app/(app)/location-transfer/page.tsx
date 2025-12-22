@@ -1,25 +1,23 @@
 "use client";
 
 import { LocationTransferClient } from "@/components/app/location-transfer/LocationTransferClient";
-import { useAppState } from "@/hooks/useAppState";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useEffect } from 'react';
 
 export default function LocationTransferPage() {
-  const { isLoaded } = useAppState();
+  const [isReady, setIsReady] = useState(false);
 
-  if (!isLoaded) {
+  useEffect(() => {
+    // Simulate a minimal delay
+    const timer = setTimeout(() => setIsReady(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!isReady) {
     return (
       <div className="space-y-4 p-4">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-10 w-32" />
-        </div>
+        <Skeleton className="h-10 w-64" />
         <Skeleton className="h-12 w-full" />
-        <div className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
       </div>
     );
   }

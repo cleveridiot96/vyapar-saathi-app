@@ -15,7 +15,7 @@ export function useTransactions() {
     purchases: appState.purchases,
     sales: appState.sales,
     adjustments: appState.adjustments,
-    locationTransfers: appState.locationTransfers,
+    locationTransfers: appState.transfers,
     purchaseReturns: appState.purchaseReturns,
     saleReturns: appState.saleReturns,
     payments: appState.payments,
