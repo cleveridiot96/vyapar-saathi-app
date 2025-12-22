@@ -1,8 +1,9 @@
+
 "use client";
 
 import React, { useState } from 'react';
 import { Button } from '../ui/button';
-import { useSettings } from '@/contexts/SettingsContext';
+import { useSettings, useFinancialYear } from '@/contexts/SettingsContext';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Printer, ShieldAlert } from 'lucide-react';
@@ -18,11 +19,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
+import { useTransactions } from '@/hooks/useTransactions';
+import { format } from 'date-fns';
 
 export function FormatButton() {
   const { printSettings, setPrintSettings } = useSettings();
   const { toast } = useToast();
   const [isFormatting, setIsFormatting] = useState(false);
+  const allTransactions = useTransactions();
+  const { financialYear } = useFinancialYear();
 
   const handleToggle = (key: keyof typeof printSettings) => {
     setPrintSettings(prev => ({
@@ -34,26 +39,72 @@ export function FormatButton() {
   const handleEmergencyFormat = () => {
     setIsFormatting(true);
     
-    // This is a conceptual wipe for the demo environment. 
-    // A real implementation would use the useTransactions hook to clear all state arrays.
     try {
-      localStorage.clear(); // Simple wipe for now
+      // 1. Create backup data
+      const dataToBackup = {
+        ...allTransactions,
+        // We only want the data, not the functions from the hook
+        setPurchases: undefined,
+        setSales: undefined,
+        setPurchaseReturns: undefined,
+        setSaleReturns: undefined,
+        setLocationTransfers: undefined,
+        setPayments: undefined,
+        setReceipts: undefined,
+        setLedger: undefined,
+        setAdjustments: undefined,
+        setCustomers: undefined,
+        setSuppliers: undefined,
+        setAgents: undefined,
+        setTransporters: undefined,
+        setWarehouses: undefined,
+        setBrokers: undefined,
+        setExpenses: undefined,
+        addLedgerEntry: undefined,
+        removeLedgerEntries: undefined,
+        addOrUpdateMaster: undefined,
+        getAllMasters: undefined,
+        masterData: undefined,
+      };
+
+      const blob = new Blob([JSON.stringify(dataToBackup, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      const date = format(new Date(), 'yyyy-MM-dd_HH-mm');
+      link.download = `vyapar-saathi-backup-${date}.json`;
       
-       toast({
-        title: "Format Complete",
-        description: "All application data has been wiped. The app will now reload.",
-        duration: 4000,
+      // 2. Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Backup Created",
+        description: "Your data backup has been downloaded. The app will now be formatted.",
       });
 
+      // 3. Proceed with format after a short delay
       setTimeout(() => {
-        window.location.reload();
-      }, 4000);
+        localStorage.clear();
+        
+        toast({
+          title: "Format Complete",
+          description: "All application data has been wiped. The app will now reload.",
+          duration: 4000,
+        });
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 4000);
+      }, 1000);
 
     } catch (error) {
-      console.error("Failed to wipe data:", error);
+      console.error("Failed to backup or wipe data:", error);
       toast({
         title: "Error",
-        description: "Could not wipe application data.",
+        description: "Could not complete the backup and format process.",
         variant: "destructive",
       });
       setIsFormatting(false);
@@ -89,13 +140,13 @@ export function FormatButton() {
               <AlertDialogHeader>
                 <AlertDialogTitle>ARE YOU ABSOLUTELY SURE?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action is irreversible. It will permanently delete ALL data from this application, including masters, transactions, and settings.
+                  This will first download a backup of all your current data, and then it will permanently delete ALL data from this application. This action is irreversible.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel onClick={() => setIsFormatting(false)}>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleEmergencyFormat} disabled={isFormatting}>
-                  {isFormatting ? "FORMATTING..." : "Yes, Format Everything"}
+                  {isFormatting ? "PROCESSING..." : "Backup and Format"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
