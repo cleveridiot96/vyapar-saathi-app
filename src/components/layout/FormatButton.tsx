@@ -1,9 +1,8 @@
-
 "use client";
 
 import React, { useState } from 'react';
 import { Button } from '../ui/button';
-import { useSettings, useFinancialYear } from '@/contexts/SettingsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Printer, ShieldAlert } from 'lucide-react';
@@ -27,7 +26,6 @@ export function FormatButton() {
   const { toast } = useToast();
   const [isFormatting, setIsFormatting] = useState(false);
   const appState = useAppState();
-  const { financialYear } = useFinancialYear();
 
   const handleToggle = (key: keyof typeof printSettings) => {
     setPrintSettings(prev => ({
