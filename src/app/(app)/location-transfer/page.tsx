@@ -1,14 +1,15 @@
-
 "use client";
 
 import { LocationTransferClient } from "@/components/app/location-transfer/LocationTransferClient";
 import { useAppState } from "@/hooks/useAppState";
+import { useHydrated } from "@/hooks/useHydrated";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function LocationTransferPage() {
   const { isLoaded } = useAppState();
+  const hydrated = useHydrated();
 
-  if (!isLoaded) {
+  if (!isLoaded || !hydrated) {
     return (
        <div className="space-y-4 p-4">
         <div className="flex justify-between items-center">
