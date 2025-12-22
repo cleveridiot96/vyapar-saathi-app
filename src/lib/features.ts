@@ -13,7 +13,7 @@ export type Feature = {
 
 export const features: Feature[] = [
     {
-        title: 'Dashboard',
+        title: '📊 Dashboard',
         href: '/dashboard',
         iconName: 'LayoutDashboard',
         shortcut: 'D',
@@ -23,7 +23,7 @@ export const features: Feature[] = [
         shadow: '0 10px 25px -5px rgba(253, 200, 48, 0.4), 0 8px 10px -6px rgba(253, 200, 48, 0.4)',
     },
   {
-    title: 'Purchases',
+    title: '🛒 Purchases',
     href: '/purchases',
     iconName: 'ShoppingCart',
     gradientFrom: '#28a745',
@@ -32,7 +32,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(40, 167, 69, 0.4), 0 8px 10px -6px rgba(40, 167, 69, 0.4)',
   },
   {
-    title: 'Sales',
+    title: '💰 Sales',
     href: '/sales',
     iconName: 'ShoppingBag',
     gradientFrom: '#dc3545',
@@ -41,7 +41,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(220, 53, 69, 0.4), 0 8px 10px -6px rgba(220, 53, 69, 0.4)',
   },
   {
-    title: 'Location Transfer',
+    title: '🚚 Location Transfer',
     href: '/location-transfer',
     iconName: 'Truck',
     gradientFrom: '#83a4d4',
@@ -50,7 +50,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(131, 164, 212, 0.4), 0 8px 10px -6px rgba(131, 164, 212, 0.4)',
   },
   {
-    title: 'Inventory',
+    title: '📦 Inventory',
     href: '/inventory',
     iconName: 'Boxes',
     gradientFrom: '#6f42c1',
@@ -59,7 +59,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(111, 66, 193, 0.4), 0 8px 10px -6px rgba(111, 66, 193, 0.4)',
   },
   {
-    title: 'Stock Adjustments',
+    title: '🔧 Stock Adjustments',
     href: '/stock-adjustments',
     iconName: 'SlidersHorizontal',
     gradientFrom: '#f09819',
@@ -68,7 +68,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(240, 152, 25, 0.4), 0 8px 10px -6px rgba(240, 152, 25, 0.4)',
   },
   {
-    title: 'Cash Book',
+    title: '📖 Cash Book',
     href: '/cash-book',
     iconName: 'BookOpenCheck',
     gradientFrom: '#37ecba',
@@ -77,7 +77,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(55, 236, 186, 0.4), 0 8px 10px -6px rgba(55, 236, 186, 0.4)',
   },
   {
-    title: 'Outstanding',
+    title: '🏦 Outstanding',
     href: '/outstanding',
     iconName: 'CircleDollarSign',
     gradientFrom: '#f093fb',
@@ -86,7 +86,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(245, 87, 108, 0.4), 0 8px 10px -6px rgba(245, 87, 108, 0.4)',
   },
   {
-    title: 'Stock Ledger',
+    title: '🧾 Stock Ledger',
     href: '/stock-ledger',
     iconName: 'ClipboardList',
     gradientFrom: '#9890e3',
@@ -95,7 +95,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(152, 144, 227, 0.4), 0 8px 10px -6px rgba(152, 144, 227, 0.4)',
   },
   {
-    title: 'Accounts Ledger',
+    title: '📒 Accounts Ledger',
     href: '/accounts-ledger',
     iconName: 'BookUser',
     gradientFrom: '#c1dfc4',
@@ -104,7 +104,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(193, 223, 196, 0.6), 0 8px 10px -6px rgba(193, 223, 196, 0.6)',
   },
   {
-    title: 'Lot Ledger',
+    title: '📜 Lot Ledger',
     href: '/lot-ledger',
     iconName: 'PackageSearch',
     gradientFrom: '#505285',
@@ -113,7 +113,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(80, 82, 133, 0.4), 0 8px 10px -6px rgba(80, 82, 133, 0.4)',
   },
   {
-    title: 'Profit Analysis',
+    title: '📈 Profit Analysis',
     href: '/profit-analysis',
     iconName: 'PieChart',
     gradientFrom: '#0ba360',
@@ -122,7 +122,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(11, 163, 96, 0.4), 0 8px 10px -6px rgba(11, 163, 96, 0.4)',
   },
   {
-    title: 'Financial Summary',
+    title: '⚖️ Financial Summary',
     href: '/financial-summary',
     iconName: 'BarChartHorizontal',
     gradientFrom: '#09203f',
@@ -131,7 +131,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(9, 32, 63, 0.4), 0 8px 10px -6px rgba(9, 32, 63, 0.4)',
   },
   {
-    title: 'Payments',
+    title: '💸 Payments',
     href: '/payments',
     iconName: 'ArrowRightLeft',
     gradientFrom: '#007bff',
@@ -140,7 +140,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(0, 123, 255, 0.4), 0 8px 10px -6px rgba(0, 123, 255, 0.4)',
   },
   {
-    title: 'Receipts',
+    title: '✉️ Receipts',
     href: '/receipts',
     iconName: 'Receipt',
     gradientFrom: '#ffc107',
@@ -149,7 +149,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(255, 193, 7, 0.4), 0 8px 10px -6px rgba(255, 193, 7, 0.4)',
   },
   {
-    title: 'Daybook',
+    title: '🗓️ Daybook',
     href: '/daybook',
     iconName: 'CalendarDays',
     gradientFrom: '#abb8c3',
@@ -158,7 +158,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(171, 184, 195, 0.5), 0 8px 10px -6px rgba(171, 184, 195, 0.5)',
   },
   {
-    title: 'Masters',
+    title: '👥 Masters',
     href: '/masters',
     iconName: 'Users',
     gradientFrom: '#d299c2',
@@ -167,7 +167,7 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(210, 153, 194, 0.5), 0 8px 10px -6px rgba(210, 153, 194, 0.5)',
   },
   {
-    title: 'Backup/Restore',
+    title: '💾 Backup/Restore',
     href: '/backup-restore',
     iconName: 'DatabaseBackup',
     gradientFrom: '#6a11cb',
