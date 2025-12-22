@@ -82,15 +82,15 @@ export default function MastersPage() {
   const allMasterItems = useMemo(() => getAllMasters(), [getAllMasters]);
   
   const getMasterDataStateForTab = useCallback((type: MasterPageTabKey) => {
-    if (type === 'All') return allMasterItems;
+    if (type === 'All') return allMasterItems || [];
     switch (type) {
         case 'Customer': return allMasterItems.filter(m => m.type === 'Customer');
         case 'Broker': return allMasterItems.filter(m => m.type === 'Broker');
         case 'Supplier': return allMasterItems.filter(m => m.type === 'Supplier');
         case 'Agent': return allMasterItems.filter(m => m.type === 'Agent');
-        case 'Warehouse': return warehouses;
+        case 'Warehouse': return warehouses || [];
         case 'Transporter': return allMasterItems.filter(m => m.type === 'Transporter');
-        case 'Expense': return expenses;
+        case 'Expense': return expenses || [];
         default: return [];
     }
   }, [allMasterItems, warehouses, expenses]);
@@ -99,7 +99,7 @@ export default function MastersPage() {
     const instances: Record<string, Fuse<MasterItem>> = {};
     TABS_CONFIG.forEach(tab => {
         const data = getMasterDataStateForTab(tab.value);
-        instances[tab.value] = new Fuse(data.filter(validateMasterItem), fuseOptions);
+        instances[tab.value] = new Fuse((data || []).filter(validateMasterItem), fuseOptions);
     });
     return instances;
   }, [getMasterDataStateForTab]);
@@ -368,5 +368,4 @@ export default function MastersPage() {
     </div>
   );
 }
-
     
