@@ -1,60 +1,100 @@
 "use client";
 
 import { useAppState } from './useAppState';
-import type { Purchase, Sale, StockAdjustment, LocationTransfer, PurchaseReturn, SaleReturn, MasterItem } from '@/lib/types';
+import type { LocationTransfer, LedgerEntry, MasterItem } from '@/lib/types';
+import { useState, useCallback, useEffect } from 'react';
+import { FIXED_WAREHOUSES, FIXED_EXPENSES } from '@/lib/constants';
 
 /**
- * Legacy hook - provides empty safe defaults
- * All data queries return empty arrays to prevent undefined errors
+ * Complete transaction management hook
+ * This provides the data LocationTransferClient needs
  */
 export function useTransactions() {
   const appState = useAppState();
+  const [locationTransfers, setLocationTransfers] = useState<LocationTransfer[]>([]);
+  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
+  const [masterData, setMasterData] = useState({
+    Warehouse: [] as MasterItem[],
+    Transporter: [] as MasterItem[],
+    Expense: [] as MasterItem[],
+    Customer: [] as MasterItem[],
+    Supplier: [] as MasterItem[],
+    Agent: [] as MasterItem[],
+    Broker: [] as MasterItem[],
+  });
 
-  return {
-    purchases: appState.purchases ??  [],
-    sales: appState.sales ?? [],
-    adjustments: appState.adjustments ??  [],
-    locationTransfers: appState.transfers ?? [],
-    purchaseReturns: appState.purchaseReturns ?? [],
-    saleReturns: appState. saleReturns ?? [],
-    isLoaded: appState.isInitialized ??  false,
-    
-    masterData: appState.masterData ?? {
+  useEffect(() => {
+    // Initialize with fixed masters
+    setMasterData({
+      Warehouse: FIXED_WAREHOUSES as any,
+      Expense: FIXED_EXPENSES as any,
+      Transporter: [],
       Customer: [],
       Supplier: [],
       Agent: [],
-      Transporter: [],
-      Warehouse: [],
       Broker: [],
-      Expense: [],
-      Product: [],
-    },
+    });
+  }, []);
+
+  const addOrUpdateMaster = useCallback((item: any) => {
+    setMasterData(prev => {
+      const type = item.type || 'Warehouse';
+      const typeKey = type as keyof typeof prev;
+      const existing = prev[typeKey] ??  [];
+      const filtered = existing.filter(e => e.id !== item.id);
+      return {
+        ...prev,
+        [typeKey]: [...filtered, item],
+      };
+    });
+  }, []);
+
+  const getAllMasters = useCallback(() => {
+    return Object.values(masterData).flat();
+  }, [masterData]);
+
+  const addLedgerEntry = useCallback((entries: LedgerEntry | LedgerEntry[]) => {
+    const entriesToAdd = Array.isArray(entries) ? entries : [entries];
+    setLedgerEntries(prev => [...prev, ... entriesToAdd]);
+  }, []);
+
+  const removeLedgerEntries = useCallback((voucherId: string) => {
+    setLedgerEntries(prev => prev.filter(e => e.relatedVoucher !== voucherId));
+  }, []);
+
+  return {
+    // Transfers
+    locationTransfers,
+    setLocationTransfers,
     
-    addOrUpdateMaster: () => {},
-    getAllMasters: appState.getAllMasters ?? (() => []),
+    // Ledger
+    ledgerEntries,
+    addLedgerEntry,
+    removeLedgerEntries,
     
-    // Stubs for dispatch
-    addPurchase: () => {},
-    updatePurchase: () => {},
-    deletePurchase: () => {},
-    addSale: () => {},
-    updateSale: () => {},
-    deleteSale: () => {},
-    addTransfer: () => {},
-    addAdjustment: () => {},
-    addReturn: () => {},
-    setPurchases: () => {},
+    // Masters
+    masterData,
+    addOrUpdateMaster,
+    getAllMasters,
+    
+    // Purchases, Sales, etc.  (from appState)
+    purchases: appState.purchases ??  [],
+    sales: appState. sales ?? [],
+    adjustments: appState.adjustments ??  [],
+    purchaseReturns: appState.purchaseReturns ?? [],
+    saleReturns: appState. saleReturns ?? [],
+    isLoaded: appState.isInitialized,
+    payments: [],
+    receipts: [],
+    setPayments: () => {},
+    setReceipts: () => {},
+    isTransactionsLoaded: appState.isInitialized,
+    isMasterDataLoaded: appState.isInitialized,
     setSales: () => {},
     setPurchaseReturns: () => {},
     setSaleReturns: () => {},
-    setPayments: () => {},
-    setReceipts: () => {},
-    setLocationTransfers: () => {},
     setAdjustments: () => {},
-    payments: [],
-    receipts: [],
-    ledger: [],
-    isTransactionsLoaded: appState.isInitialized ?? false,
-    isMasterDataLoaded: appState.isInitialized ?? false,
+    setPurchases: () => {},
+    ledger: ledgerEntries,
   };
 }
