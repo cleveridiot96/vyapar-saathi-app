@@ -1,4 +1,3 @@
-
 import type { AggregatedInventoryItem, Purchase, Sale, LocationTransfer, StockAdjustment, PurchaseReturn, SaleReturn, PurchaseItem } from '@/lib/types';
 import { FIXED_WAREHOUSES } from '@/lib/constants';
 
