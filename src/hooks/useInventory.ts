@@ -5,14 +5,16 @@ import { useMemo } from 'react';
 import { useTransactions } from './useTransactions';
 import type { AggregatedInventoryItem } from '@/lib/types';
 import { FIXED_WAREHOUSES } from '@/lib/constants';
+import { useHydrated } from './useHydrated';
 
 const KEY_SEPARATOR = '_$_';
 
 export function useInventory(saleIdToExclude?: string) {
-    const { purchases, purchaseReturns, sales, saleReturns, locationTransfers, adjustments, isTransactionsLoaded } = useTransactions();
+    const { purchases, purchaseReturns, sales, saleReturns, locationTransfers, adjustments, isLoaded: isTransactionsLoaded } = useTransactions();
+    const isHydrated = useHydrated();
 
     const allAggregatedInventory = useMemo(() => {
-        if (!isTransactionsLoaded) return [];
+        if (!isTransactionsLoaded || !isHydrated) return [];
 
         const inventory: Record<string, AggregatedInventoryItem> = {};
 
@@ -179,10 +181,11 @@ export function useInventory(saleIdToExclude?: string) {
         locationTransfers,
         adjustments,
         isTransactionsLoaded,
+        isHydrated,
         saleIdToExclude
     ]);
 
     const availableStock = useMemo(() => allAggregatedInventory.filter(item => item.currentBags > 0.01), [allAggregatedInventory]);
 
-    return { allAggregatedInventory, availableStock, isLoading: !isTransactionsLoaded };
+    return { allAggregatedInventory, availableStock, isLoading: !isTransactionsLoaded || !isHydrated };
 }
