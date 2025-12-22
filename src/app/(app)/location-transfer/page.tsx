@@ -6,7 +6,7 @@ import { useHydrated } from "@/hooks/useHydrated";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function LocationTransferPage() {
-  // Using useTransactions directly usually ensures we are checking the actual data source loading state
+  // Using useTransactions directly ensures we are checking the actual data source loading state
   const { isLoaded } = useTransactions();
   const hydrated = useHydrated();
 
