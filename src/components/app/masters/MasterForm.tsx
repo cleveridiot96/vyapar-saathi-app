@@ -123,7 +123,8 @@ export function MasterForm({
   const allMasterTypes = Object.keys(MASTER_TYPES_CONFIG).filter(type => type !== 'Product') as MasterItemType[];
   const getSingularLabel = (type: MasterItemType) => {
     if (type === 'Expense') return 'Expense';
-    return type.endsWith('s') ? type.slice(0, -1) : type;
+    const singular = type.endsWith('s') ? type.slice(0, -1) : type;
+    return singular.replace(/^[^\w\s]+/, '').trim();
   }
   const singularLabel = getSingularLabel(itemType);
 
