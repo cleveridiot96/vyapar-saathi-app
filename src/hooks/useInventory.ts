@@ -4,14 +4,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTransactions } from './useTransactions';
 import type { AggregatedInventoryItem } from '@/lib/types';
 import { calculateInventory } from '@/lib/inventoryEngine';
+import { useHydrated } from './useHydrated';
 
 export function useInventory(saleIdToExclude?: string) {
-    const { purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns, isLoaded } = useTransactions();
+    const { purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns, isLoaded: isTransactionsLoaded } = useTransactions();
     const [isLoading, setIsLoading] = useState(true);
     const [allAggregatedInventory, setAllAggregatedInventory] = useState<AggregatedInventoryItem[]>([]);
+    const isHydrated = useHydrated();
 
     useEffect(() => {
-        if (isLoaded) {
+        if (isTransactionsLoaded && isHydrated) {
             setIsLoading(true);
             // Use setTimeout to offload the calculation to a macrotask, preventing UI freeze
             const timer = setTimeout(() => {
@@ -38,7 +40,8 @@ export function useInventory(saleIdToExclude?: string) {
         locationTransfers,
         purchaseReturns,
         saleReturns,
-        isLoaded,
+        isTransactionsLoaded,
+        isHydrated,
         saleIdToExclude
     ]);
 

@@ -1,16 +1,15 @@
 "use client";
 
 import { LocationTransferClient } from "@/components/app/location-transfer/LocationTransferClient";
-import { useTransactions } from "@/hooks/useTransactions";
-import { useHydrated } from "@/hooks/useHydrated";
+import { useInventory } from "@/hooks/useInventory";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function LocationTransferPage() {
-  // Using useTransactions directly ensures we are checking the actual data source loading state
-  const { isLoaded } = useTransactions();
-  const hydrated = useHydrated();
+  // Using useInventory hook which now correctly manages its own loading state
+  // This ensures the page waits for the async inventory calculation to complete.
+  const { isLoading } = useInventory();
 
-  if (!isLoaded || !hydrated) {
+  if (isLoading) {
     return (
        <div className="space-y-4 p-4">
         <div className="flex justify-between items-center">
