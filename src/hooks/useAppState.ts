@@ -8,7 +8,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { getEvents, addEvent, onEventsChange, initializeEventStore } from '@/lib/eventStore';
 import { deriveAllTransactions } from '@/lib/derives';
 import type { TransactionEvent } from '@/lib/eventStore';
-import type { AggregatedInventoryItem, Purchase, Sale, LocationTransfer, StockAdjustment, PurchaseReturn, SaleReturn, MasterItem, Payment, Receipt, LedgerEntry } from '@/lib/types';
+import type { AggregatedInventoryItem, Purchase, Sale, LocationTransfer, StockAdjustment, PurchaseReturn, SaleReturn, MasterItem, Payment, Receipt, LedgerEntry, MasterItemType } from '@/lib/types';
 import { useMasterData } from './useMasterData';
 
 interface AppState {
