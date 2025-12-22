@@ -41,14 +41,14 @@ const ALL_FIXED_IDS = [...FIXED_WAREHOUSE_IDS, ...FIXED_EXPENSE_IDS];
 type MasterPageTabKey = MasterItemType | 'All';
 
 const TABS_CONFIG: { value: MasterPageTabKey; label: string; icon: React.ElementType; colorClass: string; }[] = [
-  { value: "All", label: "📜 ALL PARTIES", icon: List, colorClass: 'text-white bg-red-800 hover:bg-red-900 data-[state=active]:bg-red-900 data-[state=active]:text-white' },
-  { value: "Customer", label: "👥 CUSTOMERS", icon: Users, colorClass: 'bg-blue-500 hover:bg-blue-600 text-white data-[state=active]:bg-blue-600 data-[state=active]:text-white' },
-  { value: "Broker", label: "🤝 BROKERS", icon: Handshake, colorClass: 'bg-yellow-400 hover:bg-yellow-500 text-gray-800 data-[state=active]:bg-yellow-500 data-[state=active]:text-black' },
-  { value: "Supplier", label: "🚚 SUPPLIERS", icon: Truck, colorClass: 'bg-orange-500 hover:bg-orange-600 text-white data-[state=active]:bg-orange-600 data-[state=active]:text-white' },
-  { value: "Agent", label: "🕵️ AGENTS", icon: UserCheck, colorClass: 'bg-green-500 hover:bg-green-600 text-white data-[state=active]:bg-green-600 data-[state=active]:text-white' },
-  { value: "Warehouse", label: "📦 WAREHOUSES", icon: Building, colorClass: 'bg-teal-500 hover:bg-teal-600 text-white data-[state=active]:bg-teal-600 data-[state=active]:text-white' },
-  { value: "Transporter", label: "🚛 TRANSPORT", icon: Truck, colorClass: 'bg-[#531253] hover:bg-[#531253]/90 text-white data-[state=active]:bg-[#531253] data-[state=active]:text-white' },
-  { value: "Expense", label: "💸 EXPENSES", icon: DollarSign, colorClass: 'bg-purple-500 hover:bg-purple-600 text-white data-[state=active]:bg-purple-600 data-[state=active]:text-white' },
+  { value: "All", label: "ALL PARTIES", icon: List, colorClass: 'text-white bg-red-800 hover:bg-red-900 data-[state=active]:bg-red-900 data-[state=active]:text-white' },
+  { value: "Customer", label: "CUSTOMERS", icon: Users, colorClass: 'bg-blue-500 hover:bg-blue-600 text-white data-[state=active]:bg-blue-600 data-[state=active]:text-white' },
+  { value: "Broker", label: "BROKERS", icon: Handshake, colorClass: 'bg-yellow-400 hover:bg-yellow-500 text-gray-800 data-[state=active]:bg-yellow-500 data-[state=active]:text-black' },
+  { value: "Supplier", label: "SUPPLIERS", icon: Truck, colorClass: 'bg-orange-500 hover:bg-orange-600 text-white data-[state=active]:bg-orange-600 data-[state=active]:text-white' },
+  { value: "Agent", label: "AGENTS", icon: UserCheck, colorClass: 'bg-green-500 hover:bg-green-600 text-white data-[state=active]:bg-green-600 data-[state=active]:text-white' },
+  { value: "Warehouse", label: "WAREHOUSES", icon: Building, colorClass: 'bg-teal-500 hover:bg-teal-600 text-white data-[state=active]:bg-teal-600 data-[state=active]:text-white' },
+  { value: "Transporter", label: "TRANSPORT", icon: Truck, colorClass: 'bg-[#531253] hover:bg-[#531253]/90 text-white data-[state=active]:bg-[#531253] data-[state=active]:text-white' },
+  { value: "Expense", label: "EXPENSES", icon: DollarSign, colorClass: 'bg-purple-500 hover:bg-purple-600 text-white data-[state=active]:bg-purple-600 data-[state=active]:text-white' },
 ];
 
 const fuseOptions = {
@@ -66,7 +66,8 @@ const DISPLAY_LIMIT_OPTIONS = ["50", "100", "150", "All"];
 
 export default function MastersPage() {
   const { toast } = useToast();
-  const { getAllMasters, addOrUpdateMaster, warehouses, expenses, isMasterDataLoaded } = useTransactions();
+  const { getAllMasters, addOrUpdateMaster, masterData, isLoaded: isMasterDataLoaded } = useTransactions();
+  const { Warehouse: warehouses, Expense: expenses } = masterData;
   const isHydrated = useHydrated();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -83,16 +84,16 @@ export default function MastersPage() {
   const getMasterDataStateForTab = useCallback((type: MasterPageTabKey) => {
     if (type === 'All') return allMasterItems || [];
     switch (type) {
-        case 'Customer': return allMasterItems.filter(m => m.type === 'Customer');
-        case 'Broker': return allMasterItems.filter(m => m.type === 'Broker');
-        case 'Supplier': return allMasterItems.filter(m => m.type === 'Supplier');
-        case 'Agent': return allMasterItems.filter(m => m.type === 'Agent');
+        case 'Customer': return masterData.Customer || [];
+        case 'Broker': return masterData.Broker || [];
+        case 'Supplier': return masterData.Supplier || [];
+        case 'Agent': return masterData.Agent || [];
         case 'Warehouse': return warehouses || [];
-        case 'Transporter': return allMasterItems.filter(m => m.type === 'Transporter');
+        case 'Transporter': return masterData.Transporter || [];
         case 'Expense': return expenses || [];
         default: return [];
     }
-  }, [allMasterItems, warehouses, expenses]);
+  }, [allMasterItems, masterData, warehouses, expenses]);
   
   const fuseInstances = useMemo(() => {
     const instances: Record<string, Fuse<MasterItem>> = {};
@@ -178,12 +179,7 @@ export default function MastersPage() {
 
   const confirmDeleteItem = useCallback(() => {
     if (itemToDelete) {
-      // Deleting master items can have cascading effects.
-      // For now, this is simplified. A more robust solution might involve a central delete function in useTransactions.
-      // This implementation will call addOrUpdateMaster with a special flag/structure or a new deleteMaster function.
-      // For this refactor, we'll assume a soft delete or a more complex backend logic.
-      // A simple filter is not safe. However, for the sake of demonstrating the fix:
-      console.warn("Deletion is a complex operation. This is a simplified implementation.");
+      // This is not a safe deletion, but for the sake of the prototype we will soft delete
       addOrUpdateMaster({ ...itemToDelete, name: `_DELETED_${itemToDelete.name}_${Date.now()}`});
 
       toast({ title: `${itemToDelete.type} deleted`, description: `${itemToDelete.name} has been removed.`, variant: 'destructive' });
@@ -368,4 +364,3 @@ export default function MastersPage() {
     </div>
   );
 }
-    

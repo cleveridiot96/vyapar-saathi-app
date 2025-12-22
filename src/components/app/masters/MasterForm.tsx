@@ -275,6 +275,11 @@ export function MasterForm({
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
+          {isLocked && !isEditingFixed && (
+            <Button type="button" variant="secondary" onClick={handleUnlock}>
+                <Unlock className="mr-2 h-4 w-4"/> Unlock
+            </Button>
+          )}
           <Button type="button" onClick={form.handleSubmit(handleSubmit)} disabled={isLocked}>Save</Button>
         </DialogFooter>
       </DialogContent>
