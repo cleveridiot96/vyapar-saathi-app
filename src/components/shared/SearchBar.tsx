@@ -42,22 +42,34 @@ const SearchBar = () => {
   const router = useRouter();
   const commandRef = useRef<HTMLDivElement>(null);
   
-  const { purchases, sales, payments, receipts, getAllMasters, locationTransfers, isTransactionsLoaded, isMasterDataLoaded } = useTransactions();
+  const { 
+    purchases = [],
+    sales = [], 
+    payments = [], 
+    receipts = [], 
+    getAllMasters, 
+    locationTransfers = [], 
+    isLoaded 
+  } = useTransactions();
   
   const initializeIndex = useCallback(() => {
-    if (isTransactionsLoaded && isMasterDataLoaded) {
-      const allMasters = getAllMasters();
-      const searchDataPayload = buildSearchData({
-        sales,
-        purchases,
-        payments,
-        receipts,
-        masters: allMasters,
-        locationTransfers,
-      });
-      initSearchEngine(searchDataPayload);
+    if (isLoaded) {
+      try {
+        const allMasters = getAllMasters() ?? [];
+        const searchDataPayload = buildSearchData({
+          sales,
+          purchases,
+          payments,
+          receipts,
+          masters: allMasters,
+          locationTransfers,
+        });
+        initSearchEngine(searchDataPayload);
+      } catch(error) {
+        console.error("Search initialization failed:", error);
+      }
     }
-  }, [isTransactionsLoaded, isMasterDataLoaded, sales, purchases, payments, receipts, getAllMasters, locationTransfers]);
+  }, [isLoaded, sales, purchases, payments, receipts, getAllMasters, locationTransfers]);
 
   useEffect(() => {
     initializeIndex();

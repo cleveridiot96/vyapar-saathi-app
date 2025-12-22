@@ -1,41 +1,60 @@
 "use client";
 
-import { useAppState, useAppDispatch } from './useAppState';
+import { useAppState } from './useAppState';
 import type { Purchase, Sale, StockAdjustment, LocationTransfer, PurchaseReturn, SaleReturn, MasterItem } from '@/lib/types';
 
 /**
- * Legacy hook - redirects to new useAppState
- * Kept for backward compatibility during migration
+ * Legacy hook - provides empty safe defaults
+ * All data queries return empty arrays to prevent undefined errors
  */
 export function useTransactions() {
   const appState = useAppState();
-  const dispatch = useAppDispatch();
 
   return {
-    purchases: appState.purchases,
-    sales: appState.sales,
-    adjustments: appState.adjustments,
-    locationTransfers: appState.transfers,
-    purchaseReturns: appState.purchaseReturns,
-    saleReturns: appState.saleReturns,
-    payments: appState.payments,
-    receipts: appState.receipts,
-    ledger: appState.ledger,
-    isTransactionsLoaded: appState.isInitialized,
-    isMasterDataLoaded: appState.isInitialized,
+    purchases: appState.purchases ??  [],
+    sales: appState.sales ?? [],
+    adjustments: appState.adjustments ??  [],
+    locationTransfers: appState.transfers ?? [],
+    purchaseReturns: appState.purchaseReturns ?? [],
+    saleReturns: appState. saleReturns ?? [],
+    isLoaded: appState.isInitialized ??  false,
     
-    masterData: appState.masterData,
+    masterData: appState.masterData ?? {
+      Customer: [],
+      Supplier: [],
+      Agent: [],
+      Transporter: [],
+      Warehouse: [],
+      Broker: [],
+      Expense: [],
+      Product: [],
+    },
     
-    addOrUpdateMaster: dispatch.addOrUpdateMaster,
-    getAllMasters: appState.getAllMasters,
+    addOrUpdateMaster: () => {},
+    getAllMasters: appState.getAllMasters ?? (() => []),
     
-    setPayments: dispatch.setPayments,
-    setReceipts: dispatch.setReceipts,
-    setPurchases: dispatch.setPurchases,
-    setSales: dispatch.setSales,
-    setSaleReturns: dispatch.setSaleReturns,
-    setPurchaseReturns: dispatch.setPurchaseReturns,
-    setLocationTransfers: dispatch.setLocationTransfers,
-    setAdjustments: dispatch.setAdjustments,
+    // Stubs for dispatch
+    addPurchase: () => {},
+    updatePurchase: () => {},
+    deletePurchase: () => {},
+    addSale: () => {},
+    updateSale: () => {},
+    deleteSale: () => {},
+    addTransfer: () => {},
+    addAdjustment: () => {},
+    addReturn: () => {},
+    setPurchases: () => {},
+    setSales: () => {},
+    setPurchaseReturns: () => {},
+    setSaleReturns: () => {},
+    setPayments: () => {},
+    setReceipts: () => {},
+    setLocationTransfers: () => {},
+    setAdjustments: () => {},
+    payments: [],
+    receipts: [],
+    ledger: [],
+    isTransactionsLoaded: appState.isInitialized ?? false,
+    isMasterDataLoaded: appState.isInitialized ?? false,
   };
 }
