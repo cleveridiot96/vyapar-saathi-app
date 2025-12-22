@@ -1,8 +1,20 @@
 // ============================================================================
 // ULTRA-LIGHT EVENT STORE - NO DEPENDENCIES
 // ============================================================================
-import type { Purchase, Sale, LocationTransfer, StockAdjustment, PurchaseReturn, SaleReturn, MasterItem, Payment, Receipt, LedgerEntry } from './types';
+"use strict";
 
+import type { 
+  Purchase, 
+  Sale, 
+  StockAdjustment, 
+  LocationTransfer,
+  PurchaseReturn,
+  SaleReturn,
+  MasterItem,
+  Payment,
+  Receipt,
+  LedgerEntry
+} from '@/lib/types';
 
 export type TransactionEvent = 
   | { type: 'MASTER_UPSERTED'; payload: MasterItem }
@@ -27,33 +39,19 @@ export type TransactionEvent =
 let eventLog: TransactionEvent[] = [];
 let listeners: Set<(events: TransactionEvent[]) => void> = new Set();
 
-/**
- * Initialize event log from IndexedDB on app start
- * This runs ONCE, so it's blazingly fast
- */
 export async function initializeEventStore(): Promise<void> {
   const stored = await getFromIndexedDB<TransactionEvent[]>('events');
-  if (stored) {
+  if (stored && Array.isArray(stored)) {
     eventLog = stored;
   }
 }
 
-/**
- * Add a transaction and persist to IndexedDB
- */
 export function addEvent(event: TransactionEvent): void {
   eventLog.push(event);
-  
-  // Fire off async write (non-blocking)
   saveToIndexedDB('events', eventLog).catch(console.error);
-  
-  // Notify all listeners synchronously
-  listeners.forEach(cb => cb(eventLog));
+  listeners.forEach(cb => cb([...eventLog]));
 }
 
-/**
- * Subscribe to changes
- */
 export function onEventsChange(
   callback: (events: TransactionEvent[]) => void
 ): () => void {
@@ -61,25 +59,16 @@ export function onEventsChange(
   return () => listeners.delete(callback);
 }
 
-/**
- * Get all events
- */
 export function getEvents(): TransactionEvent[] {
-  return eventLog;
+  return [...eventLog];
 }
 
-/**
- * Delete an event (soft delete by re-creating the stream)
- */
 export function deleteEvent(eventIndex: number): void {
   eventLog.splice(eventIndex, 1);
   saveToIndexedDB('events', eventLog).catch(console.error);
-  listeners.forEach(cb => cb(eventLog));
+  listeners.forEach(cb => cb([...eventLog]));
 }
 
-/**
- * Ultra-simple IndexedDB (no libraries!)
- */
 const DB_NAME = 'InventoryDB';
 const STORE_NAME = 'data';
 
@@ -87,31 +76,48 @@ function getDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, 1);
     request.onupgradeneeded = () => {
-      request.result.createObjectStore(STORE_NAME);
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
     };
-    request. onsuccess = () => resolve(request.result);
+    request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
 
 export async function saveToIndexedDB(key: string, data: any): Promise<void> {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    const request = store. put(data, key);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
+  try {
+    const db = await getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.put(data, key);
+      
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (error) {
+    console.error('Failed to save to IndexedDB:', error);
+    throw error;
+  }
 }
 
 export async function getFromIndexedDB<T>(key: string): Promise<T | null> {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const store = tx.objectStore(STORE_NAME);
-    const request = store.get(key);
-    request.onsuccess = () => resolve(request.result || null);
-    request.onerror = () => reject(request.error);
-  });
+  try {
+    const db = await getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.get(key);
+      
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (error) {
+    console.error('Failed to read from IndexedDB:', error);
+    return null;
+  }
 }

@@ -1,15 +1,22 @@
-// ============================================================================
-// GLOBAL STATE - Pure React Context (0 Dependencies)
-// ============================================================================
-
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { getEvents, addEvent, onEventsChange, initializeEventStore } from '@/lib/eventStore';
 import { deriveAllTransactions } from '@/lib/derives';
 import type { TransactionEvent } from '@/lib/eventStore';
-import type { AggregatedInventoryItem, Purchase, Sale, LocationTransfer, StockAdjustment, PurchaseReturn, SaleReturn, MasterItem, Payment, Receipt, LedgerEntry, MasterItemType } from '@/lib/types';
-import { useMasterData } from './useMasterData';
+import type { 
+  AggregatedInventoryItem, 
+  Purchase, 
+  Sale, 
+  StockAdjustment, 
+  LocationTransfer,
+  PurchaseReturn,
+  SaleReturn,
+  Payment,
+  Receipt,
+  MasterItem,
+  LedgerEntry
+} from '@/lib/types';
 
 interface AppState {
   events: TransactionEvent[];
@@ -68,21 +75,29 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       await initializeEventStore();
       
       // Initialize worker
-      workerRef.current = new Worker(new URL('@/lib/inventory.worker.ts', import.meta.url), {
-        type: 'module',
-      });
+      try {
+        workerRef.current = new Worker(
+          new URL('@/lib/inventory.worker.ts', import.meta.url),
+          { type: 'module' }
+        );
 
-      workerRef.current.onmessage = (e:  MessageEvent<AggregatedInventoryItem[]>) => {
-        setState(prev => ({
-          ...prev,
-          inventory: e.data,
-          isCalculating: false,
-        }));
-      };
+        workerRef.current.onmessage = (e:  MessageEvent<AggregatedInventoryItem[]>) => {
+          setState(prev => ({
+            ...prev,
+            inventory: e.data,
+            isCalculating: false,
+          }));
+        };
 
-      // Set initial state
-      const events = getEvents();
-      updateState(events);
+        // Set initial state
+        const events = getEvents();
+        updateState(events);
+      } catch (error) {
+        console.error('Failed to initialize worker:', error);
+        // Fallback:  Calculate on main thread
+        const events = getEvents();
+        updateState(events);
+      }
     })();
 
     // Subscribe to events
@@ -96,7 +111,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     setState(prev => ({
       ...prev,
       events,
-      ... derived,
+      ...derived,
       isLoaded: true,
       isCalculating: true,
     }));

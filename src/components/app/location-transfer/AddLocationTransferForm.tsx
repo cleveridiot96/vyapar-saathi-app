@@ -40,7 +40,6 @@ import { useMasterData } from "@/hooks/useMasterData";
 interface AddLocationTransferFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (transfer: LocationTransfer) => void;
   transferToEdit?: LocationTransfer | null;
 }
 

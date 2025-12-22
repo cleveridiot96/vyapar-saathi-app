@@ -5,19 +5,24 @@ import { useAppState } from "@/hooks/useAppState";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function LocationTransferPage() {
-  const { isInitialized, isCalculating } = useAppState();
+  const { isLoaded: isInitialized } = useAppState();
 
-  // Show loading only on first load
   if (!isInitialized) {
     return (
       <div className="space-y-4 p-4">
-        <Skeleton className="h-10 w-64" />
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-10 w-32" />
+        </div>
         <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
       </div>
     );
   }
 
-  // Show content immediately, inventory calculates in background
   return <LocationTransferClient />;
 }
