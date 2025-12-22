@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useMemo } from 'react';
 import { useTransactions } from './useTransactions';
-import type { AggregatedInventoryItem } from '@/lib/types';
+import type { AggregatedInventoryItem, Sale } from '@/lib/types';
 import { FIXED_WAREHOUSES } from '@/lib/constants';
 import { useHydrated } from './useHydrated';
 
@@ -17,6 +16,9 @@ export function useInventory(saleIdToExclude?: string) {
         if (!isTransactionsLoaded || !isHydrated) return [];
 
         const inventory: Record<string, AggregatedInventoryItem> = {};
+        
+        // OPTIMIZATION: Pre-calculate Mumbai ID to avoid O(N^2) searches inside loops
+        const mumbaiLocationId = FIXED_WAREHOUSES.find(fw => fw.name === 'Mumbai')?.id;
 
         // 1. Process Purchases
         purchases.forEach(p => {
@@ -143,9 +145,11 @@ export function useInventory(saleIdToExclude?: string) {
             if (sale) {
                 const originalSaleItem = sale.items.find(i => i.lotNumber === sr.originalLotNumber);
                 if (originalSaleItem) {
-                    const mumbaiWarehouse = Object.values(inventory).find(i => i.locationId === FIXED_WAREHOUSES.find(fw => fw.name === 'Mumbai')?.id);
-                    const key = `${mumbaiWarehouse?.locationId || 'wh-mumbai'}${KEY_SEPARATOR}${sr.originalLotNumber}`;
-                     if (inventory[key]) {
+                    // OPTIMIZED: Direct Key Construction
+                    const targetLocationId = mumbaiLocationId || 'wh-mumbai';
+                    const key = `${targetLocationId}${KEY_SEPARATOR}${sr.originalLotNumber}`;
+                    
+                    if (inventory[key]) {
                         inventory[key].currentBags += sr.quantityReturned;
                         inventory[key].currentWeight += sr.netWeightReturned;
                     }
@@ -157,8 +161,11 @@ export function useInventory(saleIdToExclude?: string) {
         sales.forEach(s => {
             if (s.id === saleIdToExclude) return;
             s.items.forEach(item => {
-                 const mumbaiWarehouse = Object.values(inventory).find(i => i.locationId === FIXED_WAREHOUSES.find(fw => fw.name === 'Mumbai')?.id);
-                 const key = `${mumbaiWarehouse?.locationId || 'wh-mumbai'}${KEY_SEPARATOR}${item.lotNumber}`;
+                 // OPTIMIZED: Direct Key Construction
+                 const saleWithLocation = s as Sale & { locationId?: string };
+                 const targetLocationId = saleWithLocation.locationId || mumbaiLocationId || 'wh-mumbai'; 
+                 const key = `${targetLocationId}${KEY_SEPARATOR}${item.lotNumber}`;
+                 
                  if (inventory[key]) {
                     inventory[key].currentBags -= item.quantity;
                     inventory[key].currentWeight -= item.netWeight;
