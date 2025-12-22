@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -14,22 +15,15 @@ import { Label } from "../ui/label";
 import { LowStockThresholdSetting } from './LowStockThresholdSetting';
 import { FormatButton } from './FormatButton';
 import { FinancialYearToggle } from './FinancialYearToggle';
-import { useHydrated } from "@/hooks/useHydrated";
+import dynamic from "next/dynamic";
 
-
-export function AppHeaderContentInternal() {
+function AppHeaderContentInternal() {
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const router = useRouter();
   const { fontSize, setFontSize } = useSettings();
-  const isHydrated = useHydrated();
 
   const handleLogout = () => {
-    // In a real app, this would involve clearing tokens, etc.
     router.push('/');
-  }
-
-  if (!isHydrated) {
-    return null; // or a placeholder/skeleton
   }
 
   return (
@@ -84,3 +78,7 @@ export function AppHeaderContentInternal() {
     </>
   );
 }
+
+export const AppHeaderContentInternalDynamic = dynamic(() => Promise.resolve(AppHeaderContentInternal), {
+  ssr: false,
+});

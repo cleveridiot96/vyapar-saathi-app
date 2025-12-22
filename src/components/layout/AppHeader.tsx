@@ -1,9 +1,10 @@
+
 "use client";
 
 import React from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Menu } from "lucide-react";
-import { AppHeaderContentInternal } from "@/components/layout/AppHeaderContentInternal";
+import { AppHeaderContentInternalDynamic as AppHeaderContentInternal } from "@/components/layout/AppHeaderContentInternal";
 
 export function AppHeader() {
   return (
