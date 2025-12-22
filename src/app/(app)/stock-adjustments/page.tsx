@@ -3,12 +3,14 @@
 
 import { StockAdjustmentsClient } from "@/components/app/stock-adjustments/StockAdjustmentsClient";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTransactions } from "@/hooks/useTransactions";
+import { useAppState } from "@/hooks/useAppState";
+import { useHydrated } from "@/hooks/useHydrated";
 
 export default function StockAdjustmentsPage() {
-    const { isMasterDataLoaded, isTransactionsLoaded } = useTransactions();
+    const { isLoaded } = useAppState();
+    const hydrated = useHydrated();
 
-    if (!isMasterDataLoaded || !isTransactionsLoaded) {
+    if (!isLoaded || !hydrated) {
         return (
             <div className="space-y-4 p-4">
                 <div className="flex justify-between items-center">

@@ -23,7 +23,7 @@ import { FIXED_WAREHOUSES, FIXED_EXPENSES } from '@/lib/constants';
 import { cn, debounce } from "@/lib/utils";
 import Fuse from 'fuse.js';
 import { Input } from '@/components/ui/input';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useAppState } from '@/hooks/useAppState';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,7 +66,7 @@ const DISPLAY_LIMIT_OPTIONS = ["50", "100", "150", "All"];
 
 export default function MastersPage() {
   const { toast } = useToast();
-  const { getAllMasters, addOrUpdateMaster, masterData, isLoaded: isMasterDataLoaded } = useTransactions();
+  const { getAllMasters, addOrUpdateMaster, masterData, isLoaded } = useAppState();
   const { Warehouse: warehouses, Expense: expenses } = masterData;
   const isHydrated = useHydrated();
 
@@ -229,7 +229,7 @@ export default function MastersPage() {
   }, [getMasterDataStateForTab, fuseInstances, searchQuery]);
 
 
-  if (!isHydrated || !isMasterDataLoaded) {
+  if (!isHydrated || !isLoaded) {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
             <p className="text-lg text-muted-foreground">Loading master data...</p>
