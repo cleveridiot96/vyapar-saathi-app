@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from 'react';
@@ -21,7 +20,7 @@ import { DataTableColumnHeader } from '@/components/shared/DataTableColumnHeader
 import { cn } from '@/lib/utils';
 
 
-const HighlightedText: React.FC<{ text: string; indices: readonly [number, number][] | undefined }> = ({ text, indices }) => {
+const HighlightedText:  React.FC<{ text: string; indices: readonly [number, number][] | undefined }> = ({ text, indices }) => {
   if (!indices || indices.length === 0) {
     return <>{text}</>;
   }
@@ -33,7 +32,7 @@ const HighlightedText: React.FC<{ text: string; indices: readonly [number, numbe
     if (start > lastIndex) {
       parts.push(text.substring(lastIndex, start));
     }
-    parts.push(<mark key={i} className="bg-primary/20 text-primary-foreground rounded-sm px-0.5">{text.substring(start, end + 1)}</mark>);
+    parts.push(<mark key={i} className="bg-primary/20 text-primary-foreground rounded-sm px-0.5">{text. substring(start, end + 1)}</mark>);
     lastIndex = end + 1;
   });
 
@@ -47,16 +46,16 @@ const HighlightedText: React.FC<{ text: string; indices: readonly [number, numbe
 interface MasterListProps {
   data: FuseResult<MasterItem>[];
   itemType: MasterItemType | 'All';
-  isAllItemsTab: boolean;
+  isAllItemsTab:  boolean;
   onEdit: (item: MasterItem) => void;
-  onDelete: (item: MasterItem) => void;
+  onDelete:  (item: MasterItem) => void;
   onToggleLock: (item: MasterItem) => void;
-  fixedItemIds?: string[];
-  searchActive: boolean;
+  fixedItemIds?:  string[];
+  searchActive:  boolean;
 }
 
 export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, onToggleLock, fixedItemIds = [], searchActive }: MasterListProps) {
-  const { tableData, handleSort, sortConfig } = useSortableTable(data.map(d => d.item), { key: 'name', direction: 'ascending' });
+  const { tableData, handleSort, sortConfig } = useSortableTable(data. map(d => d.item), { key: 'name', direction: 'ascending' });
   const [openDropdownId, setOpenDropdownId] = React.useState<string | null>(null);
 
   const getFuseResult = (item: MasterItem) => data.find(d => d.item.id === item.id);
@@ -80,7 +79,7 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
         <TableHeader>
           <TableRow>
             <TableHead onClick={() => handleSort('name')} className="cursor-pointer">
-              <DataTableColumnHeader column={{getIsSorted: () => sortConfig.key === 'name' ? sortConfig.direction.slice(0,4) as "asc" | "desc" : false, getCanSort: () => true} as any} title="Name" />
+              <DataTableColumnHeader column={{getIsSorted: () => sortConfig.key === 'name' ?  sortConfig.direction. slice(0,4) as "asc" | "desc" : false, getCanSort: () => true} as any} title="Name" />
             </TableHead>
             {isAllItemsTab && <TableHead>Type</TableHead>}
             <TableHead>Details</TableHead>
@@ -107,26 +106,30 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                   </TableCell>
                 )}
                 <TableCell className="text-sm text-muted-foreground">
-                  {item.details?.commission ? `Commission: ${item.details.commission}${item.details.commissionType === 'Percentage' ? '%' : ' (Fixed)'}` : ''}
-                  {item.details?.openingBalance ? ` | OB: ${item.details.openingBalance} ${item.details.openingBalanceType}` : ''}
+                  {item. details?.commission ? `Commission: ${item.details.commission}${item.details.commissionType === 'Percentage' ? '%' :  ' (Fixed)'}` : ''}
+                  {item.details?.openingBalance ? ` | OB: ${item.details. openingBalance} ${item.details.openingBalanceType}` : ''}
                 </TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu open={openDropdownId === item.id} onOpenChange={(open) => setOpenDropdownId(open ? item.id : null)}>
+                  <DropdownMenu open={openDropdownId === item.id} onOpenChange={(open) => setOpenDropdownId(open ? item. id : null)}>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {/* ✅ EDIT:  Only enabled when UNLOCKED */}
                       <DropdownMenuItem onClick={() => onEdit(item)} disabled={isLocked}>
                         <Edit className="mr-2 h-4 w-4" /> Edit
                       </DropdownMenuItem>
+
+                      {/* ✅ LOCK/UNLOCK: Only disabled if FIXED (cannot unlock fixed items) */}
                       <DropdownMenuItem 
                         onSelect={(e) => {
                           e.preventDefault();
                           onToggleLock(item);
                         }}
                         disabled={isFixed}
+                        className={cn(! isFixed && "cursor-pointer")}
                       >
                         {isLocked ? (
                           <>
@@ -138,11 +141,17 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                           </>
                         )}
                       </DropdownMenuItem>
+
                       <DropdownMenuSeparator />
+
+                      {/* ✅ DELETE: Only enabled when UNLOCKED */}
                       <DropdownMenuItem
                         onClick={() => onDelete(item)}
                         disabled={isLocked}
-                        className={cn("text-destructive focus:text-destructive focus:bg-destructive/10", isLocked && "cursor-not-allowed opacity-50")}
+                        className={cn(
+                          "text-destructive focus:text-destructive focus:bg-destructive/10",
+                          isLocked && "cursor-not-allowed opacity-50"
+                        )}
                       >
                         <Trash2 className="mr-2 h-4 w-4" /> Delete
                       </DropdownMenuItem>
