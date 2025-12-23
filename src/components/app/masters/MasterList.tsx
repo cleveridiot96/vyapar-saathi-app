@@ -25,7 +25,7 @@ const HighlightedText:  React.FC<{ text: string; indices: readonly [number, numb
     return <>{text}</>;
   }
 
-  const parts: React.ReactNode[] = [];
+  const parts:  React.ReactNode[] = [];
   let lastIndex = 0;
 
   indices.forEach(([start, end], i) => {
@@ -46,11 +46,11 @@ const HighlightedText:  React.FC<{ text: string; indices: readonly [number, numb
 interface MasterListProps {
   data: FuseResult<MasterItem>[];
   itemType: MasterItemType | 'All';
-  isAllItemsTab:  boolean;
+  isAllItemsTab: boolean;
   onEdit: (item: MasterItem) => void;
-  onDelete:  (item: MasterItem) => void;
-  onToggleLock: (item: MasterItem) => void;
-  fixedItemIds?:  string[];
+  onDelete: (item: MasterItem) => void;
+  onToggleLock: (item:  MasterItem) => void;
+  fixedItemIds?: string[];
   searchActive:  boolean;
 }
 
@@ -120,24 +120,30 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {/* EDIT - Only enabled when unlocked */}
+                      {/* ✅ EDIT - Only works when unlocked */}
                       <DropdownMenuItem 
-                        onClick={() => {
-                          if (canEdit) onEdit(item);
+                        onSelect={(e) => {
+                          if (! canEdit) {
+                            e.preventDefault();
+                          } else {
+                            onEdit(item);
+                          }
                         }}
-                        disabled={! canEdit}
-                        className={cn(! canEdit && "opacity-50 cursor-not-allowed")}
+                        className={cn(! canEdit && "opacity-50 cursor-not-allowed pointer-events-none")}
                       >
                         <Edit className="mr-2 h-4 w-4" /> Edit
                       </DropdownMenuItem>
 
-                      {/* LOCK/UNLOCK - Only disabled for fixed items */}
+                      {/* ✅ LOCK/UNLOCK - Only works when not fixed */}
                       <DropdownMenuItem 
-                        onClick={() => {
-                          if (canToggleLock) onToggleLock(item);
+                        onSelect={(e) => {
+                          if (! canToggleLock) {
+                            e.preventDefault();
+                          } else {
+                            onToggleLock(item);
+                          }
                         }}
-                        disabled={!canToggleLock}
-                        className={cn(!canToggleLock && "opacity-50 cursor-not-allowed")}
+                        className={cn(!canToggleLock && "opacity-50 cursor-not-allowed pointer-events-none")}
                       >
                         {isLocked ? (
                           <>
@@ -152,15 +158,18 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
 
                       <DropdownMenuSeparator />
 
-                      {/* DELETE - Only enabled when unlocked */}
+                      {/* ✅ DELETE - Only works when unlocked */}
                       <DropdownMenuItem
-                        onClick={() => {
-                          if (canDelete) onDelete(item);
+                        onSelect={(e) => {
+                          if (!canDelete) {
+                            e.preventDefault();
+                          } else {
+                            onDelete(item);
+                          }
                         }}
-                        disabled={!canDelete}
                         className={cn(
                           "text-destructive focus:text-destructive focus:bg-destructive/10",
-                          ! canDelete && "opacity-50 cursor-not-allowed"
+                          ! canDelete && "opacity-50 cursor-not-allowed pointer-events-none"
                         )}
                       >
                         <Trash2 className="mr-2 h-4 w-4" /> Delete
