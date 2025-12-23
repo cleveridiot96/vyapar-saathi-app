@@ -24,7 +24,7 @@ import { FIXED_WAREHOUSES, FIXED_EXPENSES } from '@/lib/constants';
 import { cn, debounce } from "@/lib/utils";
 import Fuse from 'fuse.js';
 import { Input } from '@/components/ui/input';
-import { useAppState } from '@/hooks/useAppState';
+import { useAppState, useAppDispatch } from '@/hooks/useAppState';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,7 +67,8 @@ const DISPLAY_LIMIT_OPTIONS = ["50", "100", "150", "All"];
 
 export default function MastersPage() {
   const { toast } = useToast();
-  const { getAllMasters, addOrUpdateMaster, masterData, isLoaded } = useAppState();
+  const { getAllMasters, masterData, isLoaded } = useAppState();
+  const { addOrUpdateMaster } = useAppDispatch();
   const { Warehouse: warehouses, Expense: expenses } = masterData;
   const hydrated = useHydrated();
 
@@ -365,5 +366,4 @@ export default function MastersPage() {
     </div>
   );
 }
-
     
