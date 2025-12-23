@@ -134,6 +134,7 @@ export default function RootLayout({
 
   const contextValue = useMemo(() => ({
     ...state,
+    isLoaded: state.isInitialized, // Explicitly map isInitialized to isLoaded
     getAllMasters,
   }), [state, getAllMasters]);
 
@@ -141,7 +142,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={cn("antialiased", poppins.variable, sourceCodePro.variable)} suppressHydrationWarning>
         <SettingsProvider>
-          <AppStateContext.Provider value={contextValue}>
+          <AppStateContext.Provider value={contextValue as AppState}>
             <AppDispatchContext.Provider value={dispatch}>
               {children}
               <Toaster />

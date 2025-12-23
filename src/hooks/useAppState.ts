@@ -23,7 +23,7 @@ export interface AppState {
   purchases: Purchase[];
   sales: Sale[];
   adjustments: StockAdjustment[];
-  transfers: LocationTransfer[];
+  locationTransfers: LocationTransfer[]; // Changed from transfers
   purchaseReturns: PurchaseReturn[];
   saleReturns: SaleReturn[];
   payments: Payment[];
@@ -31,6 +31,7 @@ export interface AppState {
   ledger: LedgerEntry[];
   inventory: AggregatedInventoryItem[];
   isInitialized: boolean;
+  isLoaded: boolean; // Add isLoaded
   isCalculating: boolean;
   masterData: {
     Customer: MasterItem[];
