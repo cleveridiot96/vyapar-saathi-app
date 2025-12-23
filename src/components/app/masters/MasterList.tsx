@@ -25,7 +25,7 @@ const HighlightedText:  React.FC<{ text: string; indices: readonly [number, numb
     return <>{text}</>;
   }
 
-  const parts = [];
+  const parts: React.ReactNode[] = [];
   let lastIndex = 0;
 
   indices.forEach(([start, end], i) => {
@@ -79,7 +79,7 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
         <TableHeader>
           <TableRow>
             <TableHead onClick={() => handleSort('name')} className="cursor-pointer">
-              <DataTableColumnHeader column={{getIsSorted: () => sortConfig.key === 'name' ?  sortConfig.direction. slice(0,4) as "asc" | "desc" : false, getCanSort: () => true} as any} title="Name" />
+              <DataTableColumnHeader column={{getIsSorted: () => sortConfig.key === 'name' ?  sortConfig.direction. slice(0,4) as "asc" | "desc" :  false, getCanSort: () => true} as any} title="Name" />
             </TableHead>
             {isAllItemsTab && <TableHead>Type</TableHead>}
             <TableHead>Details</TableHead>
@@ -92,13 +92,16 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
             const nameMatch = fuseResult?.matches?.find(m => m.key === 'name');
             const isFixed = fixedItemIds.includes(item.id);
             const isLocked = item.locked || isFixed;
+            const canEdit = ! isLocked;
+            const canDelete = !isLocked;
+            const canToggleLock = ! isFixed;
 
             return (
               <TableRow key={item.id} className={cn("hover:bg-muted/50", isLocked && "bg-muted/30")}>
                 <TableCell className="font-medium">
                   {isLocked && <Lock className="h-3 w-3 inline-block mr-2 text-muted-foreground" />}
-                  {!isLocked && <Unlock className="h-3 w-3 inline-block mr-2 text-green-600" />}
-                  <HighlightedText text={item.name} indices={nameMatch?.indices} />
+                  {! isLocked && <Unlock className="h-3 w-3 inline-block mr-2 text-green-600" />}
+                  <HighlightedText text={item.name} indices={nameMatch?. indices} />
                 </TableCell>
                 {isAllItemsTab && (
                   <TableCell>
@@ -106,30 +109,35 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                   </TableCell>
                 )}
                 <TableCell className="text-sm text-muted-foreground">
-                  {item. details?.commission ? `Commission: ${item.details.commission}${item.details.commissionType === 'Percentage' ? '%' :  ' (Fixed)'}` : ''}
-                  {item.details?.openingBalance ? ` | OB: ${item.details. openingBalance} ${item.details.openingBalanceType}` : ''}
+                  {item.details?. commission ?  `Commission: ${item.details.commission}${item.details.commissionType === 'Percentage' ? '%' : ' (Fixed)'}` : ''}
+                  {item.details?.openingBalance ? ` | OB: ${item.details.openingBalance} ${item.details.openingBalanceType}` : ''}
                 </TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu open={openDropdownId === item.id} onOpenChange={(open) => setOpenDropdownId(open ? item. id : null)}>
+                  <DropdownMenu open={openDropdownId === item.id} onOpenChange={(open) => setOpenDropdownId(open ? item.id : null)}>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {/* ✅ EDIT:  Only enabled when UNLOCKED */}
-                      <DropdownMenuItem onClick={() => onEdit(item)} disabled={isLocked}>
+                      {/* EDIT - Only enabled when unlocked */}
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          if (canEdit) onEdit(item);
+                        }}
+                        disabled={! canEdit}
+                        className={cn(! canEdit && "opacity-50 cursor-not-allowed")}
+                      >
                         <Edit className="mr-2 h-4 w-4" /> Edit
                       </DropdownMenuItem>
 
-                      {/* ✅ LOCK/UNLOCK: Only disabled if FIXED (cannot unlock fixed items) */}
+                      {/* LOCK/UNLOCK - Only disabled for fixed items */}
                       <DropdownMenuItem 
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          onToggleLock(item);
+                        onClick={() => {
+                          if (canToggleLock) onToggleLock(item);
                         }}
-                        disabled={isFixed}
-                        className={cn(! isFixed && "cursor-pointer")}
+                        disabled={!canToggleLock}
+                        className={cn(!canToggleLock && "opacity-50 cursor-not-allowed")}
                       >
                         {isLocked ? (
                           <>
@@ -144,13 +152,15 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
 
                       <DropdownMenuSeparator />
 
-                      {/* ✅ DELETE: Only enabled when UNLOCKED */}
+                      {/* DELETE - Only enabled when unlocked */}
                       <DropdownMenuItem
-                        onClick={() => onDelete(item)}
-                        disabled={isLocked}
+                        onClick={() => {
+                          if (canDelete) onDelete(item);
+                        }}
+                        disabled={!canDelete}
                         className={cn(
                           "text-destructive focus:text-destructive focus:bg-destructive/10",
-                          isLocked && "cursor-not-allowed opacity-50"
+                          ! canDelete && "opacity-50 cursor-not-allowed"
                         )}
                       >
                         <Trash2 className="mr-2 h-4 w-4" /> Delete
