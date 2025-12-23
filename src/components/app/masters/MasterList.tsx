@@ -20,7 +20,7 @@ import { DataTableColumnHeader } from '@/components/shared/DataTableColumnHeader
 import { cn } from '@/lib/utils';
 
 
-const HighlightedText:  React.FC<{ text: string; indices: readonly [number, number][] | undefined }> = ({ text, indices }) => {
+const HighlightedText:  React.FC<{ text: string; indices:  readonly [number, number][] | undefined }> = ({ text, indices }) => {
   if (!indices || indices.length === 0) {
     return <>{text}</>;
   }
@@ -46,12 +46,12 @@ const HighlightedText:  React.FC<{ text: string; indices: readonly [number, numb
 interface MasterListProps {
   data: FuseResult<MasterItem>[];
   itemType: MasterItemType | 'All';
-  isAllItemsTab: boolean;
+  isAllItemsTab:  boolean;
   onEdit: (item: MasterItem) => void;
-  onDelete: (item: MasterItem) => void;
+  onDelete:  (item: MasterItem) => void;
   onToggleLock: (item: MasterItem) => void;
-  fixedItemIds?: string[];
-  searchActive: boolean;
+  fixedItemIds?:  string[];
+  searchActive:  boolean;
 }
 
 export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, onToggleLock, fixedItemIds = [], searchActive }: MasterListProps) {
@@ -90,9 +90,9 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
           {tableData.map((item) => {
             const fuseResult = getFuseResult(item);
             const nameMatch = fuseResult?.matches?.find(m => m.key === 'name');
-            const isFixed = fixedItemIds.includes(item.id);
+            const isFixed = fixedItemIds. includes(item.id);
             const isLocked = item.locked || isFixed;
-            const canEdit = !isLocked;
+            const canEdit = ! isLocked;
             const canDelete = !isLocked;
             const canToggleLock = !isFixed;
 
@@ -120,24 +120,38 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {/* EDIT - Only enabled when unlocked */}
+                      {/* ✅ EDIT - Active only when unlocked */}
                       <DropdownMenuItem 
                         onSelect={(e) => {
-                          if (!canEdit) e.preventDefault();
-                          else onEdit(item);
+                          if (! canEdit) {
+                            e.preventDefault();
+                            return;
+                          }
+                          onEdit(item);
+                          setOpenDropdownId(null);
                         }}
-                        className={cn(!canEdit && "opacity-50 cursor-not-allowed pointer-events-none")}
+                        className={cn(
+                          "cursor-pointer transition-opacity",
+                          !canEdit && "opacity-50 cursor-not-allowed"
+                        )}
                       >
                         <Edit className="mr-2 h-4 w-4" /> Edit
                       </DropdownMenuItem>
 
-                      {/* LOCK/UNLOCK - Only disabled for fixed items */}
+                      {/* ✅ LOCK/UNLOCK - Active only when not fixed */}
                       <DropdownMenuItem 
                         onSelect={(e) => {
-                          if (!canToggleLock) e.preventDefault();
-                          else onToggleLock(item);
+                          if (!canToggleLock) {
+                            e.preventDefault();
+                            return;
+                          }
+                          onToggleLock(item);
+                          setOpenDropdownId(null);
                         }}
-                        className={cn(!canToggleLock && "opacity-50 cursor-not-allowed pointer-events-none")}
+                        className={cn(
+                          "cursor-pointer transition-opacity",
+                          !canToggleLock && "opacity-50 cursor-not-allowed"
+                        )}
                       >
                         {isLocked ? (
                           <>
@@ -152,15 +166,20 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
 
                       <DropdownMenuSeparator />
 
-                      {/* DELETE - Only enabled when unlocked */}
+                      {/* ✅ DELETE - Active only when unlocked */}
                       <DropdownMenuItem
                         onSelect={(e) => {
-                          if (!canDelete) e.preventDefault();
-                          else onDelete(item);
+                          if (!canDelete) {
+                            e.preventDefault();
+                            return;
+                          }
+                          onDelete(item);
+                          setOpenDropdownId(null);
                         }}
                         className={cn(
+                          "cursor-pointer transition-opacity",
                           "text-destructive focus:text-destructive focus:bg-destructive/10",
-                          !canDelete && "opacity-50 cursor-not-allowed pointer-events-none"
+                          !canDelete && "opacity-50 cursor-not-allowed"
                         )}
                       >
                         <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -176,3 +195,4 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
     </ScrollArea>
   );
 }
+    
