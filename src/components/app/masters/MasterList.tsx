@@ -49,9 +49,9 @@ interface MasterListProps {
   isAllItemsTab: boolean;
   onEdit: (item: MasterItem) => void;
   onDelete: (item: MasterItem) => void;
-  onToggleLock: (item:  MasterItem) => void;
+  onToggleLock: (item: MasterItem) => void;
   fixedItemIds?: string[];
-  searchActive:  boolean;
+  searchActive: boolean;
 }
 
 export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, onToggleLock, fixedItemIds = [], searchActive }: MasterListProps) {
@@ -92,16 +92,16 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
             const nameMatch = fuseResult?.matches?.find(m => m.key === 'name');
             const isFixed = fixedItemIds.includes(item.id);
             const isLocked = item.locked || isFixed;
-            const canEdit = ! isLocked;
+            const canEdit = !isLocked;
             const canDelete = !isLocked;
-            const canToggleLock = ! isFixed;
+            const canToggleLock = !isFixed;
 
             return (
               <TableRow key={item.id} className={cn("hover:bg-muted/50", isLocked && "bg-muted/30")}>
                 <TableCell className="font-medium">
                   {isLocked && <Lock className="h-3 w-3 inline-block mr-2 text-muted-foreground" />}
-                  {! isLocked && <Unlock className="h-3 w-3 inline-block mr-2 text-green-600" />}
-                  <HighlightedText text={item.name} indices={nameMatch?. indices} />
+                  {!isLocked && <Unlock className="h-3 w-3 inline-block mr-2 text-green-600" />}
+                  <HighlightedText text={item.name} indices={nameMatch?.indices} />
                 </TableCell>
                 {isAllItemsTab && (
                   <TableCell>
@@ -109,7 +109,7 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                   </TableCell>
                 )}
                 <TableCell className="text-sm text-muted-foreground">
-                  {item.details?. commission ?  `Commission: ${item.details.commission}${item.details.commissionType === 'Percentage' ? '%' : ' (Fixed)'}` : ''}
+                  {item.details?.commission ?  `Commission: ${item.details.commission}${item.details.commissionType === 'Percentage' ? '%' : ' (Fixed)'}` : ''}
                   {item.details?.openingBalance ? ` | OB: ${item.details.openingBalance} ${item.details.openingBalanceType}` : ''}
                 </TableCell>
                 <TableCell className="text-right">
@@ -120,28 +120,22 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {/* ✅ EDIT - Only works when unlocked */}
+                      {/* EDIT - Only enabled when unlocked */}
                       <DropdownMenuItem 
                         onSelect={(e) => {
-                          if (! canEdit) {
-                            e.preventDefault();
-                          } else {
-                            onEdit(item);
-                          }
+                          if (!canEdit) e.preventDefault();
+                          else onEdit(item);
                         }}
-                        className={cn(! canEdit && "opacity-50 cursor-not-allowed pointer-events-none")}
+                        className={cn(!canEdit && "opacity-50 cursor-not-allowed pointer-events-none")}
                       >
                         <Edit className="mr-2 h-4 w-4" /> Edit
                       </DropdownMenuItem>
 
-                      {/* ✅ LOCK/UNLOCK - Only works when not fixed */}
+                      {/* LOCK/UNLOCK - Only disabled for fixed items */}
                       <DropdownMenuItem 
                         onSelect={(e) => {
-                          if (! canToggleLock) {
-                            e.preventDefault();
-                          } else {
-                            onToggleLock(item);
-                          }
+                          if (!canToggleLock) e.preventDefault();
+                          else onToggleLock(item);
                         }}
                         className={cn(!canToggleLock && "opacity-50 cursor-not-allowed pointer-events-none")}
                       >
@@ -158,18 +152,15 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
 
                       <DropdownMenuSeparator />
 
-                      {/* ✅ DELETE - Only works when unlocked */}
+                      {/* DELETE - Only enabled when unlocked */}
                       <DropdownMenuItem
                         onSelect={(e) => {
-                          if (!canDelete) {
-                            e.preventDefault();
-                          } else {
-                            onDelete(item);
-                          }
+                          if (!canDelete) e.preventDefault();
+                          else onDelete(item);
                         }}
                         className={cn(
                           "text-destructive focus:text-destructive focus:bg-destructive/10",
-                          ! canDelete && "opacity-50 cursor-not-allowed pointer-events-none"
+                          !canDelete && "opacity-50 cursor-not-allowed pointer-events-none"
                         )}
                       >
                         <Trash2 className="mr-2 h-4 w-4" /> Delete
