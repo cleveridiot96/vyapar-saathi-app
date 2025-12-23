@@ -24,7 +24,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useAppState } from "@/hooks/useAppState";
+import { useAppState, useAppDispatch } from "@/hooks/useAppState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ListCollapse, RotateCcw } from "lucide-react";
 import { useHydrated } from "@/hooks/useHydrated";
@@ -37,18 +37,21 @@ export default function PurchasesPage() {
   // GET FROM UNIFIED ZUSTAND STORE
   const {
     purchases,
-    addPurchase,
-    updatePurchase,
-    deletePurchase,
     purchaseReturns,
-    setPurchaseReturns,
     sales,
     locationTransfers,
     masterData,
-    addOrUpdateMaster,
     getAllMasters,
     isLoaded,
   } = useAppState();
+
+  const {
+    addPurchase,
+    updatePurchase,
+    deletePurchase,
+    setPurchaseReturns,
+    addOrUpdateMaster,
+  } = useAppDispatch();
 
 
   const [isAddPurchaseFormOpen, setIsAddPurchaseFormOpen] = React.useState(false);
