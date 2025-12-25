@@ -20,7 +20,7 @@ import { DataTableColumnHeader } from '@/components/shared/DataTableColumnHeader
 import { cn } from '@/lib/utils';
 
 
-const HighlightedText:  React.FC<{ text: string; indices:  readonly [number, number][] | undefined }> = ({ text, indices }) => {
+const HighlightedText:  React.FC<{ text: string; indices: readonly [number, number][] | undefined }> = ({ text, indices }) => {
   if (!indices || indices.length === 0) {
     return <>{text}</>;
   }
@@ -46,7 +46,7 @@ const HighlightedText:  React.FC<{ text: string; indices:  readonly [number, num
 interface MasterListProps {
   data: FuseResult<MasterItem>[];
   itemType: MasterItemType | 'All';
-  isAllItemsTab:  boolean;
+  isAllItemsTab: boolean;
   onEdit: (item: MasterItem) => void;
   onDelete:  (item: MasterItem) => void;
   onToggleLock: (item: MasterItem) => void;
@@ -90,9 +90,9 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
           {tableData.map((item) => {
             const fuseResult = getFuseResult(item);
             const nameMatch = fuseResult?.matches?.find(m => m.key === 'name');
-            const isFixed = fixedItemIds. includes(item.id);
+            const isFixed = fixedItemIds.includes(item.id);
             const isLocked = item.locked || isFixed;
-            const canEdit = ! isLocked;
+            const canEdit = !isLocked;
             const canDelete = !isLocked;
             const canToggleLock = !isFixed;
 
@@ -120,10 +120,10 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {/* ✅ EDIT - Active only when unlocked */}
+                      {/* ✅ EDIT - Only works when unlocked */}
                       <DropdownMenuItem 
                         onSelect={(e) => {
-                          if (! canEdit) {
+                          if (!canEdit) {
                             e.preventDefault();
                             return;
                           }
@@ -138,7 +138,7 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
                         <Edit className="mr-2 h-4 w-4" /> Edit
                       </DropdownMenuItem>
 
-                      {/* ✅ LOCK/UNLOCK - Active only when not fixed */}
+                      {/* ✅ LOCK/UNLOCK - Only works when not fixed */}
                       <DropdownMenuItem 
                         onSelect={(e) => {
                           if (!canToggleLock) {
@@ -166,7 +166,7 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
 
                       <DropdownMenuSeparator />
 
-                      {/* ✅ DELETE - Active only when unlocked */}
+                      {/* ✅ DELETE - Only works when unlocked */}
                       <DropdownMenuItem
                         onSelect={(e) => {
                           if (!canDelete) {
@@ -195,4 +195,3 @@ export function MasterList({ data, itemType, isAllItemsTab, onEdit, onDelete, on
     </ScrollArea>
   );
 }
-    
