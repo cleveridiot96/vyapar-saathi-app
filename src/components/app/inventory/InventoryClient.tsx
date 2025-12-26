@@ -46,7 +46,7 @@ export function InventoryClient() {
   const isHydrated = useHydrated();
   const { financialYear, isAppHydrating, lowStockThreshold } = useSettings();
   const { masterData, locationTransfers, setLocationTransfers, adjustments, setAdjustments } = useTransactions();
-  const { warehouses } = masterData;
+  const { warehouses = [] } = masterData;
   
   const { allAggregatedInventory, isLoading: isInventoryLoading } = useInventory();
 
@@ -165,7 +165,7 @@ export function InventoryClient() {
 
   const getActiveFilterName = () => {
     if (!selectedWarehouseId) return "All Warehouses";
-    return warehouses.find(w => w.id === selectedWarehouseId)?.name || "Selected Warehouse";
+    return (warehouses || []).find(w => w.id === selectedWarehouseId)?.name || "Selected Warehouse";
   };
   
   const handleMergeSubmit = (mergeData: Omit<LocationTransfer, 'id' | 'date'>) => {
