@@ -74,7 +74,7 @@ export function PurchaseTable({ data, onEdit, onDelete, onDownloadPdf }: Purchas
                   <TableCell>{purchase.items.map(i => i.lotNumber).join(', ')}</TableCell>
                   <TableCell>{purchase.locationName}</TableCell>
                   <TableCell>{purchase.supplierName}</TableCell>
-                  <TableCell>{purchase.agentName || 'N/A'}</TableCell>
+                  <TableCell>{purchase.agentName || '-'}</TableCell>
                   <TableCell className="text-right">{Math.round(purchase.totalQuantity).toLocaleString('en-IN')}</TableCell>
                   <TableCell className="text-right">{purchase.totalNetWeight.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</TableCell>
                   <TableCell className="text-right font-semibold">{Math.round(purchase.totalAmount).toLocaleString('en-IN')}</TableCell>
