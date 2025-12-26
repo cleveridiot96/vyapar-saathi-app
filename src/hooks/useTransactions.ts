@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAppState } from './useAppState';
@@ -11,47 +12,18 @@ import { FIXED_WAREHOUSES, FIXED_EXPENSES } from '@/lib/constants';
  */
 export function useTransactions() {
   const appState = useAppState();
+  const { 
+    masterData: appMasterData, 
+    addOrUpdateMaster: appAddOrUpdateMaster,
+    ...restOfAppState 
+  } = appState;
+
   const [locationTransfers, setLocationTransfers] = useState<LocationTransfer[]>([]);
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
-  const [masterData, setMasterData] = useState({
-    Warehouse: [] as MasterItem[],
-    Transporter: [] as MasterItem[],
-    Expense: [] as MasterItem[],
-    Customer: [] as MasterItem[],
-    Supplier: [] as MasterItem[],
-    Agent: [] as MasterItem[],
-    Broker: [] as MasterItem[],
-  });
-
-  useEffect(() => {
-    // Initialize with fixed masters
-    setMasterData({
-      Warehouse: FIXED_WAREHOUSES as any,
-      Expense: FIXED_EXPENSES as any,
-      Transporter: [],
-      Customer: [],
-      Supplier: [],
-      Agent: [],
-      Broker: [],
-    });
-  }, []);
-
-  const addOrUpdateMaster = useCallback((item: any) => {
-    setMasterData(prev => {
-      const type = item.type || 'Warehouse';
-      const typeKey = type as keyof typeof prev;
-      const existing = prev[typeKey] ??  [];
-      const filtered = existing.filter(e => e.id !== item.id);
-      return {
-        ...prev,
-        [typeKey]: [...filtered, item],
-      };
-    });
-  }, []);
-
+  
   const getAllMasters = useCallback(() => {
-    return Object.values(masterData).flat();
-  }, [masterData]);
+    return Object.values(appMasterData).flat();
+  }, [appMasterData]);
 
   const addLedgerEntry = useCallback((entries: LedgerEntry | LedgerEntry[]) => {
     const entriesToAdd = Array.isArray(entries) ? entries : [entries];
@@ -64,8 +36,8 @@ export function useTransactions() {
 
   return {
     // Transfers
-    locationTransfers,
-    setLocationTransfers,
+    locationTransfers: restOfAppState.locationTransfers ?? [],
+    setLocationTransfers: restOfAppState.setLocationTransfers,
     
     // Ledger
     ledgerEntries,
@@ -73,28 +45,28 @@ export function useTransactions() {
     removeLedgerEntries,
     
     // Masters
-    masterData,
-    addOrUpdateMaster,
+    masterData: appMasterData,
+    addOrUpdateMaster: appAddOrUpdateMaster,
     getAllMasters,
     
     // Purchases, Sales, etc.  (from appState)
-    purchases: appState.purchases ??  [],
-    sales: appState. sales ?? [],
-    adjustments: appState.adjustments ??  [],
-    purchaseReturns: appState.purchaseReturns ?? [],
-    saleReturns: appState. saleReturns ?? [],
-    isLoaded: appState.isInitialized,
-    payments: [],
-    receipts: [],
-    setPayments: () => {},
-    setReceipts: () => {},
-    isTransactionsLoaded: appState.isInitialized,
-    isMasterDataLoaded: appState.isInitialized,
-    setSales: () => {},
-    setPurchaseReturns: () => {},
-    setSaleReturns: () => {},
-    setAdjustments: () => {},
-    setPurchases: () => {},
+    purchases: restOfAppState.purchases ??  [],
+    sales: restOfAppState. sales ?? [],
+    adjustments: restOfAppState.adjustments ??  [],
+    purchaseReturns: restOfAppState.purchaseReturns ?? [],
+    saleReturns: restOfAppState. saleReturns ?? [],
+    isLoaded: restOfAppState.isInitialized,
+    payments: restOfAppState.payments ?? [],
+    receipts: restOfAppState.receipts ?? [],
+    setPayments: restOfAppState.setPayments,
+    setReceipts: restOfAppState.setReceipts,
+    isTransactionsLoaded: restOfAppState.isInitialized,
+    isMasterDataLoaded: restOfAppState.isInitialized,
+    setSales: restOfAppState.setSales,
+    setPurchaseReturns: restOfAppState.setPurchaseReturns,
+    setSaleReturns: restOfAppState.setSaleReturns,
+    setAdjustments: restOfAppState.setAdjustments,
+    setPurchases: restOfAppState.setPurchases,
     ledger: ledgerEntries,
   };
 }
