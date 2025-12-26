@@ -1,7 +1,8 @@
+
 "use client";
 
 import * as React from "react";
-import { format, startOfToday } from "date-fns";
+import { format, parse, startOfToday } from "date-fns";
 import { Calendar as CalendarIcon, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Input } from "./input";
 
 interface DatePickerProps {
   date?: Date;
@@ -28,10 +30,18 @@ export function DatePicker({
   className,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
+  const [inputValue, setInputValue] = React.useState<string>("");
+
+  React.useEffect(() => {
+    if (date) {
+      setInputValue(format(date, "dd/MM/yy"));
+    } else {
+      setInputValue("");
+    }
+  }, [date]);
   
   const handleSelect = (selectedDate: Date | undefined) => {
       onDateChange(selectedDate);
-      // We don't close here to allow confirmation with OK
   }
 
   const handleCancel = () => {
@@ -43,22 +53,68 @@ export function DatePicker({
     setOpen(false);
   }
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
+  
+  const parseDateString = (str: string): Date | null => {
+      if (!str) return null;
+
+      // Replace common separators with a slash
+      const normalizedStr = str.replace(/[.\-,\s]/g, '/');
+
+      // Attempt to parse different formats
+      const formats = [
+          'dd/MM/yy',
+          'd/M/yy',
+          'dd/MM/yyyy',
+          'd/M/yyyy',
+          'd/M',
+          'dd/MM',
+      ];
+      
+      const now = new Date();
+
+      for (const fmt of formats) {
+          const parsedDate = parse(normalizedStr, fmt, now);
+          if (!isNaN(parsedDate.getTime())) {
+              return parsedDate;
+          }
+      }
+      return null;
+  };
+
+  const handleInputBlur = () => {
+    const parsed = parseDateString(inputValue);
+    if (parsed) {
+        onDateChange(parsed);
+        setInputValue(format(parsed, "dd/MM/yy"));
+    } else {
+        // If parsing fails, revert to the last valid date or clear it
+        if(date) {
+            setInputValue(format(date, "dd/MM/yy"));
+        } else {
+            setInputValue("");
+        }
+    }
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !date && "text-muted-foreground",
-            className
-          )}
-          disabled={disabled}
-          type="button"
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>{placeholder}</span>}
-        </Button>
+        <div className={cn("relative w-full", className)}>
+            <Input
+                type="text"
+                placeholder={placeholder}
+                value={inputValue}
+                onChange={handleInputChange}
+                onBlur={handleInputBlur}
+                onFocus={() => setOpen(true)}
+                disabled={disabled}
+                className="w-full justify-start text-left font-normal"
+            />
+             <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        </div>
       </PopoverTrigger>
       <PopoverContent 
         className="w-auto p-0 z-[100] rounded-lg shadow-2xl bg-card" 
