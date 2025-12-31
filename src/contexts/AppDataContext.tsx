@@ -1,97 +1,110 @@
+
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { deriveAllTransactions, type DerivedTransactions } from '@/lib/derives';
-import { loadEvents, onEventsChange, type TransactionEvent } from '@/lib/eventStore';
+import React, { createContext, useCallback, useEffect, useState, useMemo, useContext } from 'react';
+import { deriveAllTransactions } from '@/lib/derives';
+import { loadEvents, addEvent as addEventToStore, onEventsChange, getEvents, setHasUnsavedChanges } from '@/lib/eventStore';
+import { useInventory } from '@/hooks/useInventory';
+import type { 
+  TransactionEvent,
+  Purchase, Sale, StockAdjustment, LocationTransfer, PurchaseReturn, SaleReturn, Payment, Receipt, LedgerEntry, MasterItem
+} from '@/lib/types';
+import type { AppState, AppDispatch } from '@/hooks/useAppState';
 
-// The full application state, derived from events.
-type AppData = Omit<DerivedTransactions, 'inventory'>;
-
-interface AppDataContextType {
-  appData: AppData | null;
-  setAppData: React.Dispatch<React.SetStateAction<AppData | null>>;
-  isLoaded: boolean;
-  loadDataFromFile: (file: File) => Promise<void>;
-  hasUnsavedChanges: boolean;
-  setHasUnsavedChanges: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
+const AppDataContext = createContext<{
+  state: AppState;
+  dispatch: AppDispatch;
+} | undefined>(undefined);
 
 export const AppDataProvider = ({ children }: { children: React.ReactNode }) => {
-  const [appData, setAppData] = useState<AppData | null>(null);
+  const [events, setEvents] = useState<TransactionEvent[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(true);
+  const [hasUnsavedChanges, _setHasUnsavedChanges] = useState(false);
+
+  // Derive state from events
+  const derivedState = useMemo(() => deriveAllTransactions(events), [events]);
+  
+  // Further derive inventory (this could be a heavy operation)
+  // Note: For now, we'll keep it simple. A worker could be used here.
+  const inventory = useMemo(() => {
+    // This is a placeholder for a more complex calculation.
+    // In a real scenario, `calculateInventory` would be called here.
+    return [];
+  }, [derivedState.purchases, derivedState.sales, derivedState.adjustments, derivedState.locationTransfers, derivedState.purchaseReturns, derivedState.saleReturns]);
 
   useEffect(() => {
-    // Initial data derivation from in-memory event store
-    const handleEventChange = (events: TransactionEvent[]) => {
-      const derivedData = deriveAllTransactions(events);
-      setAppData(derivedData);
-      if (!isLoaded) {
-        setIsLoaded(true);
-      }
+    const handleEvents = (newEvents: TransactionEvent[]) => {
+      setEvents(newEvents);
+      setIsCalculating(false);
+      if (!isLoaded) setIsLoaded(true);
     };
-    
-    // Subscribe to changes in the event store
-    const unsubscribe = onEventsChange(handleEventChange);
 
+    const unsubscribe = onEventsChange(handleEvents);
+    
     // Initial load
-    handleEventChange([]); 
+    handleEvents(getEvents());
 
     return () => unsubscribe();
   }, [isLoaded]);
 
-  const loadDataFromFile = async (file: File) => {
-    return new Promise<void>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const text = e.target?.result;
-          if (typeof text !== 'string') {
-            throw new Error("File is not readable");
-          }
-          const data = JSON.parse(text);
-
-          if (data && Array.isArray(data.events)) {
-            loadEvents(data.events as TransactionEvent[]); // This will trigger the onEventsChange listener
-            setHasUnsavedChanges(false);
-            resolve();
-          } else {
-            throw new Error("Invalid data format in file.");
-          }
-        } catch (error) {
-          console.error("Failed to load data:", error);
-          reject(error);
-        }
-      };
-      reader.onerror = () => {
-        reject(new Error("Could not read the selected file."));
-      };
-      reader.readAsText(file);
-    });
-  };
-
-  const value = {
-    appData,
-    setAppData,
+  const state: AppState = {
+    ...derivedState,
+    events,
+    inventory,
     isLoaded,
-    loadDataFromFile,
+    isInitialized: isLoaded,
+    isCalculating,
     hasUnsavedChanges,
-    setHasUnsavedChanges,
+    getAllMasters: useCallback(() => {
+      const all: MasterItem[] = [];
+      Object.values(derivedState.masterData).forEach(arr => all.push(...arr));
+      return all;
+    }, [derivedState.masterData]),
   };
+
+  const setHasUnsavedChangesCallback = useCallback((hasChanges: boolean) => {
+    setHasUnsavedChanges(hasChanges);
+    _setHasUnsavedChanges(hasChanges);
+  }, []);
+
+  const dispatch: AppDispatch = useMemo(() => ({
+    addPurchase: (payload) => addEventToStore({ type: 'PURCHASE_CREATED', payload }),
+    updatePurchase: (payload) => addEventToStore({ type: 'PURCHASE_UPDATED', payload }),
+    deletePurchase: (id) => addEventToStore({ type: 'PURCHASE_DELETED', payload: { id } }),
+    addSale: (payload) => addEventToStore({ type: 'SALE_CREATED', payload }),
+    updateSale: (payload) => addEventToStore({ type: 'SALE_UPDATED', payload }),
+    deleteSale: (id) => addEventToStore({ type: 'SALE_DELETED', payload: { id } }),
+    addPayment: (payload) => addEventToStore({ type: 'PAYMENT_CREATED', payload }),
+    updatePayment: (payload) => addEventToStore({ type: 'PAYMENT_UPDATED', payload }),
+    deletePayment: (id) => addEventToStore({ type: 'PAYMENT_DELETED', payload: { id } }),
+    addReceipt: (payload) => addEventToStore({ type: 'RECEIPT_CREATED', payload }),
+    updateReceipt: (payload) => addEventToStore({ type: 'RECEIPT_UPDATED', payload }),
+    deleteReceipt: (id) => addEventToStore({ type: 'RECEIPT_DELETED', payload: { id } }),
+    addTransfer: (payload) => addEventToStore({ type: 'TRANSFER_CREATED', payload }),
+    addAdjustment: (payload) => addEventToStore({ type: 'ADJUSTMENT_CREATED', payload }),
+    addReturn: (payload) => addEventToStore({ type: 'RETURN_CREATED', payload }),
+    addOrUpdateMaster: (payload) => addEventToStore({ type: 'MASTER_UPSERTED', payload }),
+    loadEvents,
+    setHasUnsavedChanges: setHasUnsavedChangesCallback,
+    setPurchases: (updater) => { /* Managed by events */ },
+    setSales: (updater) => { /* Managed by events */ },
+    setPurchaseReturns: (updater) => { /* Managed by events */ },
+    setSaleReturns: (updater) => { /* Managed by events */ },
+  }), [setHasUnsavedChangesCallback]);
+  
 
   return (
-    <AppDataContext.Provider value={value}>
+    <AppDataContext.Provider value={{ state, dispatch }}>
       {children}
     </AppDataContext.Provider>
   );
 };
 
-export const useAppData = () => {
+export const useAppDataContext = () => {
   const context = useContext(AppDataContext);
   if (context === undefined) {
-    throw new Error('useAppData must be used within an AppDataProvider');
+    throw new Error('useAppDataContext must be used within an AppDataProvider');
   }
   return context;
 };

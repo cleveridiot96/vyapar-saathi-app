@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useRef, type ChangeEvent, useEffect, useCallback, useState } from 'react';
@@ -7,7 +8,7 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-ki
 import { useToast } from "@/hooks/use-toast";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { navItems, type StyledNavItem as Feature } from '@/lib/features';
-import { useFinancialYear } from '@/contexts/SettingsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Button } from '@/components/ui/button';
 import { Edit, Save } from 'lucide-react';
 import { useHydrated } from '@/hooks/useHydrated';
@@ -22,7 +23,7 @@ import { ProfitAnalysisClient } from '../profit-analysis/ProfitAnalysisClient';
 type PlainFeature = Omit<Feature, 'icon'>;
 
 export function DashboardClient() {
-    const { financialYear } = useFinancialYear();
+    const { financialYear } = useSettings();
     const isHydrated = useHydrated();
     
     const [orderedNavItems, setOrderedNavItems] = useState<PlainFeature[]>(
@@ -73,7 +74,7 @@ export function DashboardClient() {
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                             {orderedNavItems.map((plainFeature) => {
                                 const feature = navItems.find(f => f.title === plainFeature.title);
-                                if (!feature || !feature.style) return null;
+                                if (!feature) return null;
                                 return (
                                 <SortableDashboardTile key={plainFeature.title} id={plainFeature.title} isEditMode={isEditMode}>
                                     <DashboardTile 

@@ -7,7 +7,7 @@ import { SettingsProvider } from '@/contexts/SettingsContext';
 import AppExitHandler from '@/components/layout/AppExitHandler';
 
 export const metadata: Metadata = {
-  title: "Kisan Khata Sahayak",
+  title: "Vyapar Saathi",
   description: "A modern accounting application for agricultural businesses.",
 };
 

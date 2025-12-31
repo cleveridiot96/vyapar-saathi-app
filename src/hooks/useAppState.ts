@@ -16,8 +16,7 @@ import type {
   MasterItemType,
   TransactionEvent
 } from '@/lib/types';
-import { useAppData } from '@/contexts/AppDataContext';
-import { addEvent, loadEvents as loadEventsFromStore, setHasUnsavedChanges as setHasUnsavedChangesInStore } from '@/lib/eventStore';
+import { useAppDataContext } from '@/contexts/AppDataContext';
 
 export interface AppState {
   events: TransactionEvent[];
@@ -78,17 +77,17 @@ export const AppStateContext = createContext<AppState | undefined>(undefined);
 export const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
 
 export function useAppState(): AppState {
-  const context = useContext(AppStateContext);
+  const context = useAppDataContext();
   if (!context) {
     throw new Error('useAppState must be used within an AppDataProvider');
   }
-  return context;
+  return context.state;
 }
 
 export function useAppDispatch(): AppDispatch {
-  const context = useContext(AppDispatchContext);
+  const context = useAppDataContext();
   if (!context) {
     throw new Error('useAppDispatch must be used within an AppDataProvider');
   }
-  return context;
+  return context.dispatch;
 }
