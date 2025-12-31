@@ -85,6 +85,16 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
               </span>
             </>
           );
+          
+          const dynamicStyles: React.CSSProperties = {};
+            if (isActive) {
+                dynamicStyles['--shadow-color'] = item.shadow;
+                dynamicStyles.backgroundImage = `linear-gradient(to bottom right, ${item.gradientFrom}, ${item.gradientTo})`;
+                dynamicStyles.color = item.textColor;
+            } else {
+                dynamicStyles['--hover-bg-color'] = item.hoverColor;
+            }
+
 
           return (
             <SidebarMenuItem key={item.href}>
@@ -100,13 +110,9 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
                         : "w-full justify-start px-2.5 py-2", 
                       isActive
                         ? "shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-px"
-                        : "hover:bg-sidebar-accent/50 text-sidebar-foreground"
+                        : "text-sidebar-foreground hover:bg-[var(--hover-bg-color)]"
                     )}
-                    style={isActive ? {
-                        '--shadow-color': item.shadow,
-                        backgroundImage: `linear-gradient(to bottom right, ${item.gradientFrom}, ${item.gradientTo})`,
-                        color: item.textColor,
-                    } as React.CSSProperties : {}}
+                    style={dynamicStyles}
                     aria-current={isActive ? "page" : undefined}
                   >
                     {buttonContent}
