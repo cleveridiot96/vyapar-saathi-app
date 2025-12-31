@@ -2,7 +2,6 @@
 "use client";
 
 import type { Metadata } from 'next';
-import { Poppins, Source_Code_Pro } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
@@ -16,17 +15,6 @@ import { deriveAllTransactions, DerivedTransactions } from '@/lib/derives';
 import type { TransactionEvent } from '@/lib/eventStore';
 import type { MasterItem } from '@/lib/types';
 
-
-const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-poppins',
-});
-
-const sourceCodePro = Source_Code_Pro({
-  subsets: ['latin'],
-  variable: '--font-source-code-pro',
-});
 
 export default function RootLayout({
   children,
@@ -140,7 +128,7 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("antialiased", poppins.variable, sourceCodePro.variable)} suppressHydrationWarning>
+      <body className="antialiased" suppressHydrationWarning>
         <SettingsProvider>
           <AppStateContext.Provider value={contextValue as AppState}>
             <AppDispatchContext.Provider value={dispatch}>

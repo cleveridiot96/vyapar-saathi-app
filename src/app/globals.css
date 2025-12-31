@@ -3,6 +3,38 @@
 @tailwind utilities;
 
 @layer base {
+  /* Define font faces for local fonts */
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/Poppins-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/Poppins-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/Poppins-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/Poppins-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Source Code Pro';
+    src: url('/fonts/SourceCodePro-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+  
   :root {
     /* CHANGED: Background to a light green gradient start color for fallback */
     --background: 140 30% 98%; 
@@ -98,7 +130,7 @@
     @apply border-border;
   }
   body {
-    @apply text-foreground;
+    @apply text-foreground font-body; /* Added font-body */
     /* ADDED: Green Gradient Background 
        This overrides the solid background color 
     */
