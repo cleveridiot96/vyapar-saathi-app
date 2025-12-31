@@ -26,8 +26,7 @@ import { PartyBrokerLeaderboard } from "./PartyBrokerLeaderboard";
 import { MergeLotsForm } from "./MergeLotsForm";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LowStockWarning } from "@/components/app/dashboard/LowStockWarning";
-import { useTransactions } from '@/hooks/useTransactions';
-import { AddAdjustmentForm } from "../stock-adjustments/AddAdjustmentForm";
+import { useAppState, useAppDispatch } from "@/hooks/useAppState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
@@ -36,6 +35,9 @@ import { useInventory } from '@/hooks/useInventory';
 import type { LocationTransfer, StockAdjustment } from '@/lib/types';
 import { useHydrated } from '@/hooks/useHydrated';
 import { isDateInFinancialYear } from "@/lib/utils";
+import dynamic from 'next/dynamic';
+
+const AddAdjustmentForm = dynamic(() => import('../stock-adjustments/AddAdjustmentForm').then(mod => mod.AddAdjustmentForm), { ssr: false });
 
 const ARCHIVED_LOTS_STORAGE_KEY = 'archivedInventoryLotKeys';
 
@@ -45,7 +47,8 @@ export function InventoryClient() {
   const { toast } = useToast();
   const isHydrated = useHydrated();
   const { financialYear, isAppHydrating, lowStockThreshold } = useSettings();
-  const { masterData, locationTransfers, setLocationTransfers, adjustments, setAdjustments } = useTransactions();
+  const { masterData, locationTransfers, adjustments } = useAppState();
+  const dispatch = useAppDispatch();
   const { warehouses = [] } = masterData;
   
   const { allAggregatedInventory, isLoading: isInventoryLoading } = useInventory();
@@ -174,17 +177,17 @@ export function InventoryClient() {
       date: new Date().toISOString().split('T')[0],
       ...mergeData,
     };
-    setLocationTransfers(prev => [newTransfer, ...prev]);
+    dispatch.addTransfer(newTransfer);
     toast({ title: "Lots Merged", description: `Successfully merged lots into ${mergeData.items[0].newLotNumber}.` });
     setIsMergeFormOpen(false);
     window.dispatchEvent(new CustomEvent('reindex-search'));
   };
   
   const handleAddAdjustment = React.useCallback((newAdjustment: Omit<StockAdjustment, 'id'>) => {
-    setAdjustments(prev => [{ ...newAdjustment, id: `adj-${Date.now()}` }, ...prev]);
+    dispatch.addAdjustment({ ...newAdjustment, id: `adj-${Date.now()}` });
     toast({ title: 'Adjustment Recorded', description: 'The stock adjustment has been successfully saved.' });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [setAdjustments, toast]);
+  }, [dispatch, toast]);
 
   const handleReverseAttempt = (adjustment: StockAdjustment) => {
     if (adjustment.type === 'Reversal') {
@@ -265,8 +268,10 @@ export function InventoryClient() {
                 </div>
             </button>
             </Link>
-            {warehouseSummary.map(wh => {
-              const isLow = wh.bags < lowStockThreshold;
+            {(warehouses || []).map(wh => {
+              const summary = warehouseSummary.find(s => s.id === wh.id);
+              if(!summary) return null;
+              const isLow = summary.bags < lowStockThreshold;
               return (
                 <Link key={wh.id} href={`/inventory?warehouseId=${wh.id}`}>
                 <button
@@ -278,11 +283,11 @@ export function InventoryClient() {
                   )}
                 >
                     {isLow && <AlertTriangle className="h-5 w-5 text-destructive absolute top-2 right-2" />}
-                    <CardTitle className="text-lg">{wh.name}</CardTitle>
+                    <CardTitle className="text-lg">{summary.name}</CardTitle>
                     <div>
-                      <p className="text-2xl font-bold">{Math.round(wh.bags).toLocaleString()} <span className="text-sm font-normal text-muted-foreground">BAGS</span></p>
-                      <p className="text-sm text-muted-foreground">{wh.netWeight.toLocaleString()} KG</p>
-                      <p className="text-sm text-muted-foreground font-semibold flex items-center gap-1 mt-1"><DollarSign className="h-3 w-3"/>{Math.round(wh.totalValue).toLocaleString('en-IN', {style: 'currency', currency: 'INR', minimumFractionDigits: 0})}</p>
+                      <p className="text-2xl font-bold">{Math.round(summary.bags).toLocaleString()} <span className="text-sm font-normal text-muted-foreground">BAGS</span></p>
+                      <p className="text-sm text-muted-foreground">{summary.netWeight.toLocaleString()} KG</p>
+                      <p className="text-sm text-muted-foreground font-semibold flex items-center gap-1 mt-1"><DollarSign className="h-3 w-3"/>{Math.round(summary.totalValue).toLocaleString('en-IN', {style: 'currency', currency: 'INR', minimumFractionDigits: 0})}</p>
                     </div>
                 </button>
                 </Link>
@@ -439,7 +444,7 @@ export function InventoryClient() {
             isOpen={isAdjustmentFormOpen}
             onClose={() => setIsAdjustmentFormOpen(false)}
             onSubmit={handleAddAdjustment}
-            warehouses={(masterData as any).Warehouse}
+            warehouses={masterData.Warehouse || []}
             availableLots={allLotsInSystem}
         />
       )}

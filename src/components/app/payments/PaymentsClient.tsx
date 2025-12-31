@@ -1,12 +1,9 @@
-
 "use client";
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer } from "lucide-react";
 import type { Payment, MasterItem, Sale } from "@/lib/types";
-import { PaymentTable } from "./PaymentTable";
-import { AddPaymentForm } from "./AddPaymentForm";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -22,12 +19,18 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
-import { useTransactions } from "@/hooks/useTransactions";
+import { useAppState, useAppDispatch } from "@/hooks/useAppState";
+import dynamic from 'next/dynamic';
+
+const PaymentTable = dynamic(() => import('./PaymentTable').then(mod => mod.PaymentTable), { ssr: false });
+const AddPaymentForm = dynamic(() => import('./AddPaymentForm').then(mod => mod.AddPaymentForm), { ssr: false });
+
 
 export function PaymentsClient() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
-  const { payments, purchases, setPayments, setSales, isTransactionsLoaded, addOrUpdateMaster } = useTransactions();
+  const { payments, purchases, sales, isLoaded, masterData } = useAppState();
+  const dispatch = useAppDispatch();
   
   const { payableParties } = useOutstandingBalances();
 
@@ -38,14 +41,13 @@ export function PaymentsClient() {
   const [paymentToDeleteId, setPaymentToDeleteId] = React.useState<string | null>(null);
 
   const filteredPayments = React.useMemo(() => {
-    if (isAppHydrating || !isTransactionsLoaded) return [];
+    if (isAppHydrating || !isLoaded) return [];
     return payments.filter(payment => payment && payment.date && isDateInFinancialYear(payment.date, financialYear));
-  }, [payments, financialYear, isAppHydrating, isTransactionsLoaded]);
+  }, [payments, financialYear, isAppHydrating, isLoaded]);
 
   const handleAddOrUpdatePayment = React.useCallback((payment: Payment) => {
     const isEditing = payments.some(p => p.id === payment.id);
     
-    // If it's a stock payment, create a corresponding "sale" transaction
     if (payment.paymentType === 'Stock' && payment.stockItems && payment.stockItems.length > 0) {
       const stockValue = payment.stockItems.reduce((sum, item) => sum + item.value, 0);
       payment.amount = stockValue;
@@ -66,24 +68,26 @@ export function PaymentsClient() {
         totalCostOfGoodsSold: 0, totalGrossProfit: 0, totalCalculatedProfit: 0, notes: `Stock payment to settle balance. Ref Payment ID: ${payment.id}`,
         isStockPaymentSale: true,
       };
-      setSales(prev => {
-          const existingIndex = prev.findIndex(s => s.id === internalSale.id);
-          if (existingIndex > -1) {
-              const newSales = [...prev];
-              newSales[existingIndex] = internalSale;
-              return newSales;
-          }
-          return [internalSale, ...prev];
-      });
+      
+      const existingSaleIndex = sales.findIndex(s => s.id === internalSale.id);
+      if(existingSaleIndex > -1) {
+        dispatch.updateSale(internalSale);
+      } else {
+        dispatch.addSale(internalSale);
+      }
     }
 
-    setPayments(prev => isEditing ? prev.map(p => p.id === payment.id ? payment : p) : [{...payment, id: payment.id || `payment-${Date.now()}`}, ...prev]);
+    if(isEditing) {
+        dispatch.updatePayment(payment);
+    } else {
+        dispatch.addPayment(payment);
+    }
 
     setPaymentToEdit(null);
     setIsAddPaymentFormOpen(false);
     toast({ title: "Success!", description: isEditing ? "Payment updated successfully." : "Payment added successfully." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [payments, setPayments, setSales, toast]);
+  }, [payments, sales, dispatch, toast]);
 
   const handleEditPayment = React.useCallback((payment: Payment) => {
     setPaymentToEdit(payment);
@@ -100,19 +104,19 @@ export function PaymentsClient() {
       const paymentToDelete = payments.find(p => p.id === paymentToDeleteId);
       if (paymentToDelete?.paymentType === 'Stock') {
         const internalSaleId = `sale-for-payment-${paymentToDelete.id}`;
-        setSales(prev => prev.filter(s => s.id !== internalSaleId));
+        dispatch.deleteSale(internalSaleId);
       }
 
-      setPayments(prev => prev.filter(p => p.id !== paymentToDeleteId));
+      dispatch.deletePayment(paymentToDeleteId);
       toast({ title: "Success!", description: "Payment deleted successfully.", variant: "destructive" });
       setPaymentToDeleteId(null);
       setShowDeleteConfirm(false);
       window.dispatchEvent(new CustomEvent('reindex-search'));
     }
-  }, [paymentToDeleteId, payments, setPayments, setSales, toast]);
+  }, [paymentToDeleteId, payments, dispatch, toast]);
   
   const handleMasterDataUpdate = (item: MasterItem) => {
-    addOrUpdateMaster(item);
+    dispatch.addOrUpdateMaster(item);
     toast({ title: `Master list updated for ${item.type}.`});
   };
 
@@ -126,7 +130,7 @@ export function PaymentsClient() {
     setPaymentToEdit(null);
   }, []);
 
-  if (isAppHydrating || !isTransactionsLoaded) {
+  if (isAppHydrating || !isLoaded) {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
             <p className="text-lg text-muted-foreground">Loading payments data...</p>

@@ -15,6 +15,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { useHydrated } from '@/hooks/useHydrated';
 import dynamic from 'next/dynamic';
 import { isDateInFinancialYear } from '@/lib/utils';
+import { useAppState } from '@/hooks/useAppState';
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
@@ -47,7 +48,7 @@ export function AccountsLedgerClient() {
     payments, 
     receipts, 
     getAllMasters
-  } = useTransactions();
+  } = useAppState();
   
   const [selectedPartyId, setSelectedPartyId] = React.useState<string>("");
   

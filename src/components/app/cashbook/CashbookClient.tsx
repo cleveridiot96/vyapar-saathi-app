@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -12,14 +11,17 @@ import { format, parseISO, startOfDay, endOfDay, isWithinInterval } from "date-f
 import { BookOpen, PlusCircle, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
-import { AddPaymentForm } from "@/components/app/payments/AddPaymentForm";
-import { AddReceiptForm } from "@/components/app/receipts/AddReceiptForm";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useTransactions } from "@/hooks/useTransactions";
+import { useAppState, useAppDispatch } from "@/hooks/useAppState";
 import { useOutstandingBalances } from "@/hooks/useOutstandingBalances";
+import dynamic from 'next/dynamic';
+
+const AddPaymentForm = dynamic(() => import('../payments/AddPaymentForm').then(mod => mod.AddPaymentForm), { ssr: false });
+const AddReceiptForm = dynamic(() => import('../receipts/AddReceiptForm').then(mod => mod.AddReceiptForm), { ssr: false });
+
 
 const CASH_OPENING_BALANCE_KEY = 'cashbookBaseOpeningBalance';
 
@@ -40,11 +42,9 @@ export function CashbookClient() {
     receipts, 
     purchases, 
     sales, 
-    setPayments, 
-    setReceipts, 
-    isTransactionsLoaded,
-    addOrUpdateMaster
-  } = useTransactions();
+    isLoaded: isTransactionsLoaded,
+  } = useAppState();
+  const dispatch = useAppDispatch();
   const { receivableParties, payableParties } = useOutstandingBalances();
 
 
@@ -132,21 +132,27 @@ export function CashbookClient() {
 
 
   const handleAddPaymentFromCashbook = React.useCallback((payment: Payment) => {
-    const isEditing = payments.some(p => p.id === payment.id);
-    setPayments(prev => isEditing ? prev.map(p => p.id === payment.id ? payment : p) : [{...payment, id: payment.id || `payment-${Date.now()}`},...prev]);
+    if(payments.some(p => p.id === payment.id)) {
+        dispatch.updatePayment(payment);
+    } else {
+        dispatch.addPayment(payment);
+    }
     toast({ title: "Success!", description: "Payment added to cashbook and payments." });
-  }, [payments, setPayments, toast]);
+  }, [payments, dispatch, toast]);
 
   const handleAddReceiptFromCashbook = React.useCallback((receipt: Receipt) => {
-    const isEditing = receipts.some(r => r.id === receipt.id);
-    setReceipts(prev => isEditing ? prev.map(r => r.id === receipt.id ? receipt : r) : [{...receipt, id: receipt.id || `receipt-${Date.now()}`},...prev]);
+    if(receipts.some(r => r.id === receipt.id)) {
+        dispatch.updateReceipt(receipt);
+    } else {
+        dispatch.addReceipt(receipt);
+    }
     toast({ title: "Success!", description: "Receipt added to cashbook and receipts." });
-  }, [receipts, setReceipts, toast]);
+  }, [receipts, dispatch, toast]);
 
   const handleMasterDataUpdateFromCashbook = React.useCallback((item: MasterItem) => {
-    addOrUpdateMaster(item);
+    dispatch.addOrUpdateMaster(item);
     toast({title: "Info", description: `Master type ${item.type} updated.`});
-  }, [addOrUpdateMaster, toast]);
+  }, [dispatch, toast]);
 
   if (!isTransactionsLoaded) {
     return (

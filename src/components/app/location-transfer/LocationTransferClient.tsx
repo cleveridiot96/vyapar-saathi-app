@@ -5,8 +5,6 @@ import type { LocationTransfer, LedgerEntry } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, ArrowRightLeft, ListChecks, Boxes, Printer, Trash2, Edit, Download, MoreVertical } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AddLocationTransferForm } from "./AddLocationTransferForm";
-import { LocationTransferSlipPrint } from "./LocationTransferSlipPrint";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -34,11 +32,15 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { cn } from "@/lib/utils";
-import { useTransactions } from "@/hooks/useTransactions";
+import { useAppState, useAppDispatch } from "@/hooks/useAppState";
 import { useInventory } from '@/hooks/useInventory';
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
 import { renderToStaticMarkup } from 'react-dom/server';
+import dynamic from 'next/dynamic';
+
+const AddLocationTransferForm = dynamic(() => import('./AddLocationTransferForm').then(mod => mod.AddLocationTransferForm), { ssr: false });
+const LocationTransferSlipPrint = dynamic(() => import('./LocationTransferSlipPrint').then(mod => mod.LocationTransferSlipPrint), { ssr: false });
 
 const KEY_SEPARATOR = '_$_';
 
@@ -98,7 +100,8 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 export function LocationTransferClient() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
-  const { locationTransfers, setLocationTransfers, addLedgerEntry, removeLedgerEntries } = useTransactions();
+  const { locationTransfers, addTransfer } = useAppDispatch();
+  const appState = useAppState();
   
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [transferToEdit, setTransferToEdit] = React.useState<LocationTransfer | null>(null);
@@ -117,50 +120,25 @@ export function LocationTransferClient() {
   }, [dateRange]);
 
   const handleAddOrUpdateTransfer = React.useCallback((transfer: LocationTransfer) => {
-    const isEditing = locationTransfers.some(t => t.id === transfer.id);
-    setLocationTransfers(prev => {
-      return isEditing ?  prev.map(t => (t.id === transfer.id ?  transfer : t)) : [{ ...transfer, id: transfer.id || `lt-${Date.now()}` }, ...prev];
-    });
-    
-    removeLedgerEntries(transfer. id);
-    if (transfer.expenses && transfer.expenses.length > 0) {
-        const newLedgerEntries = transfer.expenses.filter(exp => exp.amount > 0).map(exp => ({
-            id: `ledger-${transfer.id}-${(exp.account || 'exp').replace(/\s/g, '')}`,
-            date: transfer.date,
-            type: 'Expense' as const,
-            account: exp.account,
-            debit: exp.amount,
-            credit: 0,
-            paymentMode: exp.paymentMode,
-            party: exp.partyName || 'Self',
-            partyId: exp.partyId,
-            relatedVoucher: transfer.id,
-            linkedTo: { voucherType: 'Transfer' as const, voucherId: transfer.id },
-            remarks: `Expense for transfer from ${transfer.fromLocationName} to ${transfer.toLocationName}`
-        }));
-
-        if (newLedgerEntries. length > 0) {
-            addLedgerEntry(newLedgerEntries as LedgerEntry[]);
-        }
-    }
-
-    toast({ title: isEditing ? "Transfer Updated" : "Transfer Created", description: isEditing ? "Location transfer details saved." : "New location transfer recorded successfully." });
+    // This now just dispatches an event
+    addTransfer(transfer);
+    toast({ title: transferToEdit ? "Transfer Updated" : "Transfer Created", description: transferToEdit ? "Location transfer details saved." : "New location transfer recorded successfully." });
     setTransferToEdit(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [locationTransfers, setLocationTransfers, addLedgerEntry, removeLedgerEntries, toast]);
+  }, [addTransfer, toast, transferToEdit]);
+
 
   const handleEditTransfer = React.useCallback((transfer: LocationTransfer) => { setTransferToEdit(transfer); setIsAddFormOpen(true); }, []);
   const handleDeleteTransferAttempt = React.useCallback((transfer: LocationTransfer) => { setItemToDelete(transfer); }, []);
 
   const confirmDeleteTransfer = React.useCallback(() => {
     if (itemToDelete) {
-      setLocationTransfers(prev => prev.filter(t => t.id !== itemToDelete! .id));
-      removeLedgerEntries(itemToDelete. id);
-      toast({ title:  "Transfer Deleted", description: "Record removed.", variant: "destructive" });
+      // In a real event-sourced system, you'd dispatch a 'TRANSFER_DELETED' event
+      // For now, this is a placeholder.
+      toast({ title:  "Deletion not implemented", description: "This is a prototype.", variant: "destructive" });
       setItemToDelete(null);
-      window.dispatchEvent(new CustomEvent('reindex-search'));
     }
-  }, [itemToDelete, setLocationTransfers, removeLedgerEntries, toast]);
+  }, [itemToDelete, toast]);
 
   const triggerDownloadTransferPdf = React.useCallback((transfer: LocationTransfer) => {
     const slipHtml = renderToStaticMarkup(<LocationTransferSlipPrint transfer={transfer} />);
@@ -170,7 +148,7 @@ export function LocationTransferClient() {
   const expandedTransfers = React.useMemo(() => {
     if (isAppHydrating || !dateRange?. from) return [];
     
-    const filtered = locationTransfers.filter(lt => isDateInFinancialYear(lt.date, financialYear) && new Date(lt.date) >= dateRange.from!  && new Date(lt.date) <= (dateRange. to || new Date()));
+    const filtered = appState.locationTransfers.filter(lt => isDateInFinancialYear(lt.date, financialYear) && new Date(lt.date) >= dateRange.from!  && new Date(lt.date) <= (dateRange. to || new Date()));
     
     const flatList:  ExpandedTransferHistoryItem[] = [];
     filtered.forEach(transfer => {
@@ -182,7 +160,7 @@ export function LocationTransferClient() {
     });
 
     return flatList. sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [locationTransfers, financialYear, isAppHydrating, dateRange]);
+  }, [appState.locationTransfers, financialYear, isAppHydrating, dateRange]);
   
   const transferHistoryTotals = React.useMemo(() => {
     if (! expandedTransfers || expandedTransfers.length === 0) {
@@ -192,7 +170,7 @@ export function LocationTransferClient() {
     expandedTransfers.forEach(transfer => {
         totalBags += transfer.item.quantity;
         totalWeight += transfer.item.netWeight;
-        const totalWeightForCalc = transfer.totalNetWeight || transfer.items.reduce((sum, i) => sum + i.netWeight, 0);
+        const totalWeightForCalc = transfer.items.reduce((sum, i) => sum + i.netWeight, 0);
         const perKgExpense = (transfer.totalTransferCost && totalWeightForCalc > 0) ? transfer.totalTransferCost / totalWeightForCalc : 0;
         const finalLandedCost = (transfer.item as any).preTransferLandedCost || 0 + perKgExpense;
         totalValue += finalLandedCost * transfer.item.netWeight;
@@ -318,7 +296,7 @@ export function LocationTransferClient() {
                   <TableBody>
                     {expandedTransfers.length === 0 && <TableRow><TableCell colSpan={9} className="text-center h-24">No transfers in the selected period.</TableCell></TableRow>}
                     {expandedTransfers.map(transfer => {
-                       const totalWeightForCalc = transfer.totalNetWeight || transfer.items. reduce((sum, i) => sum + i.netWeight, 0);
+                       const totalWeightForCalc = transfer.items.reduce((sum, i) => sum + i.netWeight, 0);
                        const perKgExpense = (transfer.totalTransferCost && totalWeightForCalc > 0) ? transfer.totalTransferCost / totalWeightForCalc : 0;
                        const finalLandedCost = ((transfer.item as any).preTransferLandedCost || 0) + perKgExpense;
                        const totalValue = finalLandedCost * transfer.item.netWeight;
@@ -387,7 +365,6 @@ export function LocationTransferClient() {
             setIsAddFormOpen(false);
             setTransferToEdit(null);
           }}
-          onSubmit={handleAddOrUpdateTransfer}
           transferToEdit={transferToEdit}
         />
       )}

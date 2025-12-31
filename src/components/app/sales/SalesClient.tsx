@@ -19,14 +19,16 @@ import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useAppState } from "@/hooks/useAppState";
+import { useAppState, useAppDispatch } from "@/hooks/useAppState";
 import type { Sale, SaleReturn, MasterItem } from "@/lib/types";
-import { SaleTable } from "@/components/app/sales/SaleTable";
-import { AddSaleForm } from "@/components/app/sales/AddSaleForm";
-import { SaleChittiPrint } from "@/components/app/sales/SaleChittiPrint";
-import { AddSaleReturnForm } from "@/components/app/sales/AddSaleReturnForm";
-import { SaleReturnTable } from "@/components/app/sales/SaleReturnTable";
 import { renderToStaticMarkup } from 'react-dom/server';
+import dynamic from 'next/dynamic';
+
+const SaleTable = dynamic(() => import('@/components/app/sales/SaleTable').then(mod => mod.SaleTable), { ssr: false });
+const AddSaleForm = dynamic(() => import('@/components/app/sales/AddSaleForm').then(mod => mod.AddSaleForm), { ssr: false });
+const SaleChittiPrint = dynamic(() => import('@/components/app/sales/SaleChittiPrint').then(mod => mod.SaleChittiPrint), { ssr: false });
+const AddSaleReturnForm = dynamic(() => import('@/components/app/sales/AddSaleReturnForm').then(mod => mod.AddSaleReturnForm), { ssr: false });
+const SaleReturnTable = dynamic(() => import('@/components/app/sales/SaleReturnTable').then(mod => mod.SaleReturnTable), { ssr: false });
 
 
 function openPrintWindow(htmlContent: string, title = "Document") {
@@ -86,14 +88,11 @@ export function SalesClient() {
   
   const { 
     sales, 
-    addSale,
-    updateSale,
-    deleteSale,
     saleReturns, 
-    setSaleReturns, 
     isLoaded, 
-    addOrUpdateMaster 
   } = useAppState();
+  
+  const dispatch = useAppDispatch();
 
 
   const [isAddSaleFormOpen, setIsAddSaleFormOpen] = React.useState(false);
@@ -147,9 +146,9 @@ export function SalesClient() {
       const isEditing = !!saleToEdit;
       
       if (isEditing) {
-        updateSale(sale);
+        dispatch.updateSale(sale);
       } else {
-        addSale(sale);
+        dispatch.addSale(sale);
       }
       
       setSaleToEdit(null);
@@ -164,7 +163,7 @@ export function SalesClient() {
         window.dispatchEvent(new CustomEvent("reindex-search"));
       }, 100);
     },
-    [saleToEdit, addSale, updateSale, toast]
+    [saleToEdit, dispatch, toast]
   );
 
   const handleEditSale = React.useCallback((sale: Sale) => {
@@ -186,29 +185,26 @@ export function SalesClient() {
             setItemToDelete(null);
             return;
         }
-      deleteSale(itemToDelete.id);
+      dispatch.deleteSale(itemToDelete.id);
       toast({ title: "Deleted!", description: "Sale record removed.", variant: "destructive" });
     } else {
-      setSaleReturns(prev => prev.filter(sr => sr.id !== itemToDelete.id));
+      // This part is tricky with event sourcing. We should dispatch a 'SALE_RETURN_DELETED' event.
+      // For now, we'll use the setter.
+      dispatch.setSaleReturns(saleReturns.filter(sr => sr.id !== itemToDelete.id));
       toast({ title: "Deleted!", description: "Sale return record removed.", variant: "destructive" });
     }
 
     setItemToDelete(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [itemToDelete, deleteSale, setSaleReturns, toast, saleReturns]);
+  }, [itemToDelete, dispatch, toast, saleReturns]);
   
   const handleAddOrUpdateSaleReturn = React.useCallback((srData: SaleReturn) => {
-      const isEditing = saleReturns.some(sr => sr.id === srData.id);
-      setSaleReturns(prev => {
-        return isEditing
-          ? prev.map(sr => sr.id === srData.id ? srData : sr)
-          : [{...srData, id: srData.id || `sr-${Date.now()}`}, ...prev]
-      });
+    dispatch.addReturn(srData);
     setSaleReturnToEdit(null);
     setIsAddSaleReturnFormOpen(false);
     toast({ title: "Success!", description: "Sale return updated." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [setSaleReturns, saleReturns, toast]);
+  }, [dispatch, toast]);
 
   const handleEditSaleReturn = React.useCallback((sr: SaleReturn) => {
     setSaleReturnToEdit(sr);
@@ -221,10 +217,10 @@ export function SalesClient() {
   }, []);
 
   const handleMasterDataUpdate = React.useCallback((newItem: MasterItem) => {
-    addOrUpdateMaster(newItem);
+    dispatch.addOrUpdateMaster(newItem);
     toast({ title: `Master list updated for ${newItem.type}.` });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [addOrUpdateMaster, toast]);
+  }, [dispatch, toast]);
   
   const addButtonDynamicClass = React.useMemo(() => {
     return activeTab === 'sales' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-yellow-600 hover:bg-yellow-700 text-white';

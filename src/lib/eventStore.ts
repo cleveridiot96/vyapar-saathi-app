@@ -1,7 +1,3 @@
-
-// ============================================================================
-// ULTRA-LIGHT EVENT STORE - NO DEPENDENCIES
-// ============================================================================
 "use strict";
 
 import type { 
@@ -45,13 +41,18 @@ export async function initializeEventStore(): Promise<void> {
   if (isInitialized) return;
   
   // Asynchronously load data. This allows the UI to render immediately.
-  const stored = await getFromIndexedDB<TransactionEvent[]>('events');
-  if (stored && Array.isArray(stored)) {
-    eventLog = stored;
+  try {
+    const stored = await getFromIndexedDB<TransactionEvent[]>('events');
+    if (stored && Array.isArray(stored)) {
+      eventLog = stored;
+    }
+  } catch(e) {
+    console.error("Failed to load events from storage", e);
+  } finally {
+    isInitialized = true;
+    // Notify listeners that initial data is loaded
+    listeners.forEach(cb => cb([...eventLog]));
   }
-  isInitialized = true;
-  // Notify listeners that initial data is loaded
-  listeners.forEach(cb => cb([...eventLog]));
 }
 
 export function addEvent(event: TransactionEvent): void {

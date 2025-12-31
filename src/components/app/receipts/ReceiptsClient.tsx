@@ -1,12 +1,9 @@
-
 "use client";
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer } from "lucide-react";
 import type { Receipt, MasterItem } from "@/lib/types";
-import { ReceiptTable } from "./ReceiptTable";
-import { AddReceiptForm } from "./AddReceiptForm";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -18,16 +15,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useFinancialYear } from "@/contexts/SettingsContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
-import { useTransactions } from "@/hooks/useTransactions";
+import { useAppState, useAppDispatch } from "@/hooks/useAppState";
+import dynamic from 'next/dynamic';
+
+const ReceiptTable = dynamic(() => import('./ReceiptTable').then(mod => mod.ReceiptTable), { ssr: false });
+const AddReceiptForm = dynamic(() => import('./AddReceiptForm').then(mod => mod.AddReceiptForm), { ssr: false });
+
 
 export function ReceiptsClient() {
   const { toast } = useToast();
-  const { financialYear } = useFinancialYear();
-  const { receipts, sales, setReceipts, isTransactionsLoaded, addOrUpdateMaster } = useTransactions();
+  const { financialYear } = useSettings();
+  const { receipts, sales, isLoaded } = useAppState();
+  const dispatch = useAppDispatch();
   
   const { receivableParties } = useOutstandingBalances();
 
@@ -38,19 +41,23 @@ export function ReceiptsClient() {
   const [receiptToDeleteId, setReceiptToDeleteId] = React.useState<string | null>(null);
 
   const filteredReceipts = React.useMemo(() => {
-    if (!isTransactionsLoaded) return [];
+    if (!isLoaded) return [];
     return receipts.filter(receipt => receipt && receipt.date && isDateInFinancialYear(receipt.date, financialYear));
-  }, [receipts, financialYear, isTransactionsLoaded]);
+  }, [receipts, financialYear, isLoaded]);
 
   const handleAddOrUpdateReceipt = React.useCallback((receipt: Receipt) => {
     const isEditing = receipts.some(r => r.id === receipt.id);
-    setReceipts(prev => isEditing ? prev.map(r => r.id === receipt.id ? receipt : r) : [{...receipt, id: receipt.id || `receipt-${Date.now()}`},...prev]);
+    if(isEditing) {
+        dispatch.updateReceipt(receipt);
+    } else {
+        dispatch.addReceipt(receipt);
+    }
 
     setReceiptToEdit(null);
     setIsAddReceiptFormOpen(false);
     toast({ title: "Success!", description: isEditing ? "Receipt updated successfully." : "Receipt added successfully." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [receipts, setReceipts, toast]); 
+  }, [receipts, dispatch, toast]); 
 
   const handleEditReceipt = React.useCallback((receipt: Receipt) => {
     setReceiptToEdit(receipt);
@@ -64,16 +71,16 @@ export function ReceiptsClient() {
 
   const confirmDeleteReceipt = React.useCallback(() => {
     if (receiptToDeleteId) {
-      setReceipts(prev => prev.filter(r => r.id !== receiptToDeleteId));
+      dispatch.deleteReceipt(receiptToDeleteId);
       toast({ title: "Success!", description: "Receipt deleted successfully.", variant: "destructive" });
       setReceiptToDeleteId(null);
       setShowDeleteConfirm(false);
       window.dispatchEvent(new CustomEvent('reindex-search'));
     }
-  }, [receiptToDeleteId, setReceipts, toast]);
+  }, [receiptToDeleteId, dispatch, toast]);
   
   const handleMasterDataUpdate = (item: MasterItem) => {
-    addOrUpdateMaster(item);
+    dispatch.addOrUpdateMaster(item);
     toast({ title: `Master list updated for ${item.type}.`});
   };
 
@@ -88,7 +95,7 @@ export function ReceiptsClient() {
     setReceiptToEdit(null);
   }, []);
 
-  if (!isTransactionsLoaded) {
+  if (!isLoaded) {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
             <p className="text-lg text-muted-foreground">Loading receipts data...</p>

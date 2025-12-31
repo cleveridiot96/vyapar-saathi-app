@@ -1,7 +1,6 @@
-
 "use client";
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo, useCallback } from 'react';
 import type { 
   AggregatedInventoryItem, 
   Purchase, 
@@ -23,7 +22,7 @@ export interface AppState {
   purchases: Purchase[];
   sales: Sale[];
   adjustments: StockAdjustment[];
-  locationTransfers: LocationTransfer[]; // Changed from transfers
+  locationTransfers: LocationTransfer[];
   purchaseReturns: PurchaseReturn[];
   saleReturns: SaleReturn[];
   payments: Payment[];
@@ -31,7 +30,7 @@ export interface AppState {
   ledger: LedgerEntry[];
   inventory: AggregatedInventoryItem[];
   isInitialized: boolean;
-  isLoaded: boolean; // Add isLoaded
+  isLoaded: boolean;
   isCalculating: boolean;
   masterData: {
     Customer: MasterItem[];
@@ -82,7 +81,17 @@ export function useAppState(): AppState {
   if (!context) {
     throw new Error('useAppState must be used within an AppStateProvider');
   }
-  return context;
+  
+  // Memoize derivative functions
+  const memoizedGetAllMasters = useCallback(() => {
+    if (!context.masterData) return [];
+    return Object.values(context.masterData).flat();
+  }, [context.masterData]);
+
+  return useMemo(() => ({
+    ...context,
+    getAllMasters: memoizedGetAllMasters,
+  }), [context, memoizedGetAllMasters]);
 }
 
 export function useAppDispatch(): AppDispatch {

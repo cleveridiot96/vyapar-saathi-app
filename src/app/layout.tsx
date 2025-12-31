@@ -1,7 +1,5 @@
-
 "use client";
 
-import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
@@ -21,7 +19,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [state, setState] = useState<Omit<AppState, 'getAllMasters'>>({
+  const [state, setState] = useState<Omit<AppState, 'getAllMasters' | 'isLoaded'>>({
       events: [],
       purchases: [],
       sales: [],
@@ -41,7 +39,7 @@ export default function RootLayout({
   const [inventoryWorker, setInventoryWorker] = useState<Worker | null>(null);
 
   useEffect(() => {
-    const worker = new Worker(new URL('@/lib/inventory.worker.ts', import.meta.url));
+    const worker = new Worker(new URL('../lib/inventory.worker.ts', import.meta.url));
     setInventoryWorker(worker);
 
     worker.onmessage = (e) => {
@@ -63,6 +61,7 @@ export default function RootLayout({
         ...derived,
         events: initialEvents,
         isInitialized: true,
+        isCalculating: true, // Set to true to indicate worker is starting
       }));
       
       worker.postMessage(initialEvents);
@@ -109,6 +108,7 @@ export default function RootLayout({
       addTransfer: (transfer) => addEvent({ type: 'TRANSFER_CREATED', payload: transfer }),
       addAdjustment: (adj) => addEvent({ type: 'ADJUSTMENT_CREATED', payload: adj }),
       addReturn: (ret) => addEvent({ type: 'RETURN_CREATED', payload: ret }),
+      // These setters are now just wrappers around addEvent
       setPurchases: (purchases) => purchases.forEach(p => addEvent({ type: 'PURCHASE_CREATED', payload: p})),
       setSales: (sales) => sales.forEach(s => addEvent({ type: 'SALE_CREATED', payload: s})),
       setPurchaseReturns: (returns) => returns.forEach(r => addEvent({type: 'RETURN_CREATED', payload: r})),
@@ -122,7 +122,7 @@ export default function RootLayout({
 
   const contextValue = useMemo(() => ({
     ...state,
-    isLoaded: state.isInitialized, // Explicitly map isInitialized to isLoaded
+    isLoaded: state.isInitialized && !state.isCalculating,
     getAllMasters,
   }), [state, getAllMasters]);
 

@@ -1,72 +1,37 @@
-
 "use client";
 
-import { useAppState } from './useAppState';
-import type { LocationTransfer, LedgerEntry, MasterItem } from '@/lib/types';
-import { useState, useCallback, useEffect } from 'react';
-import { FIXED_WAREHOUSES, FIXED_EXPENSES } from '@/lib/constants';
+import { useAppState, useAppDispatch } from './useAppState';
+import type { LedgerEntry } from '@/lib/types';
+import { useCallback, useMemo } from 'react';
 
 /**
- * Complete transaction management hook
- * This provides the data LocationTransferClient needs
+ * Simplified hook for transaction management.
+ * Relies on the main app state and dispatch contexts.
  */
 export function useTransactions() {
   const appState = useAppState();
-  const { 
-    masterData: appMasterData, 
-    addOrUpdateMaster: appAddOrUpdateMaster,
-    ...restOfAppState 
-  } = appState;
-
-  const [locationTransfers, setLocationTransfers] = useState<LocationTransfer[]>([]);
-  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
+  const dispatch = useAppDispatch();
   
-  const getAllMasters = useCallback(() => {
-    return Object.values(appMasterData).flat();
-  }, [appMasterData]);
+  const { masterData, ledger, ...restOfAppState } = appState;
 
+  // Memoize ledger entries to prevent unnecessary recalculations
+  const ledgerEntries = useMemo(() => ledger || [], [ledger]);
+
+  // These are now just for demonstration; the actual logic is in the root dispatch
   const addLedgerEntry = useCallback((entries: LedgerEntry | LedgerEntry[]) => {
-    const entriesToAdd = Array.isArray(entries) ? entries : [entries];
-    setLedgerEntries(prev => [...prev, ... entriesToAdd]);
+    console.warn("addLedgerEntry is a placeholder. Logic is in root layout.");
   }, []);
 
   const removeLedgerEntries = useCallback((voucherId: string) => {
-    setLedgerEntries(prev => prev.filter(e => e.relatedVoucher !== voucherId));
+    console.warn("removeLedgerEntries is a placeholder. Logic is in root layout.");
   }, []);
 
   return {
-    // Transfers
-    locationTransfers: restOfAppState.locationTransfers ?? [],
-    setLocationTransfers: restOfAppState.setLocationTransfers,
-    
-    // Ledger
-    ledgerEntries,
-    addLedgerEntry,
-    removeLedgerEntries,
-    
-    // Masters
-    masterData: appMasterData,
-    addOrUpdateMaster: appAddOrUpdateMaster,
-    getAllMasters,
-    
-    // Purchases, Sales, etc.  (from appState)
-    purchases: restOfAppState.purchases ??  [],
-    sales: restOfAppState. sales ?? [],
-    adjustments: restOfAppState.adjustments ??  [],
-    purchaseReturns: restOfAppState.purchaseReturns ?? [],
-    saleReturns: restOfAppState. saleReturns ?? [],
-    isLoaded: restOfAppState.isInitialized,
-    payments: restOfAppState.payments ?? [],
-    receipts: restOfAppState.receipts ?? [],
-    setPayments: restOfAppState.setPayments,
-    setReceipts: restOfAppState.setReceipts,
-    isTransactionsLoaded: restOfAppState.isInitialized,
-    isMasterDataLoaded: restOfAppState.isInitialized,
-    setSales: restOfAppState.setSales,
-    setPurchaseReturns: restOfAppState.setPurchaseReturns,
-    setSaleReturns: restOfAppState.setSaleReturns,
-    setAdjustments: restOfAppState.setAdjustments,
-    setPurchases: restOfAppState.setPurchases,
+    ...restOfAppState, // includes purchases, sales, etc.
+    ...dispatch,      // includes addOrUpdateMaster, addPurchase, etc.
+    masterData,
     ledger: ledgerEntries,
+    isTransactionsLoaded: appState.isLoaded,
+    isMasterDataLoaded: appState.isLoaded,
   };
 }

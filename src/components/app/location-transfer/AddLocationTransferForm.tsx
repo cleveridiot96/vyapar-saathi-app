@@ -30,11 +30,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MasterForm } from "@/components/app/masters/MasterForm";
-import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useAppState, useAppDispatch } from "@/hooks/useAppState";
+import dynamic from 'next/dynamic';
+
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
+const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
 
 interface AddLocationTransferFormProps {
   isOpen: boolean;
@@ -73,7 +75,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   
   const { masterData } = appState;
   const { Warehouse: warehouses = [], Transporter: transporters = [], Expense: expenseAccounts = [] } = masterData;
-  const allMasters = [...warehouses, ...transporters, ...expenseAccounts];
+  const allMasters = appState.getAllMasters();
   
   const availableStock = React.useMemo(() => 
     appState.inventory.filter(item => item.currentBags > 0.01)

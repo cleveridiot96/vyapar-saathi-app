@@ -30,7 +30,6 @@ import { paymentSchema, type PaymentFormValues } from "@/lib/schemas/paymentSche
 import type { MasterItem, Payment, MasterItemType, Purchase, Sale } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
-import { MasterForm } from "@/components/app/masters/MasterForm";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@/components/ui/command";
@@ -40,6 +39,7 @@ import dynamic from 'next/dynamic';
 import { DatePicker } from "@/components/ui/date-picker";
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
+const MasterForm = dynamic(() => import('../masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
 
 
 interface AddPaymentFormProps {
