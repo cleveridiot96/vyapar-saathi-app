@@ -65,7 +65,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   onMasterDataUpdate,
 }) => {
   const { toast } = useToast();
-  const { masterData, addOrUpdateMaster } = useTransactions();
+  const { masterData } = useTransactions();
   const { Customer: customers, Transporter: transporters, Broker: brokers, Expense: expenses, Warehouse: warehouses } = masterData;
   const { availableStock } = useInventory(saleToEdit?.id);
 
@@ -353,13 +353,13 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(openState) => { if (!openState) { onClose(); } }}>
-        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-6xl">
+        <DialogContent className="sm:max-w-6xl">
           <DialogHeader>
             <DialogTitle>{saleToEdit ? 'Edit Sale' : 'Add New Sale'}</DialogTitle>
             <DialogDescription>Create a sale with one or more items.</DialogDescription>
           </DialogHeader>
           <TooltipProvider>
-            <FormProvider {...formMethods}>
+            <FormProvider {...methods}>
               <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto p-1 pr-3">
                   <div className="p-4 border rounded-md shadow-sm">
                     <h3 className="text-lg font-medium mb-3 text-primary">Sale Details</h3>
@@ -620,6 +620,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                     <Button type="submit" disabled={isSubmitting}>{isSubmitting ? (saleToEdit ? "Saving..." : "Creating Sale...") : (saleToEdit ? "Save Changes" : "Create Sale")}</Button>
                   </DialogFooter>
                 </form>
+              </Form>
             </FormProvider>
           </TooltipProvider>
         </DialogContent>

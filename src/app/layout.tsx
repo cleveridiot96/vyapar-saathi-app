@@ -42,8 +42,6 @@ export default function RootLayout({
   const router = useRouter();
 
   useEffect(() => {
-    // This effect ensures that unauthenticated users cannot access the app.
-    // It's a client-side check.
     // const isAuthenticated = sessionStorage.getItem('vyapar-saathi-authenticated') === 'true';
     // const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/setup') || pathname.startsWith('/recover');
 
@@ -75,7 +73,7 @@ export default function RootLayout({
         ...derived,
         events: initialEvents,
         isInitialized: true,
-        isCalculating: true, // Set to true to indicate worker is starting
+        isCalculating: true,
       }));
       
       worker.postMessage(initialEvents);
