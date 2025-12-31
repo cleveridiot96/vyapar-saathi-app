@@ -1,3 +1,4 @@
+
 // ============================================================================
 // ULTRA-LIGHT EVENT STORE - NO DEPENDENCIES
 // ============================================================================
@@ -38,12 +39,19 @@ export type TransactionEvent =
 
 let eventLog: TransactionEvent[] = [];
 let listeners: Set<(events: TransactionEvent[]) => void> = new Set();
+let isInitialized = false;
 
 export async function initializeEventStore(): Promise<void> {
+  if (isInitialized) return;
+  
+  // Asynchronously load data. This allows the UI to render immediately.
   const stored = await getFromIndexedDB<TransactionEvent[]>('events');
   if (stored && Array.isArray(stored)) {
     eventLog = stored;
   }
+  isInitialized = true;
+  // Notify listeners that initial data is loaded
+  listeners.forEach(cb => cb([...eventLog]));
 }
 
 export function addEvent(event: TransactionEvent): void {
@@ -56,6 +64,10 @@ export function onEventsChange(
   callback: (events: TransactionEvent[]) => void
 ): () => void {
   listeners.add(callback);
+  // If already initialized, give the new listener the current data immediately.
+  if (isInitialized) {
+      callback([...eventLog]);
+  }
   return () => listeners.delete(callback);
 }
 

@@ -1,3 +1,4 @@
+
 const { exec } = require('child_process');
 const next = require('next');
 const http = require('http');
@@ -6,7 +7,8 @@ const open = require('open');
 const dev = false;
 const app = next({ dev });
 const handle = app.getRequestHandler();
-const port = 3000;
+// Port is set to 0 to let the OS assign any available port
+const port = 0; 
 
 function runCommand(command) {
   return new Promise((resolve, reject) => {
@@ -45,7 +47,8 @@ async function main() {
 
     server.listen(port, (err) => {
       if (err) throw err;
-      const url = `http://localhost:${port}`;
+      const actualPort = server.address().port;
+      const url = `http://localhost:${actualPort}`;
       console.log(`> Ready on ${url}`);
       console.log('Opening the application in your default browser...');
       open(url);
