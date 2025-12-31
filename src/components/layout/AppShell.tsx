@@ -30,7 +30,7 @@ export function AppShell({
                         <h2 className="text-lg font-semibold tracking-tight text-sidebar-foreground">Vyapar Saathi</h2>
                     </div>
                 </SidebarHeader>
-                <SidebarContent className="py-2 overflow-y-auto">
+                <SidebarContent className="py-2 overflow-y-auto thin-scrollbar">
                     <ClientSidebarMenu navItems={features.filter(f => f.href !== '/dashboard')} />
                 </SidebarContent>
             </Sidebar>
