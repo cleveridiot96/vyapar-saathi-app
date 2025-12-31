@@ -13,7 +13,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { DataTableColumnHeader } from '@/components/shared/DataTableColumnHeader';
 import type { ColumnDef, DateRange } from '@tanstack/react-table';
 import { DataTable } from '@/components/shared/DataTable';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useAppState } from '@/hooks/useAppState';
 import { useHydrated } from '@/hooks/useHydrated';
 import { DatePicker } from "@/components/shared/DatePicker";
 
@@ -49,7 +49,7 @@ export function DaybookClient() {
   const router = useRouter();
 
   // Data states from central hook
-  const { purchases, sales, receipts, payments, locationTransfers, ledger: ledgerData, isTransactionsLoaded } = useTransactions();
+  const { purchases, sales, receipts, payments, locationTransfers, ledger: ledgerData, isLoaded } = useAppState();
   
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
       from: startOfDay(new Date()),
@@ -57,7 +57,7 @@ export function DaybookClient() {
   });
 
   const allDaybookEntries = useMemo((): DaybookEntry[] => {
-    if (!isTransactionsLoaded || !dateRange?.from) return [];
+    if (!isLoaded || !dateRange?.from) return [];
     
     const entries: DaybookEntry[] = [];
     const toDate = dateRange.to || dateRange.from;
@@ -116,7 +116,7 @@ export function DaybookClient() {
     });
 
     return entries.sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [isTransactionsLoaded, purchases, sales, payments, receipts, locationTransfers, ledgerData, dateRange]);
+  }, [isLoaded, purchases, sales, payments, receipts, locationTransfers, ledgerData, dateRange]);
   
   const columns: ColumnDef<DaybookEntry>[] = useMemo(() => [
     {
@@ -168,7 +168,7 @@ export function DaybookClient() {
     }
   ], []);
 
-  if (!isTransactionsLoaded || !isHydrated) {
+  if (!isLoaded || !isHydrated) {
       return <div>Loading Daybook...</div>;
   }
 

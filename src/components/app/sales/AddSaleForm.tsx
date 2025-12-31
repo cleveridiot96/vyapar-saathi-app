@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -368,8 +369,8 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
             <DialogDescription>Create a sale with one or more items.</DialogDescription>
           </DialogHeader>
           <TooltipProvider>
-            <Form {...methods}>
-              <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto p-1 pr-3">
+              <Form {...methods}>
+                <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto p-1 pr-3">
                   <div className="p-4 border rounded-md shadow-sm">
                     <h3 className="text-lg font-medium mb-3 text-primary">Sale Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -628,7 +629,6 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                   </DialogFooter>
                 </form>
               </Form>
-            </FormProvider>
           </TooltipProvider>
         </DialogContent>
       </Dialog>
@@ -647,3 +647,5 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
 };
 
 export const AddSaleForm = React.memo(AddSaleFormComponent);
+
+    
