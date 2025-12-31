@@ -13,9 +13,9 @@ import type {
   Receipt,
   LedgerEntry,
   MasterItem,
-  MasterItemType
+  MasterItemType,
+  TransactionEvent
 } from '@/lib/types';
-import type { TransactionEvent } from '@/lib/eventStore';
 
 export interface AppState {
   events: TransactionEvent[];
@@ -32,6 +32,7 @@ export interface AppState {
   isInitialized: boolean;
   isLoaded: boolean;
   isCalculating: boolean;
+  hasUnsavedChanges: boolean;
   masterData: {
     Customer: MasterItem[];
     Supplier: MasterItem[];
@@ -62,14 +63,8 @@ export type AppDispatch = {
   updateReceipt: (receipt: Receipt) => void;
   deleteReceipt: (id: string) => void;
   addOrUpdateMaster: (master: MasterItem) => void;
-  setPurchases: (purchases: Purchase[]) => void;
-  setSales: (sales: Sale[]) => void;
-  setPurchaseReturns: (returns: PurchaseReturn[]) => void;
-  setSaleReturns: (returns: SaleReturn[]) => void;
-  setPayments: (payments: Payment[]) => void;
-  setReceipts: (receipts: Receipt[]) => void;
-  setLocationTransfers: (transfers: LocationTransfer[]) => void;
-  setAdjustments: (adjustments: StockAdjustment[]) => void;
+  loadEvents: (events: TransactionEvent[]) => void;
+  setHasUnsavedChanges: (hasChanges: boolean) => void;
 };
 
 
@@ -94,10 +89,16 @@ export function useAppState(): AppState {
   }), [context, memoizedGetAllMasters]);
 }
 
-export function useAppDispatch(): AppDispatch {
+export function useAppDispatch(): AppDispatch & { hasUnsavedChanges: boolean; setHasUnsavedChanges: (val: boolean) => void; loadEvents: (events: any[]) => void; } {
   const context = useContext(AppDispatchContext);
-  if (!context) {
+  const stateContext = useContext(AppStateContext);
+  if (!context || !stateContext) {
     throw new Error('useAppDispatch must be used within an AppStateProvider');
   }
-  return context;
+  return {
+    ...context,
+    hasUnsavedChanges: stateContext.hasUnsavedChanges,
+    setHasUnsavedChanges: context.setHasUnsavedChanges,
+    loadEvents: context.loadEvents,
+  };
 }

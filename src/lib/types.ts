@@ -260,13 +260,15 @@ export interface AggregatedInventoryItem {
     currentWeight: number;
     purchaseRate: number;
     effectiveRate: number;
+    cogs: number;
     locationId: string;
     locationName: string;
     supplierName: string;
     purchaseDate: string;
     averageWeightPerBag: number;
     costBreakdown: CostBreakdown;
-    cogs: number;
+    daysInStock: number;
+    isDeadStock: boolean;
 }
 
 export interface StockAdjustment {
@@ -283,7 +285,7 @@ export interface StockAdjustment {
 
 export interface SearchableItem {
   id: string;
-  type: 'Sale' | 'Purchase' | 'Payment' | 'Receipt' | 'Lot' | 'Party' | 'Transfer';
+  type: 'Sale' | 'Purchase' | 'Payment' | 'Receipt' | 'Lot' | 'Party' | 'Transfer' | 'Adjustment' | 'Return';
   title: string;
   description: string;
   date?: string;
@@ -311,3 +313,23 @@ export interface Warehouse extends MasterItem {
 export interface Expense extends MasterItem {
   type: 'Expense';
 }
+
+export type TransactionEvent = 
+  | { type: 'MASTER_UPSERTED'; payload: MasterItem }
+  | { type: 'PURCHASE_CREATED'; payload: Purchase }
+  | { type: 'PURCHASE_UPDATED'; payload: Purchase }
+  | { type: 'PURCHASE_DELETED'; payload: { id: string } }
+  | { type: 'SALE_CREATED'; payload: Sale }
+  | { type: 'SALE_UPDATED'; payload: Sale }
+  | { type: 'SALE_DELETED'; payload:  { id: string } }
+  | { type: 'PAYMENT_CREATED'; payload: Payment }
+  | { type: 'PAYMENT_UPDATED'; payload: Payment }
+  | { type: 'PAYMENT_DELETED'; payload: { id: string } }
+  | { type: 'RECEIPT_CREATED'; payload: Receipt }
+  | { type: 'RECEIPT_UPDATED'; payload: Receipt }
+  | { type: 'RECEIPT_DELETED'; payload: { id: string } }
+  | { type: 'TRANSFER_CREATED'; payload: LocationTransfer }
+  | { type: 'ADJUSTMENT_CREATED'; payload: StockAdjustment }
+  | { type: 'RETURN_CREATED'; payload: PurchaseReturn | SaleReturn }
+  | { type: 'LEDGER_ENTRY_CREATED'; payload: LedgerEntry[] }
+  | { type: 'LEDGER_ENTRY_DELETED'; payload: { voucherId: string } };

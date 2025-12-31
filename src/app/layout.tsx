@@ -3,16 +3,14 @@
 
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { cn } from '@/lib/utils';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import AppExitHandler from '@/components/layout/AppExitHandler';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import type { AppState, AppDispatch } from '@/hooks/useAppState';
 import { AppStateContext, AppDispatchContext } from '@/hooks/useAppState';
-import { getEvents, onEventsChange, initializeEventStore, addEvent } from '@/lib/eventStore';
-import { deriveAllTransactions, DerivedTransactions } from '@/lib/derives';
-import type { TransactionEvent } from '@/lib/eventStore';
-import type { MasterItem } from '@/lib/types';
+import { getEvents, onEventsChange, addEvent, loadEvents, onUnsavedChangesChange, setHasUnsavedChanges } from '@/lib/eventStore';
+import { deriveAllTransactions } from '@/lib/derives';
+import type { TransactionEvent } from '@/lib/types';
 import { usePathname, useRouter } from 'next/navigation';
 
 export default function RootLayout({
@@ -20,7 +18,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [state, setState] = useState<Omit<AppState, 'getAllMasters' | 'isLoaded'>>({
+  const [state, setState] = useState<Omit<AppState, 'getAllMasters' | 'isLoaded' | 'hasUnsavedChanges'>>({
       events: [],
       purchases: [],
       sales: [],
@@ -36,19 +34,9 @@ export default function RootLayout({
       isCalculating: true,
       masterData: { Customer: [], Supplier: [], Agent: [], Transporter: [], Warehouse: [], Broker: [], Expense: [], Product: [] },
   });
-
+  
+  const [hasUnsavedChanges, setHasUnsavedChangesState] = useState(false);
   const [inventoryWorker, setInventoryWorker] = useState<Worker | null>(null);
-  const pathname = usePathname();
-  const router = useRouter();
-
-  useEffect(() => {
-    // const isAuthenticated = sessionStorage.getItem('vyapar-saathi-authenticated') === 'true';
-    // const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/setup') || pathname.startsWith('/recover');
-
-    // if (!isAuthenticated && !isAuthPage) {
-    //   router.replace('/login');
-    // }
-  }, [pathname, router]);
 
   useEffect(() => {
     const worker = new Worker(new URL('../lib/inventory.worker.ts', import.meta.url));
@@ -60,28 +48,11 @@ export default function RootLayout({
         ...prevState,
         inventory,
         isCalculating: false,
-      }));
-    };
-
-    const init = async () => {
-      await initializeEventStore();
-      const initialEvents = getEvents();
-      const derived = deriveAllTransactions(initialEvents);
-
-      setState(prevState => ({
-        ...prevState,
-        ...derived,
-        events: initialEvents,
         isInitialized: true,
-        isCalculating: true,
       }));
-      
-      worker.postMessage(initialEvents);
     };
 
-    init();
-
-    const unsubscribe = onEventsChange((newEvents) => {
+    const handleEventsChange = (newEvents: TransactionEvent[]) => {
       const derived = deriveAllTransactions(newEvents);
        setState(prevState => ({
         ...prevState,
@@ -90,15 +61,22 @@ export default function RootLayout({
         isCalculating: true,
       }));
       worker.postMessage(newEvents);
-    });
+    };
+
+    const unsubscribeEvents = onEventsChange(handleEventsChange);
+    const unsubscribeUnsaved = onUnsavedChangesChange(setHasUnsavedChangesState);
+
+    // Initial load
+    handleEventsChange(getEvents());
 
     return () => {
-      unsubscribe();
+      unsubscribeEvents();
+      unsubscribeUnsaved();
       worker.terminate();
     };
   }, []);
 
-  const getAllMasters = useCallback((): MasterItem[] => {
+  const getAllMasters = useCallback(() => {
     if (!state.masterData) return [];
     return Object.values(state.masterData).flat();
   }, [state.masterData]);
@@ -120,14 +98,8 @@ export default function RootLayout({
       addTransfer: (transfer) => addEvent({ type: 'TRANSFER_CREATED', payload: transfer }),
       addAdjustment: (adj) => addEvent({ type: 'ADJUSTMENT_CREATED', payload: adj }),
       addReturn: (ret) => addEvent({ type: 'RETURN_CREATED', payload: ret }),
-      setPurchases: (purchases) => purchases.forEach(p => addEvent({ type: 'PURCHASE_CREATED', payload: p})),
-      setSales: (sales) => sales.forEach(s => addEvent({ type: 'SALE_CREATED', payload: s})),
-      setPurchaseReturns: (returns) => returns.forEach(r => addEvent({type: 'RETURN_CREATED', payload: r})),
-      setSaleReturns: (returns) => returns.forEach(r => addEvent({type: 'RETURN_CREATED', payload: r})),
-      setPayments: (payments) => payments.forEach(p => addEvent({type: 'PAYMENT_CREATED', payload: p})),
-      setReceipts: (receipts) => receipts.forEach(r => addEvent({type: 'RECEIPT_CREATED', payload: r})),
-      setLocationTransfers: (transfers) => transfers.forEach(t => addEvent({type: 'TRANSFER_CREATED', payload: t})),
-      setAdjustments: (adjustments) => adjustments.forEach(a => addEvent({type: 'ADJUSTMENT_CREATED', payload: a})),
+      loadEvents: (events) => loadEvents(events),
+      setHasUnsavedChanges: (hasChanges: boolean) => setHasUnsavedChanges(hasChanges),
   }), []);
 
 
@@ -135,7 +107,8 @@ export default function RootLayout({
     ...state,
     isLoaded: state.isInitialized && !state.isCalculating,
     getAllMasters,
-  }), [state, getAllMasters]);
+    hasUnsavedChanges,
+  }), [state, getAllMasters, hasUnsavedChanges]);
 
   return (
     <html lang="en" suppressHydrationWarning>
