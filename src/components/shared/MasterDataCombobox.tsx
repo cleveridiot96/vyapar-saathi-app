@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -11,13 +12,7 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import dynamic from 'next/dynamic';
-
-const Command = dynamic(() => import('@/components/ui/command').then(mod => mod.Command), { ssr: false });
-const CommandInput = dynamic(() => import('@/components/ui/command').then(mod => mod.CommandInput), { ssr: false });
-const CommandList = dynamic(() => import('@/components/ui/command').then(mod => mod.CommandList), { ssr: false });
-const CommandEmpty = dynamic(() => import('@/components/ui/command').then(mod => mod.CommandEmpty), { ssr: false });
-const CommandItem = dynamic(() => import('@/components/ui/command').then(mod => mod.CommandItem), { ssr: false });
+import Fuse from 'fuse.js';
 
 export interface Option {
   value: string;
@@ -52,25 +47,34 @@ export const MasterDataCombobox: React.FC<MasterDataComboboxProps> = React.memo(
   className,
 }) => {
   const [open, setOpen] = React.useState(false);
+  const [searchValue, setSearchValue] = React.useState("");
 
-  // Find the selected option object to display its label
   const selectedOption = React.useMemo(() => options.find((option) => option.value === value), [options, value]);
 
-  // Handle option selection
-  const handleSelectOption = React.useCallback((optionValue: string) => {
+  const fuse = React.useMemo(() => new Fuse(options, {
+    keys: ['label'],
+    threshold: 0.3,
+  }), [options]);
+
+  const filteredOptions = React.useMemo(() => {
+    if (!searchValue) return options;
+    return fuse.search(searchValue).map(result => result.item);
+  }, [options, searchValue, fuse]);
+
+  const handleSelectOption = (optionValue: string) => {
     onChange(optionValue === value ? undefined : optionValue);
     setOpen(false);
-  }, [onChange, value]);
+    setSearchValue("");
+  };
 
-  // Handle add new
-  const handleAddNew = React.useCallback((e: React.MouseEvent) => {
+  const handleAddNew = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setOpen(false);
     if (onAddNew) {
       onAddNew(e);
     }
-  }, [onAddNew]);
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal={true}>
@@ -91,43 +95,55 @@ export const MasterDataCombobox: React.FC<MasterDataComboboxProps> = React.memo(
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        className="w-[var(--radix-popover-trigger-width)] p-0 z-[100]" 
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] p-0 z-[100]"
         align="start"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <Command>
-            <CommandInput 
-                placeholder={searchPlaceholder}
-            />
-            <CommandList>
-                 <CommandEmpty>{notFoundMessage}</CommandEmpty>
-                 {options.map((option) => (
-                    <CommandItem
-                        key={option.value}
-                        value={option.label}
-                        onSelect={() => handleSelectOption(option.value)}
-                    >
-                        <Check
-                            className={cn(
-                            "mr-2 h-4 w-4",
-                            value === option.value ? "opacity-100" : "opacity-0"
-                            )}
-                        />
-                        {option.label}
-                    </CommandItem>
-                ))}
-                  {onAddNew && (
-                    <>
-                        <div className="border-t my-1" />
-                        <CommandItem onSelect={(e) => handleAddNew(e as any)}>
-                            <PlusCircle className="mr-2 h-4 w-4 text-primary" />
-                            <span className="text-primary font-medium">{addNewLabel}</span>
-                        </CommandItem>
-                    </>
-                    )}
-            </CommandList>
-        </Command>
+        <div className="flex items-center border-b px-3">
+          <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+          <Input
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="flex h-11 w-full rounded-md border-0 bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
+        <ScrollArea className="h-auto max-h-60">
+          <div className="p-1">
+            {filteredOptions.length === 0 && (
+              <p className="p-4 text-center text-sm text-muted-foreground">{notFoundMessage}</p>
+            )}
+            {filteredOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant="ghost"
+                className="w-full justify-start font-normal h-auto py-1.5 px-2"
+                onClick={() => handleSelectOption(option.value)}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    value === option.value ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </ScrollArea>
+        {onAddNew && (
+          <div className="border-t p-1">
+            <Button
+              variant="ghost"
+              className="w-full justify-start font-medium h-auto py-1.5 px-2 text-primary"
+              onClick={handleAddNew}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              {addNewLabel}
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
