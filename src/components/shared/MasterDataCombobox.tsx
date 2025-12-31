@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, PlusCircle, X, Edit2, Search } from "lucide-react";
+import { Check, ChevronsUpDown, PlusCircle, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -150,3 +150,5 @@ export const MasterDataCombobox: React.FC<MasterDataComboboxProps> = React.memo(
 });
 
 MasterDataCombobox.displayName = "MasterDataCombobox";
+
+export { MasterDataCombobox };
