@@ -81,7 +81,11 @@ export function DashboardClient() {
                                         title={feature.title} 
                                         iconName={feature.iconName} 
                                         href={feature.href} 
-                                        style={feature.style}
+                                        style={{
+                                            '--shadow-color': feature.shadow,
+                                            backgroundImage: `linear-gradient(to bottom right, ${feature.gradientFrom}, ${feature.gradientTo})`,
+                                            color: feature.textColor,
+                                        } as React.CSSProperties}
                                     />
                                 </SortableDashboardTile>
                                 )
