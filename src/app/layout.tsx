@@ -44,12 +44,12 @@ export default function RootLayout({
   useEffect(() => {
     // This effect ensures that unauthenticated users cannot access the app.
     // It's a client-side check.
-    const isAuthenticated = sessionStorage.getItem('vyapar-saathi-authenticated') === 'true';
-    const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/setup') || pathname.startsWith('/recover');
+    // const isAuthenticated = sessionStorage.getItem('vyapar-saathi-authenticated') === 'true';
+    // const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/setup') || pathname.startsWith('/recover');
 
-    if (!isAuthenticated && !isAuthPage) {
-      router.replace('/login');
-    }
+    // if (!isAuthenticated && !isAuthPage) {
+    //   router.replace('/login');
+    // }
   }, [pathname, router]);
 
   useEffect(() => {
