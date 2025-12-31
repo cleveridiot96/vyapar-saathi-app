@@ -1,3 +1,4 @@
+
 "use client";
 
 import './globals.css';
@@ -12,7 +13,7 @@ import { getEvents, onEventsChange, initializeEventStore, addEvent } from '@/lib
 import { deriveAllTransactions, DerivedTransactions } from '@/lib/derives';
 import type { TransactionEvent } from '@/lib/eventStore';
 import type { MasterItem } from '@/lib/types';
-
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function RootLayout({
   children,
@@ -37,6 +38,19 @@ export default function RootLayout({
   });
 
   const [inventoryWorker, setInventoryWorker] = useState<Worker | null>(null);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    // This effect ensures that unauthenticated users cannot access the app.
+    // It's a client-side check.
+    const isAuthenticated = sessionStorage.getItem('vyapar-saathi-authenticated') === 'true';
+    const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/setup') || pathname.startsWith('/recover');
+
+    if (!isAuthenticated && !isAuthPage) {
+      router.replace('/login');
+    }
+  }, [pathname, router]);
 
   useEffect(() => {
     const worker = new Worker(new URL('../lib/inventory.worker.ts', import.meta.url));
@@ -108,7 +122,6 @@ export default function RootLayout({
       addTransfer: (transfer) => addEvent({ type: 'TRANSFER_CREATED', payload: transfer }),
       addAdjustment: (adj) => addEvent({ type: 'ADJUSTMENT_CREATED', payload: adj }),
       addReturn: (ret) => addEvent({ type: 'RETURN_CREATED', payload: ret }),
-      // These setters are now just wrappers around addEvent
       setPurchases: (purchases) => purchases.forEach(p => addEvent({ type: 'PURCHASE_CREATED', payload: p})),
       setSales: (sales) => sales.forEach(s => addEvent({ type: 'SALE_CREATED', payload: s})),
       setPurchaseReturns: (returns) => returns.forEach(r => addEvent({type: 'RETURN_CREATED', payload: r})),
