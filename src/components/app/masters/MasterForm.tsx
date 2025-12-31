@@ -159,129 +159,131 @@ export function MasterForm({
           </Button>
         </DialogHeader>
         
-        <ScrollArea className="-mx-6 flex-1 px-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-4">
-             <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Type <span className="text-destructive">*</span></FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isLocked || !!initialData}>
-                        <FormControl>
-                            <SelectTrigger><SelectValue placeholder="Select an item type" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {allMasterTypes.map(type => (
-                            <SelectItem key={type} value={type}>{getSingularLabel(type)}</SelectItem>
-                          ))}
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{singularLabel} Name <span className="text-destructive">*</span></FormLabel>
-                  <FormControl>
-                    <Input placeholder={`Enter ${singularLabel.toLowerCase()} name`} {...field} disabled={isLocked} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {(itemType === 'Agent' || itemType === 'Broker') && (
-              <div className="grid grid-cols-2 gap-4">
-                 <FormField
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <ScrollArea className="-mx-6 flex-1 px-6 max-h-[60vh]">
+              <div className="space-y-4 pt-4 pb-6 px-1">
+                <FormField
                     control={form.control}
-                    name="commission"
+                    name="type"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Commission</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 1.5" {...field} disabled={isLocked} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
-                        </FormControl>
+                        <FormLabel>Type <span className="text-destructive">*</span></FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={isLocked || !!initialData}>
+                            <FormControl>
+                                <SelectTrigger><SelectValue placeholder="Select an item type" /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {allMasterTypes.map(type => (
+                                <SelectItem key={type} value={type}>{getSingularLabel(type)}</SelectItem>
+                              ))}
+                            </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  {itemType === 'Broker' && (
-                    <FormField
-                      control={form.control}
-                      name="commissionType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Type</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} disabled={isLocked}>
-                             <FormControl><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger></FormControl>
-                             <SelectContent>
-                                <SelectItem value="Percentage">Percentage (%)</SelectItem>
-                                <SelectItem value="Fixed">Fixed (₹)</SelectItem>
-                             </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{singularLabel} Name <span className="text-destructive">*</span></FormLabel>
+                      <FormControl>
+                        <Input placeholder={`Enter ${singularLabel.toLowerCase()} name`} {...field} disabled={isLocked} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-              </div>
-            )}
-            
-            {(['Supplier', 'Customer', 'Agent', 'Broker'].includes(itemType)) && (
-               <div className="grid grid-cols-2 gap-4">
-                 <FormField
-                    control={form.control}
-                    name="openingBalance"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Opening Balance (₹)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="0" {...field} disabled={isLocked} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                      control={form.control}
-                      name="openingBalanceType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Balance Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLocked}>
-                             <FormControl><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger></FormControl>
-                             <SelectContent>
-                                <SelectItem value="Dr">Debit (Receivable)</SelectItem>
-                                <SelectItem value="Cr">Credit (Payable)</SelectItem>
-                             </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
+                />
+
+                {(itemType === 'Agent' || itemType === 'Broker') && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="commission"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Commission</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="e.g., 1.5" {...field} disabled={isLocked} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {itemType === 'Broker' && (
+                        <FormField
+                          control={form.control}
+                          name="commissionType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Type</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value} disabled={isLocked}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Percentage">Percentage (%)</SelectItem>
+                                    <SelectItem value="Fixed">Fixed (₹)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       )}
-                    />
+                  </div>
+                )}
+                
+                {(['Supplier', 'Customer', 'Agent', 'Broker'].includes(itemType)) && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="openingBalance"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Opening Balance (₹)</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="0" {...field} disabled={isLocked} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="openingBalanceType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Balance Type</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLocked}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Dr">Debit (Receivable)</SelectItem>
+                                    <SelectItem value="Cr">Credit (Payable)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                  </div>
+                )}
               </div>
-            )}
+            </ScrollArea>
+            <DialogFooter className="border-t pt-4 mt-4">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              {isLocked && !isEditingFixed && (
+                <Button type="button" variant="secondary" onClick={handleUnlock}>
+                    <Unlock className="mr-2 h-4 w-4"/> Unlock
+                </Button>
+              )}
+              <Button type="submit" disabled={isLocked}>Save</Button>
+            </DialogFooter>
           </form>
         </Form>
-        </ScrollArea>
-        <DialogFooter className="border-t pt-4 mt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          {isLocked && !isEditingFixed && (
-            <Button type="button" variant="secondary" onClick={handleUnlock}>
-                <Unlock className="mr-2 h-4 w-4"/> Unlock
-            </Button>
-          )}
-          <Button type="button" onClick={form.handleSubmit(handleSubmit)} disabled={isLocked}>Save</Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
