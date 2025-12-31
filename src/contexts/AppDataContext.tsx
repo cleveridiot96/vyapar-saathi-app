@@ -24,9 +24,8 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
 
   // Derive state from events
   const derivedState = useMemo(() => {
-    setIsCalculating(true);
+    setIsCalculating(true); // Start calculation
     const result = deriveAllTransactions(events);
-    // Directly calculate inventory here since worker is removed
     const inventory = calculateInventory(
         result.purchases,
         result.sales,
@@ -35,11 +34,15 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
         result.purchaseReturns,
         result.saleReturns
     );
-     // Simulate async calculation for UI feedback
-    queueMicrotask(() => setIsCalculating(false));
     return { ...result, inventory };
   }, [events]);
   
+  // Effect to finish calculation state change
+  useEffect(() => {
+    if (derivedState) {
+        setIsCalculating(false);
+    }
+  }, [derivedState]);
 
   useEffect(() => {
     const handleEvents = (newEvents: TransactionEvent[]) => {
