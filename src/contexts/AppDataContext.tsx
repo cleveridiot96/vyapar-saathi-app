@@ -17,35 +17,41 @@ const AppDataContext = createContext<{
 } | undefined>(undefined);
 
 export const AppDataProvider = ({ children }: { children: React.ReactNode }) => {
+  const [isMounted, setIsMounted] = useState(false);
   const [events, setEvents] = useState<TransactionEvent[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCalculating, setIsCalculating] = useState(true);
   const [hasUnsavedChangesState, _setHasUnsavedChanges] = useState(false);
 
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Derive state from events
   const derivedState = useMemo(() => {
-    setIsCalculating(true); // Start calculation
-    const result = deriveAllTransactions(events);
-    const inventory = calculateInventory(
-        result.purchases,
-        result.sales,
-        result.adjustments,
-        result.locationTransfers,
-        result.purchaseReturns,
-        result.saleReturns
-    );
-    return { ...result, inventory };
+    return deriveAllTransactions(events);
   }, [events]);
-  
-  // Effect to finish calculation state change
+
+  const inventory = useMemo(() => {
+    if (!isLoaded) return [];
+    return calculateInventory(
+      derivedState.purchases,
+      derivedState.sales,
+      derivedState.adjustments,
+      derivedState.locationTransfers,
+      derivedState.purchaseReturns,
+      derivedState.saleReturns
+    );
+  }, [isLoaded, derivedState]);
+
   useEffect(() => {
-    if (derivedState) {
-        setIsCalculating(false);
-    }
-  }, [derivedState]);
+    setIsCalculating(false);
+  }, [derivedState, inventory]);
+
 
   useEffect(() => {
     const handleEvents = (newEvents: TransactionEvent[]) => {
+      setIsCalculating(true);
       setEvents(newEvents);
       if (!isLoaded) setIsLoaded(true);
     };
@@ -60,6 +66,7 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
 
   const state: AppState = {
     ...derivedState,
+    inventory,
     events,
     isLoaded,
     isInitialized: isLoaded,
@@ -67,7 +74,9 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
     hasUnsavedChanges: hasUnsavedChangesState,
     getAllMasters: useCallback(() => {
       const all: MasterItem[] = [];
-      Object.values(derivedState.masterData).forEach(arr => all.push(...(arr || [])));
+      if (derivedState.masterData) {
+        Object.values(derivedState.masterData).forEach(arr => all.push(...(arr || [])));
+      }
       return all;
     }, [derivedState.masterData]),
   };
@@ -103,6 +112,9 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
     setSaleReturns: (updater) => { /* Managed by events */ },
   }), [setHasUnsavedChangesCallback]);
   
+  if (!isMounted) {
+    return null; // Or a loading spinner
+  }
 
   return (
     <AppDataContext.Provider value={{ state, dispatch }}>
