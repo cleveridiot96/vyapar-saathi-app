@@ -1,10 +1,9 @@
-
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SidebarMenu, SidebarMenuItem, useSidebar, SidebarTrigger } from "@/components/ui/sidebar"; 
-import type { Feature as NavItem } from "@/lib/features";
+import { SidebarMenu, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar"; 
+import type { StyledNavItem as NavItem } from "@/lib/features";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import React from "react";
@@ -12,7 +11,7 @@ import {
   LayoutDashboard, ShoppingCart, ShoppingBag, Truck, Boxes, BookOpenCheck,
   CircleDollarSign, ClipboardList, BookUser, PackageSearch, PieChart,
   BarChartHorizontal, ArrowRightLeft, Receipt, CalendarDays, Users,
-  DatabaseBackup, SlidersHorizontal, Landmark, Search, HelpCircle as FallbackIcon, Menu
+  DatabaseBackup, SlidersHorizontal, Landmark, Search, HelpCircle as FallbackIcon, BookCopy, Layers, Rocket, BookOpen, BookMarked
 } from 'lucide-react';
 import type { LucideProps } from 'lucide-react';
 import { useHydrated } from "@/hooks/useHydrated";
@@ -21,7 +20,7 @@ const iconMap: Record<string, React.ComponentType<LucideProps>> = {
   LayoutDashboard, ShoppingCart, ShoppingBag, Truck, Boxes, BookOpenCheck,
   CircleDollarSign, ClipboardList, BookUser, PackageSearch, PieChart,
   BarChartHorizontal, ArrowRightLeft, Receipt, CalendarDays, Users,
-  DatabaseBackup, SlidersHorizontal, Landmark, Search,
+  DatabaseBackup, SlidersHorizontal, Landmark, Search, BookCopy, Layers, Rocket, BookOpen, BookMarked
 };
 
 const LazyIcon = ({ name }: { name: string }) => {
@@ -36,7 +35,7 @@ interface ClientSidebarMenuProps {
 
 export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
   const pathname = usePathname();
-  const { state: sidebarState, setOpenMobile, isMobile } = useSidebar(); 
+  const { state: sidebarState, setOpenMobile } = useSidebar(); 
   const isHydrated = useHydrated();
 
   const handleLinkClick = () => {
@@ -88,9 +87,8 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
           
           const dynamicStyles: React.CSSProperties = {};
             if (isActive) {
-                dynamicStyles['--shadow-color'] = item.shadow;
-                dynamicStyles.backgroundImage = `linear-gradient(to bottom right, ${item.gradientFrom}, ${item.gradientTo})`;
-                dynamicStyles.color = item.textColor;
+                dynamicStyles.backgroundImage = item.style?.backgroundImage;
+                dynamicStyles.color = item.style?.color;
             } else {
                 dynamicStyles['--hover-bg-color'] = item.hoverColor;
             }

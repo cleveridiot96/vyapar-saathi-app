@@ -43,3 +43,5 @@ export function useInventory(saleToEditId?: string | null) {
     isLoading: !isInitialized || isCalculating,
   };
 }
+
+export type { AggregatedInventoryItem };

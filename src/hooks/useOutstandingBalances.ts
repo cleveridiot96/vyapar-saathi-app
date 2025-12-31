@@ -1,20 +1,20 @@
 "use client";
 
 import { useMemo } from 'react';
-import { useTransactions } from './useTransactions';
+import { useAppState } from './useAppState';
 import type { MasterItem } from '@/lib/types';
-import { useFinancialYear } from '@/contexts/SettingsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { isDateInFinancialYear, isDateBeforeFinancialYear } from '@/lib/utils';
 import { parseISO } from 'date-fns';
 
 export function useOutstandingBalances() {
-    const { purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger, getAllMasters, isTransactionsLoaded } = useTransactions();
-    const { financialYear } = useFinancialYear();
+    const { purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger, getAllMasters, isLoaded } = useAppState();
+    const { financialYear } = useSettings();
 
     const allMasters = useMemo(() => getAllMasters(), [getAllMasters]);
 
     const balances = useMemo(() => {
-        if (!isTransactionsLoaded) {
+        if (!isLoaded) {
             return new Map<string, number>();
         }
 
@@ -34,10 +34,12 @@ export function useOutstandingBalances() {
         // 2. Process all transactions to establish final balances
         allTransactions.forEach(tx => {
             // Sales increase receivables
-            if ('billedAmount' in tx && tx.type !== 'Purchase' && tx.type !== 'Payment' && tx.type !== 'Receipt' && tx.type !== 'Purchase Return' && tx.type !== 'Sale Return' && tx.type !== 'Expense' && tx.type !== 'Transfer') { // Simple check for Sale
+            if ('billedAmount' in tx && 'isStockPaymentSale' in tx) { // Simple check for Sale
                 const s = tx as typeof sales[0];
                 const primaryDebtorId = s.brokerId || s.customerId;
-                balancesMap.set(primaryDebtorId, (balancesMap.get(primaryDebtorId) || 0) + (s.billedAmount || 0));
+                if (primaryDebtorId) {
+                    balancesMap.set(primaryDebtorId, (balancesMap.get(primaryDebtorId) || 0) + (s.billedAmount || 0));
+                }
 
                 const brokerCommission = (s.expenses || []).find(e => e.account === 'Broker Commission')?.amount || 0;
                 if (s.brokerId && brokerCommission > 0) {
@@ -45,20 +47,26 @@ export function useOutstandingBalances() {
                 }
             } 
             // Purchases increase payables
-            else if ('totalAmount' in tx) { // Simple check for Purchase
+            else if ('totalAmount' in tx && 'supplierId' in tx) { // Simple check for Purchase
                 const p = tx as typeof purchases[0];
                 const primaryCreditorId = p.agentId || p.supplierId;
-                balancesMap.set(primaryCreditorId, (balancesMap.get(primaryCreditorId) || 0) - (p.totalAmount || 0));
+                if(primaryCreditorId) {
+                    balancesMap.set(primaryCreditorId, (balancesMap.get(primaryCreditorId) || 0) - (p.totalAmount || 0));
+                }
             }
             // Receipts decrease receivables
-            else if ('paymentMethod' in tx && 'transactionType' in tx) { // Receipt
+            else if ('paymentMethod' in tx && 'transactionType' in tx && 'cashDiscount' in tx) { // Receipt
                 const r = tx as typeof receipts[0];
-                balancesMap.set(r.partyId, (balancesMap.get(r.partyId) || 0) - (r.amount + (r.cashDiscount || 0)));
+                if(r.partyId) {
+                    balancesMap.set(r.partyId, (balancesMap.get(r.partyId) || 0) - (r.amount + (r.cashDiscount || 0)));
+                }
             }
             // Payments decrease payables
-            else if ('paymentMethod' in tx) { // Payment
+            else if ('paymentMethod' in tx && 'paymentType' in tx) { // Payment
                 const p = tx as typeof payments[0];
-                balancesMap.set(p.partyId, (balancesMap.get(p.partyId) || 0) + (p.amount || 0));
+                if(p.partyId) {
+                    balancesMap.set(p.partyId, (balancesMap.get(p.partyId) || 0) + (p.amount || 0));
+                }
             }
             // Purchase Returns decrease payables
             else if ('originalPurchaseId' in tx) { // Purchase Return
@@ -66,7 +74,9 @@ export function useOutstandingBalances() {
                  const p = purchases.find(p => p.id === pr.originalPurchaseId);
                  if (p) {
                     const primaryCreditorId = p.agentId || p.supplierId;
-                    balancesMap.set(primaryCreditorId, (balancesMap.get(primaryCreditorId) || 0) + (pr.returnAmount || 0));
+                    if(primaryCreditorId) {
+                        balancesMap.set(primaryCreditorId, (balancesMap.get(primaryCreditorId) || 0) + (pr.returnAmount || 0));
+                    }
                 }
             } 
             // Sale Returns decrease receivables
@@ -75,7 +85,9 @@ export function useOutstandingBalances() {
                 const s = sales.find(s => s.id === sr.originalSaleId);
                 if (s) {
                     const primaryDebtorId = s.brokerId || s.customerId;
-                    balancesMap.set(primaryDebtorId, (balancesMap.get(primaryDebtorId) || 0) - (sr.returnAmount || 0));
+                    if(primaryDebtorId) {
+                        balancesMap.set(primaryDebtorId, (balancesMap.get(primaryDebtorId) || 0) - (sr.returnAmount || 0));
+                    }
                 }
             }
             // Pending expenses increase payables
@@ -86,7 +98,7 @@ export function useOutstandingBalances() {
 
 
         return balancesMap;
-    }, [allMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger, isTransactionsLoaded]);
+    }, [allMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger, isLoaded]);
 
     const { receivableParties, payableParties } = useMemo(() => {
         const receivableParties: MasterItem[] = [];
@@ -96,10 +108,15 @@ export function useOutstandingBalances() {
             const balance = balances.get(party.id);
             if (balance === undefined) return;
             
+            const partyWithType = {
+                ...party,
+                balance
+            };
+            
             if (balance > 0.01) { 
-                receivableParties.push({ ...party, balance });
+                receivableParties.push(partyWithType);
             } else if (balance < -0.01) {
-                payableParties.push({ ...party, balance });
+                payableParties.push(partyWithType);
             }
         });
         
@@ -120,6 +137,6 @@ export function useOutstandingBalances() {
         payableParties,
         getPartyName,
         balances,
-        isBalancesLoading: !isTransactionsLoaded
+        isBalancesLoading: !isLoaded
     };
-};
+}

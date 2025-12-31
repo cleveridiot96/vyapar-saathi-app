@@ -10,9 +10,10 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { features } from "@/lib/features";
+import { navItems } from "@/lib/features";
 import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
+import { LazyIcon } from "@/components/layout/ClientSidebarMenu";
 
 interface CommandMenuProps {
   open: boolean;
@@ -51,7 +52,7 @@ export function CommandMenu({ open, setOpen }: CommandMenuProps) {
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading="Suggestions">
-          {features.map((feature) => (
+          {navItems.map((feature) => (
             <CommandItem
               key={feature.href}
               value={feature.title}
@@ -59,8 +60,8 @@ export function CommandMenu({ open, setOpen }: CommandMenuProps) {
                 runCommand(() => router.push(feature.href));
               }}
             >
-              <feature.icon className="mr-2 h-4 w-4" />
-              <span>{feature.title}</span>
+              <LazyIcon name={feature.iconName} />
+              <span className="ml-2">{feature.title}</span>
             </CommandItem>
           ))}
         </CommandGroup>

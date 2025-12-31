@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { initSearchEngine, searchData, type SearchableItem } from '@/lib/searchEngine';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useAppState } from '@/hooks/useAppState';
 import { buildSearchData } from '@/lib/buildSearchData';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from '@/components/ui/command';
 import { Search as SearchIcon } from 'lucide-react';
@@ -43,14 +43,17 @@ const SearchBar = () => {
   const commandRef = useRef<HTMLDivElement>(null);
   
   const { 
-    purchases = [],
-    sales = [], 
-    payments = [], 
-    receipts = [], 
+    purchases,
+    sales, 
+    payments, 
+    receipts, 
     getAllMasters, 
-    locationTransfers = [], 
-    isLoaded 
-  } = useTransactions();
+    locationTransfers,
+    isLoaded,
+    adjustments,
+    purchaseReturns,
+    saleReturns,
+  } = useAppState();
   
   const initializeIndex = useCallback(() => {
     if (isLoaded) {
@@ -63,13 +66,16 @@ const SearchBar = () => {
           receipts,
           masters: allMasters,
           locationTransfers,
+          adjustments,
+          purchaseReturns,
+          saleReturns,
         });
         initSearchEngine(searchDataPayload);
       } catch(error) {
         console.error("Search initialization failed:", error);
       }
     }
-  }, [isLoaded, sales, purchases, payments, receipts, getAllMasters, locationTransfers]);
+  }, [isLoaded, sales, purchases, payments, receipts, getAllMasters, locationTransfers, adjustments, purchaseReturns, saleReturns]);
 
   useEffect(() => {
     initializeIndex();

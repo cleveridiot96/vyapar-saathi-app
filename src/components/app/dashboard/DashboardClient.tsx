@@ -6,7 +6,7 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-ki
 
 import { useToast } from "@/hooks/use-toast";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
-import { features, type Feature } from '@/lib/features';
+import { navItems, type StyledNavItem as Feature } from '@/lib/features';
 import { useFinancialYear } from '@/contexts/SettingsContext';
 import { Button } from '@/components/ui/button';
 import { Edit, Save } from 'lucide-react';
@@ -26,7 +26,7 @@ export function DashboardClient() {
     const isHydrated = useHydrated();
     
     const [orderedNavItems, setOrderedNavItems] = useState<PlainFeature[]>(
-        features.filter(f => f.href !== '/dashboard').map(({ icon, ...rest }) => rest)
+        navItems.filter(f => f.href !== '/dashboard').map(({ ...rest }) => rest)
     );
 
     const [isEditMode, setIsEditMode] = useState(false);
@@ -56,7 +56,7 @@ export function DashboardClient() {
 
             {!isHydrated || orderedNavItems.length === 0 ? ( 
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                    {Array.from({ length: features.length }).map((_, index) => (
+                    {Array.from({ length: navItems.length }).map((_, index) => (
                         <Skeleton key={index} className="h-40 rounded-xl" />
                     ))}
                 </div>
@@ -72,19 +72,15 @@ export function DashboardClient() {
                     >
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                             {orderedNavItems.map((plainFeature) => {
-                                const feature = features.find(f => f.title === plainFeature.title);
-                                if (!feature) return null;
+                                const feature = navItems.find(f => f.title === plainFeature.title);
+                                if (!feature || !feature.style) return null;
                                 return (
                                 <SortableDashboardTile key={plainFeature.title} id={plainFeature.title} isEditMode={isEditMode}>
                                     <DashboardTile 
                                         title={feature.title} 
                                         iconName={feature.iconName} 
                                         href={feature.href} 
-                                        style={{
-                                            '--shadow-color': feature.shadow,
-                                            backgroundImage: `linear-gradient(to bottom right, ${feature.gradientFrom}, ${feature.gradientTo})`,
-                                            color: feature.textColor,
-                                        } as React.CSSProperties}
+                                        style={feature.style}
                                     />
                                 </SortableDashboardTile>
                                 )

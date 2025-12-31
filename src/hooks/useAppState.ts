@@ -16,6 +16,8 @@ import type {
   MasterItemType,
   TransactionEvent
 } from '@/lib/types';
+import { useAppData } from '@/contexts/AppDataContext';
+import { addEvent, loadEvents as loadEventsFromStore, setHasUnsavedChanges as setHasUnsavedChangesInStore } from '@/lib/eventStore';
 
 export interface AppState {
   events: TransactionEvent[];
@@ -65,6 +67,10 @@ export type AppDispatch = {
   addOrUpdateMaster: (master: MasterItem) => void;
   loadEvents: (events: TransactionEvent[]) => void;
   setHasUnsavedChanges: (hasChanges: boolean) => void;
+  setPurchases: (updater: React.SetStateAction<Purchase[]>) => void;
+  setSales: (updater: React.SetStateAction<Sale[]>) => void;
+  setPurchaseReturns: (updater: React.SetStateAction<PurchaseReturn[]>) => void;
+  setSaleReturns: (updater: React.SetStateAction<SaleReturn[]>) => void;
 };
 
 
@@ -74,31 +80,15 @@ export const AppDispatchContext = createContext<AppDispatch | undefined>(undefin
 export function useAppState(): AppState {
   const context = useContext(AppStateContext);
   if (!context) {
-    throw new Error('useAppState must be used within an AppStateProvider');
+    throw new Error('useAppState must be used within an AppDataProvider');
   }
-  
-  // Memoize derivative functions
-  const memoizedGetAllMasters = useCallback(() => {
-    if (!context.masterData) return [];
-    return Object.values(context.masterData).flat();
-  }, [context.masterData]);
-
-  return useMemo(() => ({
-    ...context,
-    getAllMasters: memoizedGetAllMasters,
-  }), [context, memoizedGetAllMasters]);
+  return context;
 }
 
-export function useAppDispatch(): AppDispatch & { hasUnsavedChanges: boolean; setHasUnsavedChanges: (val: boolean) => void; loadEvents: (events: any[]) => void; } {
+export function useAppDispatch(): AppDispatch {
   const context = useContext(AppDispatchContext);
-  const stateContext = useContext(AppStateContext);
-  if (!context || !stateContext) {
-    throw new Error('useAppDispatch must be used within an AppStateProvider');
+  if (!context) {
+    throw new Error('useAppDispatch must be used within an AppDataProvider');
   }
-  return {
-    ...context,
-    hasUnsavedChanges: stateContext.hasUnsavedChanges,
-    setHasUnsavedChanges: context.setHasUnsavedChanges,
-    loadEvents: context.loadEvents,
-  };
+  return context;
 }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -32,7 +31,7 @@ import { CalendarIcon, Info, Percent, PlusCircle, Trash2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { saleSchema, type SaleFormValues } from '@/lib/schemas/saleSchema';
-import type { MasterItem, MasterItemType, Sale, ExpenseItem } from '@/lib/types';
+import type { MasterItem, MasterItemType, Sale, ExpenseItem, CostBreakdown } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import {
   Accordion,
@@ -40,10 +39,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useInventory } from "@/hooks/useInventory";
+import { useInventory, type AggregatedInventoryItem } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
 import { DatePicker } from "@/components/ui/date-picker";
-import { useTransactions } from "@/hooks/useTransactions";
+import { useAppState, useAppDispatch } from "@/hooks/useAppState";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
@@ -68,53 +67,62 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   onMasterDataUpdate,
 }) => {
   const { toast } = useToast();
-  const { masterData, addOrUpdateMaster } = useTransactions();
+  const { masterData } = useAppState();
   const { Customer: customers, Transporter: transporters, Broker: brokers, Expense: expenses, Warehouse: warehouses } = masterData || {};
   const { availableStock } = useInventory(saleToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   const [isMasterFormOpen, setIsMasterFormOpen] = React.useState(false);
   const [masterFormItemType, setMasterFormItemType] = React.useState<MasterItemType | null>(null);
   const [masterItemToEdit, setMasterItemToEdit] = React.useState<MasterItem | null>(null);
   const [manualNetWeight, setManualNetWeight] = React.useState<Record<number, boolean>>({});
   const [lastRates, setLastRates] = React.useState<Record<number, number | null>>({});
 
+  const getDefaultValues = React.useCallback((): SaleFormValues => {
+    if (saleToEdit) {
+      return {
+        date: new Date(saleToEdit.date),
+        billNumber: saleToEdit.billNumber || "",
+        customerId: saleToEdit.customerId,
+        brokerId: saleToEdit.brokerId || undefined,
+        transporterId: saleToEdit.transporterId || undefined,
+        items: saleToEdit.items.map(item => ({
+            lotNumber: item.lotNumber,
+            quantity: item.quantity,
+            netWeight: item.netWeight,
+            rate: item.rate
+        })),
+        expenses: saleToEdit.expenses || [],
+        notes: saleToEdit.notes || "",
+        cbAmount: saleToEdit.cbAmount || undefined,
+        balanceAmount: saleToEdit.balanceAmount || undefined,
+      };
+    }
+    return {
+      date: new Date(),
+      billNumber: "",
+      customerId: undefined,
+      brokerId: undefined,
+      transporterId: undefined,
+      items: [{ lotNumber: "", quantity: undefined, netWeight: undefined, rate: undefined }],
+      expenses: [],
+      notes: "",
+      cbAmount: undefined,
+      balanceAmount: undefined,
+    };
+  }, [saleToEdit]);
+
+  const memoizedSaleSchema = React.useMemo(() =>
+    saleSchema(existingSales, availableStock, saleToEdit?.id)
+  , [availableStock, existingSales, saleToEdit]);
+
   const methods = useForm<SaleFormValues>({
-    resolver: zodResolver(saleSchema(existingSales, availableStock, saleToEdit?.id)),
-    defaultValues: saleToEdit
-      ? {
-          date: new Date(saleToEdit.date),
-          billNumber: saleToEdit.billNumber || "",
-          customerId: saleToEdit.customerId,
-          brokerId: saleToEdit.brokerId || undefined,
-          transporterId: saleToEdit.transporterId || undefined,
-          items: saleToEdit.items.map(item => ({
-              lotNumber: item.lotNumber,
-              quantity: item.quantity,
-              netWeight: item.netWeight,
-              rate: item.rate
-          })),
-          expenses: saleToEdit.expenses || [],
-          notes: saleToEdit.notes || "",
-          cbAmount: saleToEdit.cbAmount || undefined,
-          balanceAmount: saleToEdit.balanceAmount || undefined,
-        }
-      : {
-          date: new Date(),
-          billNumber: "",
-          customerId: undefined,
-          brokerId: undefined,
-          transporterId: undefined,
-          items: [{ lotNumber: "", quantity: undefined, netWeight: undefined, rate: undefined }],
-          expenses: [],
-          notes: "",
-          cbAmount: undefined,
-          balanceAmount: undefined,
-        },
+    resolver: zodResolver(memoizedSaleSchema),
+    defaultValues: getDefaultValues(),
     mode: 'onChange',
   });
-  
-  const { control, watch, setValue, handleSubmit, formState: { errors }, reset } = methods;
+  const { control, watch, reset, setValue, handleSubmit, formState: { errors } } = methods;
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const { fields: expenseFields, append: appendExpense, remove: removeExpense } = useFieldArray({ control, name: "expenses" });
@@ -124,38 +132,9 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   const watchedItems = watch("items");
 
     React.useEffect(() => {
-    const defaultValues = saleToEdit
-      ? {
-          date: new Date(saleToEdit.date),
-          billNumber: saleToEdit.billNumber || "",
-          customerId: saleToEdit.customerId,
-          brokerId: saleToEdit.brokerId || undefined,
-          transporterId: saleToEdit.transporterId || undefined,
-          items: saleToEdit.items.map(item => ({
-              lotNumber: item.lotNumber,
-              quantity: item.quantity,
-              netWeight: item.netWeight,
-              rate: item.rate
-          })),
-          expenses: saleToEdit.expenses || [],
-          notes: saleToEdit.notes || "",
-          cbAmount: saleToEdit.cbAmount || undefined,
-          balanceAmount: saleToEdit.balanceAmount || undefined,
-        }
-      : {
-          date: new Date(),
-          billNumber: "",
-          customerId: undefined,
-          brokerId: undefined,
-          transporterId: undefined,
-          items: [{ lotNumber: "", quantity: undefined, netWeight: undefined, rate: undefined }],
-          expenses: [],
-          notes: "",
-          cbAmount: undefined,
-          balanceAmount: undefined,
-        };
+    const defaultValues = getDefaultValues()
     reset(defaultValues);
-  }, [saleToEdit, reset]);
+  }, [saleToEdit, reset, getDefaultValues]);
 
 
   React.useEffect(() => {
@@ -278,43 +257,44 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   }, [brokerId, brokers, summary.totalGoodsValue, appendExpense, removeExpense, setValue, watch]);
 
 
-  const handleOpenMasterForm = React.useCallback((type: MasterItemType) => {
+  const handleOpenMasterForm = (type: MasterItemType) => {
     setMasterItemToEdit(null);
     setMasterFormItemType(type);
     setIsMasterFormOpen(true);
-  }, []);
+  };
   
-  const handleEditMasterItem = React.useCallback((id: string) => {
-    const allMasters = [...(customers || []), ...(brokers || []), ...(transporters || [])];
-    const itemToEdit = allMasters.find(p => p.id === id) || null;
-    if (itemToEdit) {
-      setMasterItemToEdit(itemToEdit);
-      setMasterFormItemType(itemToEdit.type);
-      setIsMasterFormOpen(true);
-    }
-  }, [customers, brokers, transporters]);
+  const handleEditMasterItem = (type: MasterItemType, id: string) => {
+    let itemToEdit: MasterItem | null = null;
+    if (type === 'Customer' && customers) itemToEdit = customers.find(i => i.id === id) || null;
+    else if (type === 'Broker' && brokers) itemToEdit = brokers.find(i => i.id === id) || null;
+    else if (type === 'Transporter' && transporters) itemToEdit = transporters.find(t => t.id === id) || null;
 
-  const handleMasterFormSubmit = React.useCallback((newItem: MasterItem) => {
+    if (itemToEdit) {
+        setMasterItemToEdit(itemToEdit);
+        setMasterFormItemType(type);
+        setIsMasterFormOpen(true);
+    }
+  };
+
+  const handleMasterFormSubmit = (newItem: MasterItem) => {
     onMasterDataUpdate(newItem);
-    if (newItem.type === 'Customer') setValue('customerId', newItem.id, { shouldValidate: true });
-    if (newItem.type === 'Broker') setValue('brokerId', newItem.id, { shouldValidate: true });
-    if (newItem.type === 'Transporter') setValue('transporterId', newItem.id, { shouldValidate: true });
+    if (newItem.type === 'Customer') methods.setValue('customerId', newItem.id, { shouldValidate: true });
+    if (newItem.type === 'Broker') methods.setValue('brokerId', newItem.id, { shouldValidate: true });
+    if (newItem.type === 'Transporter') methods.setValue('transporterId', newItem.id, { shouldValidate: true });
     setIsMasterFormOpen(false); setMasterItemToEdit(null);
     toast({ title: `${newItem.type} added/updated successfully.` });
-  }, [onMasterDataUpdate, setValue, toast]);
+  };
   
   const stockOptionsForSale = React.useMemo(() => {
-    const mumbaiWarehouseId = (warehouses || []).find(wh => wh.name.toUpperCase() === 'MUMBAI')?.id;
     return (availableStock || [])
-      .filter(s => s.locationId === mumbaiWarehouseId)
       .map(s => ({
         value: s.lotNumber,
         label: `${s.lotNumber} (Avl: ${Math.round(s.currentBags)} bags) @ ₹${Math.round(s.purchaseRate)}`,
       }));
-  }, [availableStock, warehouses]);
+  }, [availableStock]);
 
 
-  const processSubmit = React.useCallback((values: SaleFormValues) => {
+  const processSubmit = (values: SaleFormValues) => {
     setIsSubmitting(true);
     const selectedCustomer = (customers || []).find(c => c.id === values.customerId);
     const selectedBroker = (brokers || []).find(b => b.id === values.brokerId);
@@ -375,7 +355,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
     onSubmit(saleData);
     setIsSubmitting(false);
     onClose();
-  }, [customers, brokers, transporters, availableStock, summary, saleToEdit, onSubmit, onClose]);
+  };
 
   if (!isOpen) return null;
 
@@ -413,7 +393,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                             onChange={field.onChange} 
                             options={(customers || []).map(c => ({ value: c.id, label: c.name }))} 
                             placeholder="Select Customer" 
-                            onAddNew={(e) => handleOpenMasterForm("Customer")}
+                            onAddNew={() => handleOpenMasterForm("Customer")}
                             onEdit={(id) => handleEditMasterItem("Customer", id)}
                           /> <FormMessage />
                         </FormItem>)} />
@@ -424,7 +404,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                             onChange={field.onChange} 
                             options={(brokers || []).map(b => ({ value: b.id, label: b.name }))} 
                             placeholder="Select Broker" 
-                            onAddNew={(e) => handleOpenMasterForm("Broker")}
+                            onAddNew={() => handleOpenMasterForm("Broker")}
                             onEdit={(id) => handleEditMasterItem("Broker", id)}
                           />
                           <FormMessage />
@@ -433,7 +413,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                   </div>
 
                   <div className="p-4 border rounded-md shadow-sm">
-                    <h3 className="text-lg font-medium text-primary">Quantity & Rate (From Mumbai Warehouse Only)</h3>
+                    <h3 className="text-lg font-medium text-primary">Quantity &amp; Rate</h3>
                     {fields.map((field, index) => (
                       <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start p-3 border-b last:border-b-0">
                         <FormField control={control} name={`items.${index}.lotNumber`} render={({ field: itemField }) => (
@@ -448,7 +428,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                               }}
                               options={stockOptionsForSale}
                               placeholder="Select Vakkal/Lot"
-                              notFoundMessage="No stock in Mumbai."
+                              notFoundMessage="No stock available."
                             />
                             <FormMessage />
                           </FormItem>)} />
@@ -648,6 +628,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                   </DialogFooter>
                 </form>
               </Form>
+            </FormProvider>
           </TooltipProvider>
         </DialogContent>
       </Dialog>
@@ -666,5 +647,3 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
 };
 
 export const AddSaleForm = React.memo(AddSaleFormComponent);
-
-    

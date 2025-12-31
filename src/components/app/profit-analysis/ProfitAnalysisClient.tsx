@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -16,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { cn } from "@/lib/utils";
-import { useTransactions } from '@/hooks/useTransactions';
+import { useAppState } from '@/hooks/useAppState';
 import Link from 'next/link';
 
 
@@ -58,7 +59,7 @@ const CostRow: React.FC<{ label: string; value: number; isDeduction?: boolean; i
 
 export function ProfitAnalysisClient() {
   const { isAppHydrating } = useSettings();
-  const { sales } = useTransactions();
+  const { sales } = useAppState();
   const { financialYear: currentFinancialYearString } = useSettings();
   const [saleIdForCalc, setSaleIdForCalc] = React.useState<string | undefined>();
   const calculatorRef = useRef<HTMLDivElement>(null);
@@ -515,3 +516,5 @@ export function ProfitAnalysisClient() {
     </TooltipProvider>
   );
 }
+
+    

@@ -1,7 +1,6 @@
 import React from "react";
 import { Sidebar, SidebarInset, SidebarHeader, SidebarContent } from "@/components/ui/sidebar";
-import { features } from "@/lib/features";
-import { Menu } from "lucide-react";
+import { navItems } from "@/lib/features";
 import { ClientSidebarMenu } from "@/components/layout/ClientSidebarMenu";
 import ErrorBoundary from "../ErrorBoundary";
 import { cn } from "@/lib/utils";
@@ -31,7 +30,7 @@ export function AppShell({
                     </div>
                 </SidebarHeader>
                 <SidebarContent className="py-2 overflow-y-auto thin-scrollbar">
-                    <ClientSidebarMenu navItems={features.filter(f => f.href !== '/dashboard')} />
+                    <ClientSidebarMenu navItems={navItems.filter(f => f.href !== '/dashboard')} />
                 </SidebarContent>
             </Sidebar>
 

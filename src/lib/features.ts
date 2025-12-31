@@ -1,23 +1,33 @@
-import type { LucideIcon } from 'lucide-react';
+import type { CSSProperties } from 'react';
 
-export type Feature = {
-  title: string;
-  href: string;
-  iconName: string;
-  shortcut?: string;
-  gradientFrom: string;
-  gradientTo: string;
-  hoverColor: string;
-  textColor: 'white' | 'black';
-  shadow: string;
-};
+export interface NavItem {
+    title: string;
+    href: string;
+    iconName: string;
+    shortcut?: string;
+    description: string;
+}
 
-export const features: Feature[] = [
+// Extend NavItem to include a style property
+export interface StyledNavItem extends NavItem {
+  style?: CSSProperties;
+  gradientFrom?: string;
+  gradientTo?: string;
+  hoverColor?: string;
+  textColor?: 'white' | 'black';
+  shadow?: string;
+}
+
+export const APP_NAME = "Vyapar Saathi";
+export const APP_ICON = 'LineChart';
+
+export const navItems: StyledNavItem[] = [
     {
         title: 'Dashboard',
         href: '/dashboard',
         iconName: 'LayoutDashboard',
         shortcut: 'D',
+        description: "Your business overview",
         gradientFrom: '#fdc830',
         gradientTo: '#f37335',
         hoverColor: 'rgba(253, 200, 48, 0.2)',
@@ -28,6 +38,8 @@ export const features: Feature[] = [
     title: 'Purchases',
     href: '/purchases',
     iconName: 'ShoppingCart',
+    shortcut: 'Alt + P',
+    description: "Manage incoming goods",
     gradientFrom: '#28a745',
     gradientTo: '#218838',
     hoverColor: 'rgba(40, 167, 69, 0.2)',
@@ -38,6 +50,8 @@ export const features: Feature[] = [
     title: 'Sales',
     href: '/sales',
     iconName: 'ShoppingBag',
+    shortcut: 'Alt + S',
+    description: "Create new sales",
     gradientFrom: '#dc3545',
     gradientTo: '#c82333',
     hoverColor: 'rgba(220, 53, 69, 0.2)',
@@ -47,7 +61,9 @@ export const features: Feature[] = [
   {
     title: 'Location Transfer',
     href: '/location-transfer',
-    iconName: 'Truck',
+    iconName: 'ArrowRightLeft',
+    shortcut: 'Alt + L',
+    description: "Move stock",
     gradientFrom: '#83a4d4',
     gradientTo: '#b6fbff',
     hoverColor: 'rgba(131, 164, 212, 0.2)',
@@ -58,36 +74,20 @@ export const features: Feature[] = [
     title: 'Inventory',
     href: '/inventory',
     iconName: 'Boxes',
+    shortcut: 'Alt + I',
+    description: "View stock levels",
     gradientFrom: '#6f42c1',
     gradientTo: '#5a32a3',
     hoverColor: 'rgba(111, 66, 193, 0.2)',
     textColor: 'white',
     shadow: '0 10px 25px -5px rgba(111, 66, 193, 0.4), 0 8px 10px -6px rgba(111, 66, 193, 0.4)',
   },
-  {
-    title: 'Stock Adjustments',
-    href: '/stock-adjustments',
-    iconName: 'SlidersHorizontal',
-    gradientFrom: '#f09819',
-    gradientTo: '#edde5d',
-    hoverColor: 'rgba(240, 152, 25, 0.2)',
-    textColor: 'black',
-    shadow: '0 10px 25px -5px rgba(240, 152, 25, 0.4), 0 8px 10px -6px rgba(240, 152, 25, 0.4)',
-  },
-  {
-    title: 'Cash Book',
-    href: '/cash-book',
-    iconName: 'BookOpenCheck',
-    gradientFrom: '#37ecba',
-    gradientTo: '#72afd3',
-    hoverColor: 'rgba(55, 236, 186, 0.2)',
-    textColor: 'white',
-    shadow: '0 10px 25px -5px rgba(55, 236, 186, 0.4), 0 8px 10px -6px rgba(55, 236, 186, 0.4)',
-  },
-  {
+   {
     title: 'Outstanding',
     href: '/outstanding',
-    iconName: 'CircleDollarSign',
+    iconName: 'ClipboardList',
+    shortcut: 'Alt + O',
+    description: "Receivables & Payables",
     gradientFrom: '#f093fb',
     gradientTo: '#f5576c',
     hoverColor: 'rgba(245, 87, 108, 0.2)',
@@ -97,7 +97,9 @@ export const features: Feature[] = [
   {
     title: 'Stock Ledger',
     href: '/stock-ledger',
-    iconName: 'ClipboardList',
+    iconName: 'BookUser',
+    shortcut: 'Alt + K',
+    description: "Party-wise stock",
     gradientFrom: '#9890e3',
     gradientTo: '#b1f4cf',
     hoverColor: 'rgba(152, 144, 227, 0.2)',
@@ -107,7 +109,9 @@ export const features: Feature[] = [
   {
     title: 'Accounts Ledger',
     href: '/accounts-ledger',
-    iconName: 'BookUser',
+    iconName: 'BookCopy',
+    shortcut: 'Alt + A',
+    description: "Party financial ledger",
     gradientFrom: '#c1dfc4',
     gradientTo: '#deecdd',
     hoverColor: 'rgba(193, 223, 196, 0.3)',
@@ -117,7 +121,8 @@ export const features: Feature[] = [
   {
     title: 'Lot Ledger',
     href: '/lot-ledger',
-    iconName: 'PackageSearch',
+    iconName: 'Layers',
+    description: "Trace any vakkal",
     gradientFrom: '#505285',
     gradientTo: '#ebebfb',
     hoverColor: 'rgba(80, 82, 133, 0.2)',
@@ -127,7 +132,9 @@ export const features: Feature[] = [
   {
     title: 'Profit Analysis',
     href: '/profit-analysis',
-    iconName: 'PieChart',
+    iconName: 'Rocket',
+    shortcut: 'Alt + Shift + A',
+    description: "Analyze profitability",
     gradientFrom: '#0ba360',
     gradientTo: '#3cba92',
     hoverColor: 'rgba(11, 163, 96, 0.2)',
@@ -137,7 +144,8 @@ export const features: Feature[] = [
   {
     title: 'Financial Summary',
     href: '/financial-summary',
-    iconName: 'BarChartHorizontal',
+    iconName: 'Landmark',
+    description: "Business overview",
     gradientFrom: '#09203f',
     gradientTo: '#537895',
     hoverColor: 'rgba(83, 120, 149, 0.2)',
@@ -147,7 +155,9 @@ export const features: Feature[] = [
   {
     title: 'Payments',
     href: '/payments',
-    iconName: 'ArrowRightLeft',
+    iconName: 'ArrowRightCircle',
+    shortcut: 'Alt + Shift + P',
+    description: "Record payments made",
     gradientFrom: '#007bff',
     gradientTo: '#0056b3',
     hoverColor: 'rgba(0, 123, 255, 0.2)',
@@ -158,6 +168,8 @@ export const features: Feature[] = [
     title: 'Receipts',
     href: '/receipts',
     iconName: 'Receipt',
+    shortcut: 'Alt + R',
+    description: "Record receipts",
     gradientFrom: '#ffc107',
     gradientTo: '#e0a800',
     hoverColor: 'rgba(255, 193, 7, 0.2)',
@@ -165,9 +177,23 @@ export const features: Feature[] = [
     shadow: '0 10px 25px -5px rgba(255, 193, 7, 0.4), 0 8px 10px -6px rgba(255, 193, 7, 0.4)',
   },
   {
+    title: 'Cash Book',
+    href: '/cash-book',
+    iconName: 'BookOpen',
+    shortcut: 'Alt + C',
+    description: "Daily cash flow",
+    gradientFrom: '#37ecba',
+    gradientTo: '#72afd3',
+    hoverColor: 'rgba(55, 236, 186, 0.2)',
+    textColor: 'white',
+    shadow: '0 10px 25px -5px rgba(55, 236, 186, 0.4), 0 8px 10px -6px rgba(55, 236, 186, 0.4)',
+  },
+  {
     title: 'Daybook',
     href: '/daybook',
-    iconName: 'CalendarDays',
+    iconName: 'BookMarked',
+    shortcut: 'Alt + D',
+    description: "All daily entries",
     gradientFrom: '#abb8c3',
     gradientTo: '#e2ebf0',
     hoverColor: 'rgba(171, 184, 195, 0.3)',
@@ -178,16 +204,30 @@ export const features: Feature[] = [
     title: 'Masters',
     href: '/masters',
     iconName: 'Users',
+    shortcut: 'Alt + M',
+    description: "Manage all parties",
     gradientFrom: '#d299c2',
     gradientTo: '#fef9d7',
     hoverColor: 'rgba(210, 153, 194, 0.3)',
     textColor: 'black',
     shadow: '0 10px 25px -5px rgba(210, 153, 194, 0.5), 0 8px 10px -6px rgba(210, 153, 194, 0.5)',
   },
+    {
+    title: 'Stock Adjustments',
+    href: '/stock-adjustments',
+    iconName: 'SlidersHorizontal',
+    description: "Manual stock changes",
+    gradientFrom: '#f09819',
+    gradientTo: '#edde5d',
+    hoverColor: 'rgba(240, 152, 25, 0.2)',
+    textColor: 'black',
+    shadow: '0 10px 25px -5px rgba(240, 152, 25, 0.4), 0 8px 10px -6px rgba(240, 152, 25, 0.4)',
+  },
   {
     title: 'Backup/Restore',
     href: '/backup-restore',
     iconName: 'DatabaseBackup',
+    description: "Save or load your data",
     gradientFrom: '#6a11cb',
     gradientTo: '#2575fc',
     hoverColor: 'rgba(106, 17, 203, 0.2)',
