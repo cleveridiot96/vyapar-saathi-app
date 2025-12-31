@@ -1,18 +1,17 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAppState } from './useAppState';
 
 export function useHydrated() {
     const [hydrated, setHydrated] = useState(false);
-    const { isLoaded } = useAppState();
 
     useEffect(() => {
-        // We are hydrated when the app state is fully loaded from the background worker.
-        if (isLoaded) {
-            setHydrated(true);
-        }
-    }, [isLoaded]);
+        // This effect runs only on the client, after the initial render.
+        // Therefore, setting hydrated to true here ensures server and client
+        // match on the first render, and subsequent client-only logic can run.
+        setHydrated(true);
+    }, []);
 
     return hydrated;
 }

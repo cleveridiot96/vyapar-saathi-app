@@ -4,10 +4,10 @@
 import React, { createContext, useCallback, useEffect, useState, useMemo, useContext } from 'react';
 import { deriveAllTransactions } from '@/lib/derives';
 import { loadEvents, addEvent as addEventToStore, onEventsChange, getEvents, setHasUnsavedChanges } from '@/lib/eventStore';
-import { useInventory } from '@/hooks/useInventory';
+import { calculateInventory } from '@/lib/inventoryEngine';
 import type { 
   TransactionEvent,
-  Purchase, Sale, StockAdjustment, LocationTransfer, PurchaseReturn, SaleReturn, Payment, Receipt, LedgerEntry, MasterItem
+  Purchase, Sale, StockAdjustment, LocationTransfer, PurchaseReturn, SaleReturn, Payment, Receipt, LedgerEntry, MasterItem, AggregatedInventoryItem
 } from '@/lib/types';
 import type { AppState, AppDispatch } from '@/hooks/useAppState';
 
@@ -20,23 +20,30 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
   const [events, setEvents] = useState<TransactionEvent[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCalculating, setIsCalculating] = useState(true);
-  const [hasUnsavedChanges, _setHasUnsavedChanges] = useState(false);
+  const [hasUnsavedChangesState, _setHasUnsavedChanges] = useState(false);
 
   // Derive state from events
-  const derivedState = useMemo(() => deriveAllTransactions(events), [events]);
+  const derivedState = useMemo(() => {
+    setIsCalculating(true);
+    const result = deriveAllTransactions(events);
+    // Directly calculate inventory here since worker is removed
+    const inventory = calculateInventory(
+        result.purchases,
+        result.sales,
+        result.adjustments,
+        result.locationTransfers,
+        result.purchaseReturns,
+        result.saleReturns
+    );
+     // Simulate async calculation for UI feedback
+    queueMicrotask(() => setIsCalculating(false));
+    return { ...result, inventory };
+  }, [events]);
   
-  // Further derive inventory (this could be a heavy operation)
-  // Note: For now, we'll keep it simple. A worker could be used here.
-  const inventory = useMemo(() => {
-    // This is a placeholder for a more complex calculation.
-    // In a real scenario, `calculateInventory` would be called here.
-    return [];
-  }, [derivedState.purchases, derivedState.sales, derivedState.adjustments, derivedState.locationTransfers, derivedState.purchaseReturns, derivedState.saleReturns]);
 
   useEffect(() => {
     const handleEvents = (newEvents: TransactionEvent[]) => {
       setEvents(newEvents);
-      setIsCalculating(false);
       if (!isLoaded) setIsLoaded(true);
     };
 
@@ -51,14 +58,13 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
   const state: AppState = {
     ...derivedState,
     events,
-    inventory,
     isLoaded,
     isInitialized: isLoaded,
     isCalculating,
-    hasUnsavedChanges,
+    hasUnsavedChanges: hasUnsavedChangesState,
     getAllMasters: useCallback(() => {
       const all: MasterItem[] = [];
-      Object.values(derivedState.masterData).forEach(arr => all.push(...arr));
+      Object.values(derivedState.masterData).forEach(arr => all.push(...(arr || [])));
       return all;
     }, [derivedState.masterData]),
   };
@@ -87,6 +93,7 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
     addOrUpdateMaster: (payload) => addEventToStore({ type: 'MASTER_UPSERTED', payload }),
     loadEvents,
     setHasUnsavedChanges: setHasUnsavedChangesCallback,
+    // These setters are now dummies because state is derived from events
     setPurchases: (updater) => { /* Managed by events */ },
     setSales: (updater) => { /* Managed by events */ },
     setPurchaseReturns: (updater) => { /* Managed by events */ },
