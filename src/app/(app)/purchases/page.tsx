@@ -34,7 +34,6 @@ export default function PurchasesPage() {
   const { financialYear } = useSettings();
   const hydrated = useHydrated();
 
-  // GET FROM UNIFIED ZUSTAND STORE
   const {
     purchases,
     purchaseReturns,
@@ -223,13 +222,6 @@ export default function PurchasesPage() {
     return "bg-primary hover:bg-primary/90"; // Fallback
   }, [activeTab]);
 
-  React.useEffect(() => {
-    console.log('===============================');
-    console.log('PURCHASES ZUSTAND STATE:', purchases.length);
-    console.log('Purchases:', purchases.map(p => ({ id: p.id, supplier: p.supplierName })));
-    console.log('===============================');
-  }, [purchases]);
-
   if (!hydrated || !isLoaded) {
     return (
       <div className="space-y-4 p-4">
@@ -376,5 +368,3 @@ export default function PurchasesPage() {
     </div>
   );
 }
-
-    

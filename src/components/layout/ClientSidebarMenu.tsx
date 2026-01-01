@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -71,8 +72,8 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
                   "flex items-center justify-center h-8 w-8 rounded-full shrink-0 transition-colors",
                   sidebarState === 'expanded' && "mr-3",
                    isActive 
-                    ? "bg-transparent"
-                    : "bg-transparent text-sidebar-foreground group-hover:text-sidebar-accent-foreground"
+                    ? "text-primary-foreground"
+                    : "text-sidebar-foreground group-hover:text-sidebar-accent-foreground"
               )}>
                 <LazyIcon name={item.iconName} />
               </div>
@@ -87,10 +88,9 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
           
           const dynamicStyles: React.CSSProperties = {};
             if (isActive) {
-                dynamicStyles.backgroundImage = item.style?.backgroundImage;
-                dynamicStyles.color = item.style?.color;
+                dynamicStyles.backgroundColor = 'hsl(var(--primary))';
             } else {
-                dynamicStyles['--hover-bg-color'] = item.hoverColor;
+                dynamicStyles['--hover-bg-color'] = 'hsl(var(--sidebar-accent))';
             }
 
 
