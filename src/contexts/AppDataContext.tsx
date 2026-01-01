@@ -110,19 +110,19 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const dispatch: AppDispatch = useMemo(() => ({
-    addPurchase: async (payload) => { await db.purchases.add(payload); setPurchases(p => [payload, ...p].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
+    addPurchase: async (payload) => { await db.purchases.add(payload); setPurchases(p => [...p, payload].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
     updatePurchase: async (payload) => { await db.purchases.put(payload); setPurchases(p => p.map(i => i.id === payload.id ? payload : i).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
     deletePurchase: async (id) => { await db.purchases.delete(id); setPurchases(p => p.filter(i => i.id !== id)); },
     
-    addSale: async (payload) => { await db.sales.add(payload); setSales(s => [payload, ...s].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
+    addSale: async (payload) => { await db.sales.add(payload); setSales(s => [...s, payload].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
     updateSale: async (payload) => { await db.sales.put(payload); setSales(s => s.map(i => i.id === payload.id ? payload : i).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
     deleteSale: async (id) => { await db.sales.delete(id); setSales(s => s.filter(i => i.id !== id)); },
 
-    addPayment: async (payload) => { await db.payments.add(payload); setPayments(p => [payload, ...p].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
+    addPayment: async (payload) => { await db.payments.add(payload); setPayments(p => [...p, payload].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
     updatePayment: async (payload) => { await db.payments.put(payload); setPayments(p => p.map(i => i.id === payload.id ? payload : i).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
     deletePayment: async (id) => { await db.payments.delete(id); setPayments(p => p.filter(i => i.id !== id)); },
 
-    addReceipt: async (payload) => { await db.receipts.add(payload); setReceipts(r => [payload, ...r].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
+    addReceipt: async (payload) => { await db.receipts.add(payload); setReceipts(r => [...r, payload].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
     updateReceipt: async (payload) => { await db.receipts.put(payload); setReceipts(r => r.map(i => i.id === payload.id ? payload : i).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
     deleteReceipt: async (id) => { await db.receipts.delete(id); setReceipts(r => r.filter(i => i.id !== id)); },
 
