@@ -4,7 +4,6 @@
 import React, { createContext, useCallback, useEffect, useState, useMemo, useContext } from 'react';
 import { deriveAllTransactions } from '@/lib/derives';
 import { loadEvents, addEvent as addEventToStore, onEventsChange, getEvents, setHasUnsavedChanges } from '@/lib/eventStore';
-import { calculateInventory } from '@/lib/inventoryEngine';
 import type { 
   TransactionEvent,
   Purchase, Sale, StockAdjustment, LocationTransfer, PurchaseReturn, SaleReturn, Payment, Receipt, LedgerEntry, MasterItem, AggregatedInventoryItem
@@ -45,8 +44,10 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
   }, [isLoaded, derivedState]);
 
   useEffect(() => {
-    setIsCalculating(false);
-  }, [derivedState, inventory]);
+    if (isLoaded) {
+      setIsCalculating(false);
+    }
+  }, [derivedState, inventory, isLoaded]);
 
 
   useEffect(() => {
@@ -59,7 +60,12 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
     const unsubscribe = onEventsChange(handleEvents);
     
     // Initial load
-    handleEvents(getEvents());
+    const fetchInitialEvents = async () => {
+        const initialEvents = await getEvents();
+        handleEvents(initialEvents);
+    }
+    fetchInitialEvents();
+
 
     return () => unsubscribe();
   }, [isLoaded]);
