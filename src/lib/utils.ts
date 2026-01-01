@@ -1,5 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { MasterItem, MasterItemType } from "./types";
+import { FIXED_WAREHOUSES, FIXED_EXPENSES } from "./constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -56,4 +58,28 @@ export function debounce<T extends (...args: any[]) => void>(func: T, wait: numb
     }
     timeout = setTimeout(later, wait);
   };
+}
+
+export function groupMasters(masters: MasterItem[]): { [key in MasterItemType]: MasterItem[] } {
+    const initialGrouped = {
+        Customer: [],
+        Supplier: [],
+        Agent: [],
+        Broker: [],
+        Transporter: [],
+        Warehouse: [...FIXED_WAREHOUSES],
+        Expense: [...FIXED_EXPENSES],
+        Product: [],
+    };
+
+    return masters.reduce((acc, master) => {
+        if (!acc[master.type]) {
+            acc[master.type] = [];
+        }
+        // Avoid duplicates if fixed masters are somehow in the DB
+        if (!acc[master.type].some(m => m.id === master.id)) {
+          acc[master.type].push(master);
+        }
+        return acc;
+    }, initialGrouped);
 }

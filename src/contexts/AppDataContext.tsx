@@ -1,14 +1,14 @@
 "use client";
 
 import React, { createContext, useCallback, useEffect, useState, useMemo, useContext } from 'react';
-import { deriveAllTransactions } from '@/lib/derives';
-import { loadEvents, addEvent as addEventToStore, setHasUnsavedChanges, useLiveEvents } from '@/lib/eventStore';
+import { db } from '@/lib/db';
 import type { 
-  TransactionEvent,
-  Purchase, Sale, StockAdjustment, LocationTransfer, PurchaseReturn, SaleReturn, Payment, Receipt, LedgerEntry, MasterItem, AggregatedInventoryItem
+  Purchase, Sale, StockAdjustment, LocationTransfer, PurchaseReturn, SaleReturn, Payment, Receipt, LedgerEntry, MasterItem, AggregatedInventoryItem, MasterItemType
 } from '@/lib/types';
 import type { AppState, AppDispatch } from '@/hooks/useAppState';
 import { calculateInventory } from '@/lib/inventoryEngine';
+import { groupMasters } from '@/lib/utils';
+import { useHydrated } from '@/hooks/useHydrated';
 
 const AppDataContext = createContext<{
   state: AppState;
@@ -16,89 +16,153 @@ const AppDataContext = createContext<{
 } | undefined>(undefined);
 
 export const AppDataProvider = ({ children }: { children: React.ReactNode }) => {
-  const events = useLiveEvents();
-  
-  const [isInitialized, setIsInitialized] = useState(false);
+  const isHydrated = useHydrated();
+  const [isLoaded, setIsLoaded] = useState(false);
   const [isCalculating, setIsCalculating] = useState(true);
-  const [hasUnsavedChangesState, _setHasUnsavedChanges] = useState(false);
+
+  // Direct state for all our data
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [adjustments, setAdjustments] = useState<StockAdjustment[]>([]);
+  const [locationTransfers, setLocationTransfers] = useState<LocationTransfer[]>([]);
+  const [purchaseReturns, setPurchaseReturns] = useState<PurchaseReturn[]>([]);
+  const [saleReturns, setSaleReturns] = useState<SaleReturn[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [ledger, setLedger] = useState<LedgerEntry[]>([]);
+  const [masterData, setMasterData] = useState<AppState['masterData']>({
+    Customer: [], Supplier: [], Agent: [], Transporter: [], Warehouse: [], Broker: [], Expense: [], Product: []
+  });
 
   useEffect(() => {
-    if(events !== undefined && !isInitialized) {
-      setIsInitialized(true);
-    }
-  }, [events, isInitialized]);
+    if (!isHydrated) return;
+    // Load all data from Dexie on initial mount
+    const loadData = async () => {
+      setIsCalculating(true);
+      const [
+        allMasters, allPurchases, allSales, allAdjustments, allTransfers,
+        allPurchaseReturns, allSaleReturns, allPayments, allReceipts, allLedger
+      ] = await Promise.all([
+        db.masters.toArray(),
+        db.purchases.toArray(),
+        db.sales.toArray(),
+        db.adjustments.toArray(),
+        db.locationTransfers.toArray(),
+        db.purchaseReturns.toArray(),
+        db.saleReturns.toArray(),
+        db.payments.toArray(),
+        db.receipts.toArray(),
+        db.ledger.toArray(),
+      ]);
 
-  const derivedState = useMemo(() => {
-    return deriveAllTransactions(Array.isArray(events) ? events : []);
-  }, [events]);
+      setMasterData(groupMasters(allMasters));
+      setPurchases(allPurchases);
+      setSales(allSales);
+      setAdjustments(allAdjustments);
+      setLocationTransfers(allTransfers);
+      setPurchaseReturns(allPurchaseReturns);
+      setSaleReturns(allSaleReturns);
+      setPayments(allPayments);
+      setReceipts(allReceipts);
+      setLedger(allLedger);
+      
+      setIsLoaded(true);
+      setIsCalculating(false);
+    };
+
+    loadData();
+  }, [isHydrated]);
 
   const inventory = useMemo(() => {
-    if (!isInitialized) return [];
+    if (!isLoaded) return [];
     return calculateInventory(
-      derivedState.purchases,
-      derivedState.sales,
-      derivedState.adjustments,
-      derivedState.locationTransfers,
-      derivedState.purchaseReturns,
-      derivedState.saleReturns
+      purchases,
+      sales,
+      adjustments,
+      locationTransfers,
+      purchaseReturns,
+      saleReturns
     );
-  }, [isInitialized, derivedState]);
-
-  useEffect(() => {
-    if (isInitialized) {
-      setIsCalculating(false);
-    }
-  }, [derivedState, inventory, isInitialized]);
+  }, [isLoaded, purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns]);
 
   const state: AppState = {
-    ...derivedState,
+    purchases,
+    sales,
+    adjustments,
+    locationTransfers,
+    purchaseReturns,
+    saleReturns,
+    payments,
+    receipts,
+    ledger,
+    masterData,
     inventory,
-    events: Array.isArray(events) ? events : [],
-    isLoaded: isInitialized,
-    isInitialized,
+    isLoaded,
+    isInitialized: isLoaded,
     isCalculating,
-    hasUnsavedChanges: hasUnsavedChangesState,
+    hasUnsavedChanges: false, // Direct DB ops mean we're always "saved"
     getAllMasters: useCallback(() => {
       const all: MasterItem[] = [];
-      if (derivedState.masterData) {
-        Object.values(derivedState.masterData).forEach(arr => all.push(...(arr || [])));
-      }
+      Object.values(masterData).forEach(arr => all.push(...(arr || [])));
       return all;
-    }, [derivedState.masterData]),
+    }, [masterData]),
+    events: [], // Events are no longer the source of truth
   };
 
-  const setHasUnsavedChangesCallback = useCallback((hasChanges: boolean) => {
-    setHasUnsavedChanges(hasChanges);
-    _setHasUnsavedChanges(hasChanges);
-  }, []);
-
   const dispatch: AppDispatch = useMemo(() => ({
-    addPurchase: (payload) => addEventToStore({ type: 'PURCHASE_CREATED', payload }),
-    updatePurchase: (payload) => addEventToStore({ type: 'PURCHASE_UPDATED', payload }),
-    deletePurchase: (id) => addEventToStore({ type: 'PURCHASE_DELETED', payload: { id } }),
-    addSale: (payload) => addEventToStore({ type: 'SALE_CREATED', payload }),
-    updateSale: (payload) => addEventToStore({ type: 'SALE_UPDATED', payload }),
-    deleteSale: (id) => addEventToStore({ type: 'SALE_DELETED', payload: { id } }),
-    addPayment: (payload) => addEventToStore({ type: 'PAYMENT_CREATED', payload }),
-    updatePayment: (payload) => addEventToStore({ type: 'PAYMENT_UPDATED', payload }),
-    deletePayment: (id) => addEventToStore({ type: 'PAYMENT_DELETED', payload: { id } }),
-    addReceipt: (payload) => addEventToStore({ type: 'RECEIPT_CREATED', payload }),
-    updateReceipt: (payload) => addEventToStore({ type: 'RECEIPT_UPDATED', payload }),
-    deleteReceipt: (id) => addEventToStore({ type: 'RECEIPT_DELETED', payload: { id } }),
-    addTransfer: (payload) => addEventToStore({ type: 'TRANSFER_CREATED', payload }),
-    addAdjustment: (payload) => addEventToStore({ type: 'ADJUSTMENT_CREATED', payload }),
-    addReturn: (payload) => addEventToStore({ type: 'RETURN_CREATED', payload }),
-    addOrUpdateMaster: (payload) => addEventToStore({ type: 'MASTER_UPSERTED', payload }),
-    loadEvents,
-    setHasUnsavedChanges: setHasUnsavedChangesCallback,
-    setPurchases: (updater) => { /* Managed by events */ },
-    setSales: (updater) => { /* Managed by events */ },
-    setPurchaseReturns: (updater) => { /* Managed by events */ },
-    setSaleReturns: (updater) => { /* Managed by events */ },
-  }), [setHasUnsavedChangesCallback]);
+    addPurchase: async (payload) => { await db.purchases.add(payload); setPurchases(p => [payload, ...p]); },
+    updatePurchase: async (payload) => { await db.purchases.put(payload); setPurchases(p => p.map(i => i.id === payload.id ? payload : i)); },
+    deletePurchase: async (id) => { await db.purchases.delete(id); setPurchases(p => p.filter(i => i.id !== id)); },
+    
+    addSale: async (payload) => { await db.sales.add(payload); setSales(s => [payload, ...s]); },
+    updateSale: async (payload) => { await db.sales.put(payload); setSales(s => s.map(i => i.id === payload.id ? payload : i)); },
+    deleteSale: async (id) => { await db.sales.delete(id); setSales(s => s.filter(i => i.id !== id)); },
+
+    addPayment: async (payload) => { await db.payments.add(payload); setPayments(p => [payload, ...p]); },
+    updatePayment: async (payload) => { await db.payments.put(payload); setPayments(p => p.map(i => i.id === payload.id ? payload : i)); },
+    deletePayment: async (id) => { await db.payments.delete(id); setPayments(p => p.filter(i => i.id !== id)); },
+
+    addReceipt: async (payload) => { await db.receipts.add(payload); setReceipts(r => [payload, ...r]); },
+    updateReceipt: async (payload) => { await db.receipts.put(payload); setReceipts(r => r.map(i => i.id === payload.id ? payload : i)); },
+    deleteReceipt: async (id) => { await db.receipts.delete(id); setReceipts(r => r.filter(i => i.id !== id)); },
+
+    addTransfer: async (payload) => { await db.locationTransfers.add(payload); setLocationTransfers(t => [payload, ...t]); },
+    addAdjustment: async (payload) => { await db.adjustments.add(payload); setAdjustments(a => [payload, ...a]); },
+    addReturn: async (payload) => {
+      if ('originalPurchaseId' in payload) {
+        await db.purchaseReturns.add(payload);
+        setPurchaseReturns(pr => [payload, ...pr]);
+      } else {
+        await db.saleReturns.add(payload as SaleReturn);
+        setSaleReturns(sr => [payload as SaleReturn, ...sr]);
+      }
+    },
+    addOrUpdateMaster: async (payload) => { 
+        await db.masters.put(payload);
+        setMasterData(prev => {
+            const newMasters = { ...prev };
+            const type = payload.type as MasterItemType;
+            if (!newMasters[type]) newMasters[type] = [];
+            
+            const existingIndex = newMasters[type].findIndex(m => m.id === payload.id);
+            if (existingIndex > -1) {
+                newMasters[type][existingIndex] = payload;
+            } else {
+                newMasters[type].push(payload);
+            }
+            return newMasters;
+        });
+    },
+    loadEvents: (events) => { /* No longer used */ },
+    setHasUnsavedChanges: (hasChanges) => { /* No longer used */ },
+    setPurchases,
+    setSales,
+    setPurchaseReturns,
+    setSaleReturns,
+  }), []);
   
-  if (!isInitialized) {
-    return null;
+  if (!isHydrated) {
+    return null; 
   }
 
   return (
