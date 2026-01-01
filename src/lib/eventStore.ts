@@ -15,8 +15,8 @@ function getDb(): Promise<IDBPDatabase> {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
       upgrade(db) {
         if (!db.objectStoreNames.contains(STORE_NAME)) {
+          // FIX: Removed `keyPath` to allow auto-incrementing keys for the event log.
           db.createObjectStore(STORE_NAME, {
-            keyPath: 'id',
             autoIncrement: true,
           });
         }
