@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useCallback, useEffect, useState, useMemo, useContext } from 'react';
@@ -30,7 +31,7 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
 
   // Derive state from events
   const derivedState = useMemo(() => {
-    return deriveAllTransactions(events || []);
+    return deriveAllTransactions(Array.isArray(events) ? events : []);
   }, [events]);
 
   const inventory = useMemo(() => {
