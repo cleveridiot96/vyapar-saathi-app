@@ -56,14 +56,14 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
       ]);
 
       setMasterData(groupMasters(allMasters));
-      setPurchases(allPurchases);
-      setSales(allSales);
+      setPurchases(allPurchases.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      setSales(allSales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       setAdjustments(allAdjustments);
       setLocationTransfers(allTransfers);
       setPurchaseReturns(allPurchaseReturns);
       setSaleReturns(allSaleReturns);
-      setPayments(allPayments);
-      setReceipts(allReceipts);
+      setPayments(allPayments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      setReceipts(allReceipts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       setLedger(allLedger);
       
       setIsLoaded(true);
@@ -110,28 +110,28 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const dispatch: AppDispatch = useMemo(() => ({
-    addPurchase: async (payload) => { await db.purchases.add(payload); setPurchases(p => [payload, ...p]); },
-    updatePurchase: async (payload) => { await db.purchases.put(payload); setPurchases(p => p.map(i => i.id === payload.id ? payload : i)); },
+    addPurchase: async (payload) => { await db.purchases.add(payload); setPurchases(p => [payload, ...p].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
+    updatePurchase: async (payload) => { await db.purchases.put(payload); setPurchases(p => p.map(i => i.id === payload.id ? payload : i).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
     deletePurchase: async (id) => { await db.purchases.delete(id); setPurchases(p => p.filter(i => i.id !== id)); },
     
-    addSale: async (payload) => { await db.sales.add(payload); setSales(s => [payload, ...s]); },
-    updateSale: async (payload) => { await db.sales.put(payload); setSales(s => s.map(i => i.id === payload.id ? payload : i)); },
+    addSale: async (payload) => { await db.sales.add(payload); setSales(s => [payload, ...s].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
+    updateSale: async (payload) => { await db.sales.put(payload); setSales(s => s.map(i => i.id === payload.id ? payload : i).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
     deleteSale: async (id) => { await db.sales.delete(id); setSales(s => s.filter(i => i.id !== id)); },
 
-    addPayment: async (payload) => { await db.payments.add(payload); setPayments(p => [payload, ...p]); },
-    updatePayment: async (payload) => { await db.payments.put(payload); setPayments(p => p.map(i => i.id === payload.id ? payload : i)); },
+    addPayment: async (payload) => { await db.payments.add(payload); setPayments(p => [payload, ...p].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
+    updatePayment: async (payload) => { await db.payments.put(payload); setPayments(p => p.map(i => i.id === payload.id ? payload : i).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
     deletePayment: async (id) => { await db.payments.delete(id); setPayments(p => p.filter(i => i.id !== id)); },
 
-    addReceipt: async (payload) => { await db.receipts.add(payload); setReceipts(r => [payload, ...r]); },
-    updateReceipt: async (payload) => { await db.receipts.put(payload); setReceipts(r => r.map(i => i.id === payload.id ? payload : i)); },
+    addReceipt: async (payload) => { await db.receipts.add(payload); setReceipts(r => [payload, ...r].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
+    updateReceipt: async (payload) => { await db.receipts.put(payload); setReceipts(r => r.map(i => i.id === payload.id ? payload : i).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); },
     deleteReceipt: async (id) => { await db.receipts.delete(id); setReceipts(r => r.filter(i => i.id !== id)); },
 
     addTransfer: async (payload) => { await db.locationTransfers.add(payload); setLocationTransfers(t => [payload, ...t]); },
     addAdjustment: async (payload) => { await db.adjustments.add(payload); setAdjustments(a => [payload, ...a]); },
     addReturn: async (payload) => {
       if ('originalPurchaseId' in payload) {
-        await db.purchaseReturns.add(payload);
-        setPurchaseReturns(pr => [payload, ...pr]);
+        await db.purchaseReturns.add(payload as PurchaseReturn);
+        setPurchaseReturns(pr => [payload as PurchaseReturn, ...pr]);
       } else {
         await db.saleReturns.add(payload as SaleReturn);
         setSaleReturns(sr => [payload as SaleReturn, ...sr]);
@@ -159,7 +159,7 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
     setSales,
     setPurchaseReturns,
     setSaleReturns,
-  }), []);
+  }), [setPurchases, setSales, setPurchaseReturns, setSaleReturns]);
   
   if (!isHydrated) {
     return null; 
