@@ -48,7 +48,7 @@ export default function PurchasesPage() {
     addPurchase,
     updatePurchase,
     deletePurchase,
-    setPurchaseReturns,
+    addReturn,
     addOrUpdateMaster,
   } = useAppDispatch();
 
@@ -137,37 +137,27 @@ export default function PurchasesPage() {
           variant: "destructive",
         });
       } else {
-        setPurchaseReturns(
-          (prev) => prev.filter((pr) => pr.id !== itemToDelete.id)
-        );
-        toast({
-          title: "Deleted!",
-          description: "Purchase return record removed.",
-          variant: "destructive",
-        });
+        // For returns, we don't have a specific delete event, so we'd need to add one.
+        // This is a placeholder for now.
+        toast({ title: "Info", description: "Deletion for purchase returns is not yet implemented.", variant: "default" });
       }
       setItemToDelete(null);
       window.dispatchEvent(new CustomEvent("reindex-search"));
     }
-  }, [itemToDelete, deletePurchase, setPurchaseReturns, toast]);
+  }, [itemToDelete, deletePurchase, toast]);
 
     const handleAddOrUpdatePurchaseReturn = React.useCallback(
     (prData: PurchaseReturn) => {
-      const isEditing = purchaseReturns.some((pr) => pr.id === prData.id);
-      setPurchaseReturns(prev => {
-        return isEditing
-          ? prev.map((pr) => (pr.id === prData.id ? prData : pr))
-          : [{ ...prData, id: prData.id || `pr-${Date.now()}` }, ...prev]
-      });
+      addReturn(prData);
       setPurchaseReturnToEdit(null);
       setIsAddPurchaseReturnFormOpen(false);
       toast({
         title: "Success!",
-        description: isEditing ? "Purchase return updated." : "Purchase return added.",
+        description: "Purchase return updated.",
       });
       window.dispatchEvent(new CustomEvent("reindex-search"));
     },
-    [setPurchaseReturns, purchaseReturns, toast]
+    [addReturn, toast]
   );
 
   const handleEditPurchaseReturn = React.useCallback((pr: PurchaseReturn) => {

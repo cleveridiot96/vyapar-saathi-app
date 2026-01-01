@@ -24,7 +24,7 @@ const iconMap: Record<string, React.ComponentType<LucideProps>> = {
   DatabaseBackup, SlidersHorizontal, Landmark, Search, BookCopy, Layers, Rocket, BookOpen, BookMarked
 };
 
-const LazyIcon = ({ name }: { name: string }) => {
+export const LazyIcon = ({ name }: { name: string }) => {
     const Icon = iconMap[name] || FallbackIcon;
     return <Icon className="h-5 w-5" />;
 };
@@ -72,8 +72,8 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
                   "flex items-center justify-center h-8 w-8 rounded-full shrink-0 transition-colors",
                   sidebarState === 'expanded' && "mr-3",
                    isActive 
-                    ? "text-primary-foreground"
-                    : "text-sidebar-foreground group-hover:text-sidebar-accent-foreground"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-sidebar-primary/20 text-sidebar-foreground group-hover:bg-sidebar-accent group-hover:text-sidebar-accent-foreground"
               )}>
                 <LazyIcon name={item.iconName} />
               </div>
@@ -86,14 +86,6 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
             </>
           );
           
-          const dynamicStyles: React.CSSProperties = {};
-            if (isActive) {
-                dynamicStyles.backgroundColor = 'hsl(var(--primary))';
-            } else {
-                dynamicStyles['--hover-bg-color'] = 'hsl(var(--sidebar-accent))';
-            }
-
-
           return (
             <SidebarMenuItem key={item.href}>
               <Tooltip>
@@ -107,10 +99,9 @@ export function ClientSidebarMenu({ navItems }: ClientSidebarMenuProps) {
                         ? "w-10 h-10 justify-center" 
                         : "w-full justify-start px-2.5 py-2", 
                       isActive
-                        ? "shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-px"
-                        : "text-sidebar-foreground hover:bg-[var(--hover-bg-color)]"
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md hover:shadow-lg transform hover:-translate-y-px"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent"
                     )}
-                    style={dynamicStyles}
                     aria-current={isActive ? "page" : undefined}
                   >
                     {buttonContent}

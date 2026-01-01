@@ -1,9 +1,8 @@
-
 "use client";
 
 import React, { createContext, useCallback, useEffect, useState, useMemo, useContext } from 'react';
 import { deriveAllTransactions } from '@/lib/derives';
-import { loadEvents, addEvent as addEventToStore, onEventsChange, getEvents, setHasUnsavedChanges } from '@/lib/eventStore';
+import { loadEvents, addEvent as addEventToStore, setHasUnsavedChanges, useLiveEvents } from '@/lib/eventStore';
 import type { 
   TransactionEvent,
   Purchase, Sale, StockAdjustment, LocationTransfer, PurchaseReturn, SaleReturn, Payment, Receipt, LedgerEntry, MasterItem, AggregatedInventoryItem
@@ -17,23 +16,25 @@ const AppDataContext = createContext<{
 } | undefined>(undefined);
 
 export const AppDataProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isMounted, setIsMounted] = useState(false);
-  const [events, setEvents] = useState<TransactionEvent[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const events = useLiveEvents(); // This is now a live query from Dexie
+  
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isCalculating, setIsCalculating] = useState(true);
   const [hasUnsavedChangesState, _setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    if(events !== undefined && !isInitialized) {
+      setIsInitialized(true);
+    }
+  }, [events, isInitialized]);
 
   // Derive state from events
   const derivedState = useMemo(() => {
-    return deriveAllTransactions(events);
+    return deriveAllTransactions(events || []);
   }, [events]);
 
   const inventory = useMemo(() => {
-    if (!isLoaded) return [];
+    if (!isInitialized) return [];
     return calculateInventory(
       derivedState.purchases,
       derivedState.sales,
@@ -42,41 +43,21 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
       derivedState.purchaseReturns,
       derivedState.saleReturns
     );
-  }, [isLoaded, derivedState]);
+  }, [isInitialized, derivedState]);
 
   useEffect(() => {
-    if (isLoaded) {
+     // This effect now simply watches for the derived state and inventory to be ready.
+    if (isInitialized) {
       setIsCalculating(false);
     }
-  }, [derivedState, inventory, isLoaded]);
-
-
-  useEffect(() => {
-    const handleEvents = (newEvents: TransactionEvent[]) => {
-      setIsCalculating(true);
-      setEvents(newEvents);
-      if (!isLoaded) setIsLoaded(true);
-    };
-
-    const unsubscribe = onEventsChange(handleEvents);
-    
-    // Initial load
-    const fetchInitialEvents = async () => {
-        const initialEvents = await getEvents();
-        handleEvents(initialEvents);
-    }
-    fetchInitialEvents();
-
-
-    return () => unsubscribe();
-  }, [isLoaded]);
+  }, [derivedState, inventory, isInitialized]);
 
   const state: AppState = {
     ...derivedState,
     inventory,
-    events,
-    isLoaded,
-    isInitialized: isLoaded,
+    events: events || [],
+    isLoaded: isInitialized,
+    isInitialized,
     isCalculating,
     hasUnsavedChanges: hasUnsavedChangesState,
     getAllMasters: useCallback(() => {
@@ -112,15 +93,16 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
     addOrUpdateMaster: (payload) => addEventToStore({ type: 'MASTER_UPSERTED', payload }),
     loadEvents,
     setHasUnsavedChanges: setHasUnsavedChangesCallback,
-    // These setters are now dummies because state is derived from events
+    // These setters are now dummies as state is derived directly from events
     setPurchases: (updater) => { /* Managed by events */ },
     setSales: (updater) => { /* Managed by events */ },
     setPurchaseReturns: (updater) => { /* Managed by events */ },
     setSaleReturns: (updater) => { /* Managed by events */ },
   }), [setHasUnsavedChangesCallback]);
   
-  if (!isMounted) {
-    return null; // Or a loading spinner
+  if (!isInitialized) {
+    // You can return a global loading spinner here if you want
+    return null;
   }
 
   return (

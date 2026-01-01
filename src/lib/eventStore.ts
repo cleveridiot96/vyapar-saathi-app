@@ -1,70 +1,56 @@
-
 "use strict";
 
 import type { TransactionEvent } from '@/lib/types';
-import { openDB, type IDBPDatabase } from 'idb';
+import { db } from './db';
+import { liveQuery } from 'dexie';
 
-const DB_NAME = 'InventoryDB';
-const STORE_NAME = 'events';
-const DB_VERSION = 2; // Incremented version to trigger upgrade
+// This file now acts as a service layer on top of db.ts
 
-let dbPromise: Promise<IDBPDatabase> | null = null;
-
-function getDb(): Promise<IDBPDatabase> {
-  if (!dbPromise) {
-    dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, {
-            autoIncrement: true,
-          });
-        }
-      },
-    });
-  }
-  return dbPromise;
-}
-
-let listeners: Set<(events: TransactionEvent[]) => void> = new Set();
+let listeners: Set<() => void> = new Set();
 let hasUnsavedChangesState = false;
 let unsavedChangesListeners: Set<(hasChanges: boolean) => void> = new Set();
 
-async function notifyListeners() {
-  const events = await getEvents();
-  listeners.forEach(cb => cb(events));
+
+// Notify generic listeners that data has changed.
+function notifyListeners() {
+  listeners.forEach(cb => cb());
 }
 
 function notifyUnsavedChangesListeners() {
   unsavedChangesListeners.forEach(cb => cb(hasUnsavedChangesState));
 }
 
+// Replaces all events in the DB. Used for restoring from a backup.
 export async function loadEvents(newEvents: TransactionEvent[]): Promise<void> {
-  const db = await getDb();
-  const tx = db.transaction(STORE_NAME, 'readwrite');
-  await tx.objectStore(STORE_NAME).clear();
-  await Promise.all(newEvents.map(event => tx.objectStore(STORE_NAME).put(event)));
-  await tx.done;
+  await db.transaction('rw', db.events, async () => {
+    await db.events.clear();
+    await db.events.bulkAdd(newEvents);
+  });
   hasUnsavedChangesState = false;
   notifyListeners();
   notifyUnsavedChangesListeners();
 }
 
+// Adds a single event to the DB.
 export async function addEvent(event: TransactionEvent): Promise<void> {
-  const db = await getDb();
-  await db.put(STORE_NAME, event);
+  await db.events.add(event);
   hasUnsavedChangesState = true;
-  notifyListeners();
+  // Dexie's liveQuery will handle notifying components, but we still need this for the unsaved changes flag
   notifyUnsavedChangesListeners();
 }
 
-export function onEventsChange(
-  callback: (events: TransactionEvent[]) => void
-): () => void {
-  listeners.add(callback);
-  // Initial load
-  getEvents().then(events => callback(events));
-  return () => listeners.delete(callback);
+// Retrieves all events.
+export async function getEvents(): Promise<TransactionEvent[]> {
+  return db.events.toArray();
 }
+
+// A hook-friendly way to subscribe to all events.
+export function useLiveEvents() {
+    return liveQuery(() => db.events.toArray());
+}
+
+
+// --- Unsaved Changes Logic ---
 
 export function onUnsavedChangesChange(
   callback: (hasChanges: boolean) => void
@@ -74,12 +60,18 @@ export function onUnsavedChangesChange(
   return () => unsavedChangesListeners.delete(callback);
 }
 
-export async function getEvents(): Promise<TransactionEvent[]> {
-  const db = await getDb();
-  return db.getAll(STORE_NAME);
-}
-
 export function setHasUnsavedChanges(hasChanges: boolean): void {
   hasUnsavedChangesState = hasChanges;
   notifyUnsavedChangesListeners();
+}
+
+// Legacy subscription model, kept for compatibility during refactoring if needed,
+// but useLiveEvents is preferred for new components.
+export function onEventsChange(
+  callback: () => void
+): () => void {
+  listeners.add(callback);
+  // Initial call
+  callback();
+  return () => listeners.delete(callback);
 }

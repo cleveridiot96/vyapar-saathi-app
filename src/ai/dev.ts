@@ -1,1 +1,2 @@
-// Flows will be imported for their side effects in this file.
+// This file is intentionally left blank.
+// It was used for development with Genkit but is no longer needed.

@@ -23,6 +23,7 @@ export function AppShell({
                         "bg-[length:200%_200%] animate-gradient"
                     )} 
                     style={{ animation: 'animate-gradient 15s ease infinite' }}
+                    collapsible="icon"
                 >
                     <SidebarHeader className="flex h-14 items-center justify-center p-2 border-b border-sidebar-border">
                         <div className="flex items-center gap-2">
