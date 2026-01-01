@@ -67,7 +67,7 @@ const DISPLAY_LIMIT_OPTIONS = ["50", "100", "150", "All"];
 
 export default function MastersPage() {
   const { toast } = useToast();
-  const { getAllMasters, masterData, isLoaded } = useAppState();
+  const { masterData, isLoaded } = useAppState();
   const { addOrUpdateMaster } = useAppDispatch();
   const { Warehouse: warehouses, Expense: expenses } = masterData;
   const hydrated = useHydrated();
@@ -81,7 +81,9 @@ export default function MastersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [displayLimit, setDisplayLimit] = useState(DISPLAY_LIMIT_OPTIONS[1]);
 
-  const allMasterItems = useMemo(() => getAllMasters(), [getAllMasters]);
+  const allMasterItems = useMemo(() => {
+    return Object.values(masterData).flat();
+  }, [masterData]);
   
   const getMasterDataStateForTab = useCallback((type: MasterPageTabKey) => {
     if (type === 'All') return allMasterItems || [];
