@@ -5,25 +5,25 @@ export default {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    'src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+    fontSize: {
+      'xs': '0.75rem',    // 12px
+      'sm': '0.875rem',   // 14px
+      'base': '1rem',      // 16px
+      'lg': '1.125rem',   // 18px
+      'xl': '1.25rem',    // 20px
+      '2xl': '1.5rem',     // 24px
+      '3xl': '1.875rem',   // 30px
+      '4xl': '2.25rem',    // 36px
+    },
+    fontFamily: {
+      body: ['Poppins', 'sans-serif'],
+      headline: ['Poppins', 'sans-serif'],
+      code: ['"Source Code Pro"', 'monospace'],
+    },
     extend: {
-      fontSize: {
-        'xs': '0.75rem',    // 12px
-        'sm': '0.875rem',   // 14px
-        'base': '1rem',      // 16px
-        'lg': '1.125rem',   // 18px
-        'xl': '1.25rem',    // 20px
-        '2xl': '1.5rem',     // 24px
-        '3xl': '1.875rem',   // 30px
-        '4xl': '2.25rem',    // 36px
-      },
-      fontFamily: {
-        body: ['Poppins', 'sans-serif'],
-        headline: ['Poppins', 'sans-serif'],
-        code: ['"Source Code Pro"', 'monospace'],
-      },
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
