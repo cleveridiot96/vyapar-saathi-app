@@ -60,7 +60,7 @@ const fuseOptions = {
 };
 
 const validateMasterItem = (item: any): item is MasterItem => {
-  return item && typeof item.id === 'string' && typeof item.name === 'string' && typeof item.type === 'string';
+  return item && typeof item.id === 'string' && typeof item.name === 'string' && typeof item.type === 'string' && !item.name.startsWith('_DELETED_');
 };
 
 const DISPLAY_LIMIT_OPTIONS = ["50", "100", "150", "All"];
@@ -86,18 +86,10 @@ export default function MastersPage() {
   }, [masterData]);
   
   const getMasterDataStateForTab = useCallback((type: MasterPageTabKey) => {
-    if (type === 'All') return allMasterItems || [];
-    switch (type) {
-        case 'Customer': return masterData.Customer || [];
-        case 'Broker': return masterData.Broker || [];
-        case 'Supplier': return masterData.Supplier || [];
-        case 'Agent': return masterData.Agent || [];
-        case 'Warehouse': return warehouses || [];
-        case 'Transporter': return masterData.Transporter || [];
-        case 'Expense': return expenses || [];
-        default: return [];
-    }
-  }, [allMasterItems, masterData, warehouses, expenses]);
+    if (type === 'All') return allMasterItems.filter(item => !item.name.startsWith('_DELETED_')) || [];
+    const data = masterData[type] || [];
+    return data.filter(item => !item.name.startsWith('_DELETED_'));
+  }, [allMasterItems, masterData]);
   
   const fuseInstances = useMemo(() => {
     const instances: Record<string, Fuse<MasterItem>> = {};
@@ -177,15 +169,21 @@ export default function MastersPage() {
       });
       return;
     }
+    if (item.name.startsWith('_DELETED_')) {
+      toast({
+        title: "Already Deleted",
+        description: `${item.name} has already been deleted.`,
+        variant: "destructive",
+      });
+      return;
+    }
     setItemToDelete(item);
     setShowDeleteConfirm(true);
   }, [toast]);
 
   const confirmDeleteItem = useCallback(() => {
     if (itemToDelete) {
-      // This is not a safe deletion, but for the sake of the prototype we will soft delete
       addOrUpdateMaster({ ...itemToDelete, name: `_DELETED_${itemToDelete.name}_${Date.now()}`});
-
       toast({ title: `${itemToDelete.type} deleted`, description: `${itemToDelete.name} has been removed.`, variant: 'destructive' });
       setItemToDelete(null);
       setShowDeleteConfirm(false);
