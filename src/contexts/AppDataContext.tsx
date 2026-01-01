@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useCallback, useEffect, useState, useMemo, useContext } from 'react';
@@ -17,7 +16,7 @@ const AppDataContext = createContext<{
 } | undefined>(undefined);
 
 export const AppDataProvider = ({ children }: { children: React.ReactNode }) => {
-  const events = useLiveEvents(); // This is now a live query from Dexie
+  const events = useLiveEvents();
   
   const [isInitialized, setIsInitialized] = useState(false);
   const [isCalculating, setIsCalculating] = useState(true);
@@ -29,7 +28,6 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
     }
   }, [events, isInitialized]);
 
-  // Derive state from events
   const derivedState = useMemo(() => {
     return deriveAllTransactions(Array.isArray(events) ? events : []);
   }, [events]);
@@ -47,7 +45,6 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
   }, [isInitialized, derivedState]);
 
   useEffect(() => {
-     // This effect now simply watches for the derived state and inventory to be ready.
     if (isInitialized) {
       setIsCalculating(false);
     }
@@ -56,7 +53,7 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
   const state: AppState = {
     ...derivedState,
     inventory,
-    events: events || [],
+    events: Array.isArray(events) ? events : [],
     isLoaded: isInitialized,
     isInitialized,
     isCalculating,
@@ -94,7 +91,6 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
     addOrUpdateMaster: (payload) => addEventToStore({ type: 'MASTER_UPSERTED', payload }),
     loadEvents,
     setHasUnsavedChanges: setHasUnsavedChangesCallback,
-    // These setters are now dummies as state is derived directly from events
     setPurchases: (updater) => { /* Managed by events */ },
     setSales: (updater) => { /* Managed by events */ },
     setPurchaseReturns: (updater) => { /* Managed by events */ },
@@ -102,7 +98,6 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
   }), [setHasUnsavedChangesCallback]);
   
   if (!isInitialized) {
-    // You can return a global loading spinner here if you want
     return null;
   }
 
