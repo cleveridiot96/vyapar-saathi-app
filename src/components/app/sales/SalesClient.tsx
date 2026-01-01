@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -84,7 +85,7 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 
 export function SalesClient() {
   const { toast } = useToast();
-  const { financialYear, isAppHydrating } = useSettings();
+  const { financialYear } = useSettings();
   
   const { 
     sales, 
@@ -126,7 +127,7 @@ export function SalesClient() {
   }, [activeTab]);
 
   const filteredSales = React.useMemo(() => {
-    if (isAppHydrating || !isLoaded) return [];
+    if (!isLoaded) return [];
     
     return sales.filter(
       sale => sale && 
@@ -134,12 +135,12 @@ export function SalesClient() {
       isDateInFinancialYear(sale.date, financialYear) && 
       !sale.isStockPaymentSale
     );
-  }, [sales, financialYear, isAppHydrating, isLoaded]);
+  }, [sales, financialYear, isLoaded]);
 
   const filteredSaleReturns = React.useMemo(() => {
-    if (isAppHydrating || !isLoaded) return [];
+    if (!isLoaded) return [];
     return saleReturns.filter(sr => sr && sr.date && isDateInFinancialYear(sr.date, financialYear));
-  }, [saleReturns, financialYear, isAppHydrating, isLoaded]);
+  }, [saleReturns, financialYear, isLoaded]);
 
   const handleAddOrUpdateSale = React.useCallback(
     (sale: Sale) => {
@@ -201,7 +202,7 @@ export function SalesClient() {
   const handleAddOrUpdateSaleReturn = React.useCallback((srData: SaleReturn) => {
     dispatch.addReturn(srData);
     setSaleReturnToEdit(null);
-    setIsAddSaleReturnFormOpen(false);
+    setIsAddSaleReturnFormOpen(true);
     toast({ title: "Success!", description: "Sale return updated." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
   }, [dispatch, toast]);
@@ -225,10 +226,6 @@ export function SalesClient() {
   const addButtonDynamicClass = React.useMemo(() => {
     return activeTab === 'sales' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-yellow-600 hover:bg-yellow-700 text-white';
   }, [activeTab]);
-
-  if (isAppHydrating || !isLoaded) {
-    return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p className="text-lg text-muted-foreground">Loading sales data...</p></div>;
-  }
 
   return (
     <div className="space-y-2 print-area">

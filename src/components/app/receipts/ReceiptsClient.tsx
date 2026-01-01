@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -94,14 +95,6 @@ export function ReceiptsClient() {
     setIsAddReceiptFormOpen(false);
     setReceiptToEdit(null);
   }, []);
-
-  if (!isLoaded) {
-    return (
-        <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
-            <p className="text-lg text-muted-foreground">Loading receipts data...</p>
-        </div>
-    );
-  }
 
   return (
     <div className="space-y-6 print-area">

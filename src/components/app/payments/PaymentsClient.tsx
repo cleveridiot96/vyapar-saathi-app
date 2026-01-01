@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -28,8 +29,8 @@ const AddPaymentForm = dynamic(() => import('./AddPaymentForm').then(mod => mod.
 
 export function PaymentsClient() {
   const { toast } = useToast();
-  const { financialYear, isAppHydrating } = useSettings();
-  const { payments, purchases, sales, isLoaded, masterData } = useAppState();
+  const { financialYear } = useSettings();
+  const { payments, purchases, sales, isLoaded } = useAppState();
   const dispatch = useAppDispatch();
   
   const { payableParties } = useOutstandingBalances();
@@ -41,9 +42,9 @@ export function PaymentsClient() {
   const [paymentToDeleteId, setPaymentToDeleteId] = React.useState<string | null>(null);
 
   const filteredPayments = React.useMemo(() => {
-    if (isAppHydrating || !isLoaded) return [];
+    if (!isLoaded) return [];
     return payments.filter(payment => payment && payment.date && isDateInFinancialYear(payment.date, financialYear));
-  }, [payments, financialYear, isAppHydrating, isLoaded]);
+  }, [payments, financialYear, isLoaded]);
 
   const handleAddOrUpdatePayment = React.useCallback((payment: Payment) => {
     const isEditing = payments.some(p => p.id === payment.id);
@@ -129,14 +130,6 @@ export function PaymentsClient() {
     setIsAddPaymentFormOpen(false);
     setPaymentToEdit(null);
   }, []);
-
-  if (isAppHydrating || !isLoaded) {
-    return (
-        <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
-            <p className="text-lg text-muted-foreground">Loading payments data...</p>
-        </div>
-    );
-  }
 
   return (
     <div className="space-y-6 print-area">

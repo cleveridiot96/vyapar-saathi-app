@@ -62,6 +62,24 @@ export default function PurchasesPage() {
     type: "purchase" | "return";
   } | null>(null);
   const [activeTab, setActiveTab] = React.useState("purchases");
+  
+  const filteredPurchases = React.useMemo(() => {
+    if (!isLoaded) return [];
+    return purchases.filter(
+      (purchase) =>
+        purchase &&
+        purchase.date &&
+        isDateInFinancialYear(purchase.date, financialYear)
+    );
+  }, [purchases, financialYear, isLoaded]);
+
+
+  const filteredPurchaseReturns = React.useMemo(() => {
+    if (!isLoaded) return [];
+    return purchaseReturns.filter(
+      (pr) => pr && pr.date && isDateInFinancialYear(pr.date, financialYear)
+    );
+  }, [purchaseReturns, financialYear, isLoaded]);
 
   const handleAddOrUpdatePurchase = React.useCallback(
     (purchase: Purchase) => {
@@ -169,23 +187,6 @@ export default function PurchasesPage() {
     setItemToDelete({ id: prId, type: "return" });
   }, []);
 
-  const filteredPurchases = React.useMemo(() => {
-    if (!isLoaded || !hydrated) return [];
-    return purchases.filter(
-      (purchase) =>
-        purchase &&
-        purchase.date &&
-        isDateInFinancialYear(purchase.date, financialYear)
-    );
-  }, [purchases, financialYear, isLoaded, hydrated]);
-
-
-  const filteredPurchaseReturns = React.useMemo(() => {
-    if (!isLoaded || !hydrated) return [];
-    return purchaseReturns.filter(
-      (pr) => pr && pr.date && isDateInFinancialYear(pr.date, financialYear)
-    );
-  }, [purchaseReturns, financialYear, isLoaded, hydrated]);
 
   const handleEditPurchase = (purchase: Purchase) => {
     setPurchaseToEdit(purchase);
