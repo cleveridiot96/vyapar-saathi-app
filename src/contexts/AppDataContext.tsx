@@ -9,6 +9,7 @@ import type {
   Purchase, Sale, StockAdjustment, LocationTransfer, PurchaseReturn, SaleReturn, Payment, Receipt, LedgerEntry, MasterItem, AggregatedInventoryItem
 } from '@/lib/types';
 import type { AppState, AppDispatch } from '@/hooks/useAppState';
+import { calculateInventory } from '@/lib/inventoryEngine';
 
 const AppDataContext = createContext<{
   state: AppState;
