@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -26,9 +27,10 @@ import type { MasterItem, MasterItemType } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MASTER_TYPES_CONFIG } from "@/lib/constants";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Lock, Unlock, RefreshCw } from "lucide-react";
+import { Lock, Unlock, RefreshCw, Lightbulb } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import Fuse from 'fuse.js';
 
 interface MasterFormProps {
   isOpen: boolean;
@@ -38,6 +40,7 @@ interface MasterFormProps {
   itemTypeFromButton: MasterItemType;
   initialData?: MasterItem | null;
   fixedIds?: string[];
+  allMasterItems: MasterItem[];
 }
 
 const formSchema = z.object({
@@ -59,10 +62,12 @@ export function MasterForm({
   itemTypeFromButton,
   initialData,
   fixedIds = [],
+  allMasterItems,
 }: MasterFormProps) {
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
-
+  const [suggestion, setSuggestion] = React.useState<MasterItem | null>(null);
+  
   const isEditingFixed = initialData ? fixedIds.includes(initialData.id) : false;
   const isLocked = initialData?.locked || isEditingFixed;
 
@@ -78,8 +83,31 @@ export function MasterForm({
     },
   });
 
-  const itemType = form.watch('type');
+  const watchedName = form.watch('name');
+  const watchedType = form.watch('type');
   
+  const fuse = React.useMemo(() => {
+    const itemsOfType = allMasterItems.filter(item => item.type === watchedType && item.id !== initialData?.id);
+    return new Fuse(itemsOfType, {
+      keys: ['name'],
+      includeScore: true,
+      threshold: 0.4,
+    });
+  }, [allMasterItems, watchedType, initialData?.id]);
+
+  React.useEffect(() => {
+    if (watchedName && watchedName.length > 2 && !initialData) {
+      const results = fuse.search(watchedName);
+      if (results.length > 0 && results[0].score! < 0.3) {
+        setSuggestion(results[0].item);
+      } else {
+        setSuggestion(null);
+      }
+    } else {
+      setSuggestion(null);
+    }
+  }, [watchedName, fuse, initialData]);
+
   React.useEffect(() => {
     const type = initialData?.type || itemTypeFromButton;
     form.reset({
@@ -112,9 +140,6 @@ export function MasterForm({
   const handleManualRefresh = async (e: React.MouseEvent) => {
     e.preventDefault();
     setIsRefreshing(true);
-    // In a real app with TanStack Query, you would do:
-    // await queryClient.invalidateQueries({ queryKey: ['masters'] });
-    // For this demo, we just simulate the refresh.
     window.dispatchEvent(new Event('reindex-search'));
     toast({ title: "Refreshed", description: "Master data re-synced." });
     setIsRefreshing(false);
@@ -126,13 +151,20 @@ export function MasterForm({
     const singular = type.endsWith('s') ? type.slice(0, -1) : type;
     return singular.replace(/^[^\w\s]+/, '').trim();
   }
-  const singularLabel = getSingularLabel(itemType);
+  const singularLabel = getSingularLabel(watchedType);
 
   const handleUnlock = () => {
     if (initialData && onToggleLock) {
       onToggleLock(initialData);
       onClose();
     }
+  }
+
+  const handleSuggestion = (accept: boolean) => {
+    if (accept && suggestion) {
+      form.setValue('name', suggestion.name);
+    }
+    setSuggestion(null);
   }
 
   return (
@@ -197,8 +229,21 @@ export function MasterForm({
                     </FormItem>
                   )}
                 />
+                
+                {suggestion && (
+                  <div className="p-3 border rounded-md bg-amber-50 border-amber-200 text-sm">
+                    <div className="flex items-center gap-2 font-medium text-amber-800">
+                      <Lightbulb className="h-4 w-4" />
+                      Did you mean: <strong className="uppercase">{suggestion.name}</strong>?
+                    </div>
+                    <div className="flex justify-end gap-2 mt-2">
+                        <Button type="button" size="sm" variant="ghost" className="text-amber-800 hover:text-amber-900 hover:bg-amber-100" onClick={() => handleSuggestion(false)}>No</Button>
+                        <Button type="button" size="sm" className="bg-amber-500 hover:bg-amber-600 text-white" onClick={() => handleSuggestion(true)}>Yes</Button>
+                    </div>
+                  </div>
+                )}
 
-                {(itemType === 'Agent' || itemType === 'Broker') && (
+                {(watchedType === 'Agent' || watchedType === 'Broker') && (
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
@@ -213,7 +258,7 @@ export function MasterForm({
                           </FormItem>
                         )}
                       />
-                      {itemType === 'Broker' && (
+                      {watchedType === 'Broker' && (
                         <FormField
                           control={form.control}
                           name="commissionType"
@@ -235,7 +280,7 @@ export function MasterForm({
                   </div>
                 )}
                 
-                {(['Supplier', 'Customer', 'Agent', 'Broker'].includes(itemType)) && (
+                {(['Supplier', 'Customer', 'Agent', 'Broker'].includes(watchedType)) && (
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
@@ -288,3 +333,5 @@ export function MasterForm({
     </Dialog>
   );
 }
+
+    

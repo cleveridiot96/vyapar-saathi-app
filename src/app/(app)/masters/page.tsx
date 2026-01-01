@@ -82,7 +82,7 @@ export default function MastersPage() {
   const [displayLimit, setDisplayLimit] = useState(DISPLAY_LIMIT_OPTIONS[1]);
 
   const allMasterItems = useMemo(() => {
-    return Object.values(masterData).flat();
+    return Object.values(masterData).flat().filter(validateMasterItem);
   }, [masterData]);
   
   const getMasterDataStateForTab = useCallback((type: MasterPageTabKey) => {
@@ -344,6 +344,7 @@ export default function MastersPage() {
           initialData={editingItem}
           itemTypeFromButton={editingItem ? editingItem.type : (activeTab !== 'All' ? activeTab as MasterItemType : 'Customer')}
           fixedIds={ALL_FIXED_IDS}
+          allMasterItems={allMasterItems}
         />
       )}
 
@@ -366,4 +367,6 @@ export default function MastersPage() {
     </div>
   );
 }
+    
+
     
