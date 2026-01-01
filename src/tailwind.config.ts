@@ -5,19 +5,19 @@ export default {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    'src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
       fontSize: {
-        'xs': 'calc(var(--font-size) * 0.75)',
-        'sm': 'calc(var(--font-size) * 0.875)',
-        'base': 'var(--font-size)',
-        'lg': 'calc(var(--font-size) * 1.125)',
-        'xl': 'calc(var(--font-size) * 1.25)',
-        '2xl': 'calc(var(--font-size) * 1.5)',
-        '3xl': 'calc(var(--font-size) * 1.875)',
-        '4xl': 'calc(var(--font-size) * 2.25)',
+        'xs': '0.75rem',    // 12px
+        'sm': '0.875rem',   // 14px
+        'base': '1rem',      // 16px
+        'lg': '1.125rem',   // 18px
+        'xl': '1.25rem',    // 20px
+        '2xl': '1.5rem',     // 24px
+        '3xl': '1.875rem',   // 30px
+        '4xl': '2.25rem',    // 36px
       },
       fontFamily: {
         body: ['Poppins', 'sans-serif'],
