@@ -6,7 +6,7 @@ import { openDB, type IDBPDatabase } from 'idb';
 
 const DB_NAME = 'InventoryDB';
 const STORE_NAME = 'events';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented version to trigger upgrade
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
@@ -15,7 +15,6 @@ function getDb(): Promise<IDBPDatabase> {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
       upgrade(db) {
         if (!db.objectStoreNames.contains(STORE_NAME)) {
-          // FIX: Removed `keyPath` to allow auto-incrementing keys for the event log.
           db.createObjectStore(STORE_NAME, {
             autoIncrement: true,
           });
