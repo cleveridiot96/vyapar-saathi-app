@@ -349,6 +349,8 @@ const SidebarInset = React.forwardRef<
         "relative flex min-h-svh flex-1 flex-col bg-background transition-[margin-left] duration-300 ease-in-out",
         "md:peer-data-[state=expanded]:ml-[--sidebar-width]",
         "md:peer-data-[state=collapsed]:peer-data-[collapsible=icon]:ml-[--sidebar-width-icon]",
+        "md:peer-data-[variant=inset]:ml-0",
+        "md:peer-data-[state=expanded]:peer-data-[variant=inset]:ml-[--sidebar-width]",
         "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)] md:peer-data-[state=expanded]:peer-data-[variant=inset]:ml-[calc(var(--sidebar-width)_+_theme(spacing.2))] md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
         className
       )}
