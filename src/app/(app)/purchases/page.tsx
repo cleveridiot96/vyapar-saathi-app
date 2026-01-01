@@ -66,7 +66,7 @@ export default function PurchasesPage() {
 
   const handleAddOrUpdatePurchase = React.useCallback(
     (purchase: Purchase) => {
-      const isEditing = !!purchaseToEdit;
+      const isEditing = purchases.some(p => p.id === purchase.id);
       
       if (isEditing) {
         updatePurchase(purchase);
@@ -83,7 +83,7 @@ export default function PurchasesPage() {
         window.dispatchEvent(new CustomEvent("reindex-search"));
       }, 100);
     },
-    [purchaseToEdit, addPurchase, updatePurchase, toast]
+    [purchases, addPurchase, updatePurchase, toast]
   );
 
   const handleDeletePurchaseAttempt = React.useCallback(
