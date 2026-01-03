@@ -1,15 +1,16 @@
 
 "use client";
 
-import { useAppState } from './useAppState';
+import { useAppDataContext } from '@/contexts/AppDataContext';
 import type { AggregatedInventoryItem } from '@/lib/types';
 import { useMemo } from 'react';
 
 export function useInventory(saleToEditId?: string | null) {
-  const { inventory, sales, isInitialized, isCalculating } = useAppState();
+  const { state } = useAppDataContext();
+  const { inventory, sales, isLoaded, isCalculating } = state;
 
   const adjustedInventory = useMemo(() => {
-    if (!saleToEditId || !isInitialized) {
+    if (!saleToEditId || !isLoaded) {
       return inventory;
     }
 
@@ -24,6 +25,7 @@ export function useInventory(saleToEditId?: string | null) {
     });
 
     return inventory.map(invItem => {
+        if(!invItem) return null;
         const saleItem = saleItemsMap.get(invItem.lotNumber);
         if (saleItem) {
             return {
@@ -33,14 +35,14 @@ export function useInventory(saleToEditId?: string | null) {
             };
         }
         return invItem;
-    });
+    }).filter(Boolean) as AggregatedInventoryItem[];
 
-  }, [inventory, sales, saleToEditId, isInitialized]);
+  }, [inventory, sales, saleToEditId, isLoaded]);
 
   return {
     allAggregatedInventory: adjustedInventory,
-    availableStock: adjustedInventory.filter(item => item.currentBags > 0.01),
-    isLoading: !isInitialized || isCalculating,
+    availableStock: (adjustedInventory || []).filter(item => item && item.currentBags > 0.01),
+    isLoading: !isLoaded || isCalculating,
   };
 }
 

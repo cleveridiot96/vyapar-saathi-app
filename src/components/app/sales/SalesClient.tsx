@@ -1,8 +1,10 @@
+
 "use client";
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, RotateCcw, ListChecks } from "lucide-react";
+import type { Sale, SaleReturn, MasterItem } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -19,11 +21,11 @@ import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useAppDataContext } from "@/contexts/AppDataContext";
-import type { Sale, SaleReturn, MasterItem } from "@/lib/types";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
-import { useInventory } from '@/hooks/useInventory';
+import { useTransactions } from "@/hooks/useTransactions";
+import { useMasterData } from "@/contexts/MasterDataContext";
+import { useInventory } from "@/hooks/useInventory";
 
 const SaleTable = dynamic(() => import('@/components/app/sales/SaleTable').then(mod => mod.SaleTable), { ssr: false });
 const AddSaleForm = dynamic(() => import('@/components/app/sales/AddSaleForm').then(mod => mod.AddSaleForm), { ssr: false });
@@ -87,13 +89,15 @@ export function SalesClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
   
-  const { state, dispatch } = useAppDataContext();
   const { 
-    sales,
+    sales, 
+    setSales,
     saleReturns, 
-    isLoaded, 
-  } = state;
+    setSaleReturns,
+    isTransactionsLoaded,
+  } = useTransactions();
   
+  const { setData: setMasterData } = useMasterData();
   const { availableStock } = useInventory();
 
 
@@ -128,7 +132,7 @@ export function SalesClient() {
   }, [activeTab]);
 
   const filteredSales = React.useMemo(() => {
-    if (!isLoaded) return [];
+    if (!isTransactionsLoaded) return [];
     
     return sales.filter(
       sale => sale && 
@@ -136,21 +140,21 @@ export function SalesClient() {
       isDateInFinancialYear(sale.date, financialYear) && 
       !sale.isStockPaymentSale
     );
-  }, [sales, financialYear, isLoaded]);
+  }, [sales, financialYear, isTransactionsLoaded]);
 
   const filteredSaleReturns = React.useMemo(() => {
-    if (!isLoaded) return [];
+    if (!isTransactionsLoaded) return [];
     return saleReturns.filter(sr => sr && sr.date && isDateInFinancialYear(sr.date, financialYear));
-  }, [saleReturns, financialYear, isLoaded]);
+  }, [saleReturns, financialYear, isTransactionsLoaded]);
 
   const handleAddOrUpdateSale = React.useCallback(
     (sale: Sale) => {
-      const isEditing = !!saleToEdit;
+      const isEditing = sales.some(s => s.id === sale.id);
       
       if (isEditing) {
-        dispatch.updateSale(sale);
+        setSales(prev => prev.map(s => s.id === sale.id ? sale : s));
       } else {
-        dispatch.addSale(sale);
+        setSales(prev => [sale, ...prev]);
       }
       
       setSaleToEdit(null);
@@ -165,7 +169,7 @@ export function SalesClient() {
         window.dispatchEvent(new CustomEvent("reindex-search"));
       }, 100);
     },
-    [saleToEdit, dispatch, toast]
+    [sales, setSales, toast]
   );
 
   const handleEditSale = React.useCallback((sale: Sale) => {
@@ -187,24 +191,29 @@ export function SalesClient() {
             setItemToDelete(null);
             return;
         }
-      dispatch.deleteSale(itemToDelete.id);
+      setSales(prev => prev.filter(s => s.id !== itemToDelete.id));
       toast({ title: "Deleted!", description: "Sale record removed.", variant: "destructive" });
     } else {
-      dispatch.setSaleReturns(saleReturns.filter(sr => sr.id !== itemToDelete.id));
+      setSaleReturns(prev => prev.filter(sr => sr.id !== itemToDelete.id));
       toast({ title: "Deleted!", description: "Sale return record removed.", variant: "destructive" });
     }
 
     setItemToDelete(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [itemToDelete, dispatch, toast, saleReturns]);
+  }, [itemToDelete, setSales, setSaleReturns, toast, saleReturns]);
   
   const handleAddOrUpdateSaleReturn = React.useCallback((srData: SaleReturn) => {
-    dispatch.addReturn(srData);
+    const isEditing = saleReturns.some(sr => sr.id === srData.id);
+    if(isEditing) {
+      setSaleReturns(prev => prev.map(sr => sr.id === srData.id ? srData : sr));
+    } else {
+      setSaleReturns(prev => [srData, ...prev]);
+    }
     setSaleReturnToEdit(null);
     setIsAddSaleReturnFormOpen(false);
     toast({ title: "Success!", description: "Sale return updated." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [dispatch, toast]);
+  }, [saleReturns, setSaleReturns, toast]);
 
   const handleEditSaleReturn = React.useCallback((sr: SaleReturn) => {
     setSaleReturnToEdit(sr);
@@ -217,18 +226,22 @@ export function SalesClient() {
   }, []);
 
   const handleMasterDataUpdate = React.useCallback((newItem: MasterItem) => {
-    dispatch.addOrUpdateMaster(newItem);
+    setMasterData(newItem.type, (prev) => {
+      const existingIndex = prev.findIndex(item => item.id === newItem.id);
+      if (existingIndex > -1) {
+        const updated = [...prev];
+        updated[existingIndex] = newItem;
+        return updated;
+      }
+      return [newItem, ...prev];
+    });
     toast({ title: `Master list updated for ${newItem.type}.` });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [dispatch, toast]);
+  }, [setMasterData, toast]);
   
   const addButtonDynamicClass = React.useMemo(() => {
     return activeTab === 'sales' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-yellow-600 hover:bg-yellow-700 text-white';
   }, [activeTab]);
-
-  if (!isLoaded) {
-    return null; // Or skeleton
-  }
 
   return (
     <div className="space-y-2 print-area">
@@ -299,3 +312,5 @@ export function SalesClient() {
     </div>
   );
 }
+
+    

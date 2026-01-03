@@ -2,7 +2,6 @@
 import type { Metadata } from "next";
 import { cn } from "@/lib/utils";
 import "./globals.css";
-import { AppDataProvider } from "@/contexts/AppDataContext";
 import { Toaster } from "@/components/ui/toaster";
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import AppExitHandler from '@/components/layout/AppExitHandler';
@@ -23,11 +22,9 @@ export default function RootLayout({
       <body className={cn("bg-background font-sans antialiased")}>
         <SettingsProvider>
           <PasswordProvider>
-            <AppDataProvider>
-                {children}
-                <Toaster />
-                <AppExitHandler />
-            </AppDataProvider>
+            {children}
+            <Toaster />
+            <AppExitHandler />
           </PasswordProvider>
         </SettingsProvider>
       </body>

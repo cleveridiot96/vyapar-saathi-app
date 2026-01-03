@@ -1,14 +1,11 @@
 "use client";
 
 import { PurchasesClient } from "@/components/app/purchases/PurchasesClient";
-// FIX: Import from the correct context
-import { useAppDataContext } from "@/contexts/AppDataContext"; 
+import { useAppState } from "@/hooks/useAppState";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PurchasesPage() {
-  // FIX: Use the new hook
-  const { state } = useAppDataContext();
-  const { isLoaded } = state;
+  const { isLoaded } = useAppState();
 
   if (!isLoaded) {
     return (

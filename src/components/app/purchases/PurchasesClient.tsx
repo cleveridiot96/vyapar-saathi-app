@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, RotateCcw, ListChecks } from "lucide-react";
+import type { Purchase, PurchaseReturn, MasterItem, Sale } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -19,10 +20,11 @@ import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useAppDataContext } from "@/contexts/AppDataContext";
-import type { Purchase, PurchaseReturn, MasterItem, Sale } from "@/lib/types";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
+import { useTransactions } from "@/hooks/useTransactions";
+import { useMasterData } from "@/contexts/MasterDataContext";
+import { useInventory } from "@/hooks/useInventory";
 
 // Dynamic Imports
 const PurchaseTable = dynamic(() => import('@/components/app/purchases/PurchaseTable').then(mod => mod.PurchaseTable), { ssr: false });
@@ -75,17 +77,17 @@ export function PurchasesClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
   
-  const { state, dispatch } = useAppDataContext();
-  
   const { 
-    purchases, 
+    purchases,
+    setPurchases,
     purchaseReturns, 
-    isLoaded, 
-    sales,
-    masterData,
-    getAllMasters,
-    inventory,
-  } = state;
+    setPurchaseReturns,
+    isTransactionsLoaded,
+    sales
+  } = useTransactions();
+  
+  const { masterData, setData: setMasterData, getAllMasters } = useMasterData();
+  const { availableStock } = useInventory();
 
   const [isAddPurchaseFormOpen, setIsAddPurchaseFormOpen] = React.useState(false);
   const [purchaseToEdit, setPurchaseToEdit] = React.useState<Purchase | null>(null);
@@ -98,38 +100,35 @@ export function PurchasesClient() {
   const [activeTab, setActiveTab] = React.useState('purchases');
   
   const filteredPurchases = React.useMemo(() => {
-    if (!isLoaded) return [];
+    if (!isTransactionsLoaded) return [];
     return purchases.filter(p => p && p.date && isDateInFinancialYear(p.date, financialYear));
-  }, [purchases, financialYear, isLoaded]);
+  }, [purchases, financialYear, isTransactionsLoaded]);
 
   const filteredPurchaseReturns = React.useMemo(() => {
-    if (!isLoaded) return [];
+    if (!isTransactionsLoaded) return [];
     return purchaseReturns.filter(pr => pr && pr.date && isDateInFinancialYear(pr.date, financialYear));
-  }, [purchaseReturns, financialYear, isLoaded]);
+  }, [purchaseReturns, financialYear, isTransactionsLoaded]);
 
   const handleAddOrUpdatePurchase = React.useCallback(
     (purchase: Purchase) => {
-      const isEditing = !!purchaseToEdit;
+      const isEditing = purchases.some(p => p.id === purchase.id);
       
       if (isEditing) {
-        dispatch.updatePurchase(purchase);
+        setPurchases(prev => prev.map(p => p.id === purchase.id ? purchase : p));
+        toast({ title: "Purchase updated!" });
       } else {
-        dispatch.addPurchase(purchase);
+        setPurchases(prev => [purchase, ...prev]);
+        toast({ title: "Purchase added!" });
       }
       
       setPurchaseToEdit(null);
       setIsAddPurchaseFormOpen(false);
       
-      toast({
-        title: "Success!",
-        description: isEditing ? "Purchase updated." : "Purchase added.",
-      });
-      
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent("reindex-search"));
       }, 100);
     },
-    [purchaseToEdit, dispatch, toast]
+    [purchases, setPurchases, toast]
   );
 
   const handleEditPurchase = React.useCallback((purchase: Purchase) => {
@@ -151,24 +150,29 @@ export function PurchasesClient() {
           setItemToDelete(null);
           return;
       }
-      dispatch.deletePurchase(itemToDelete.id);
+      setPurchases(prev => prev.filter(p => p.id !== itemToDelete.id));
       toast({ title: "Deleted!", description: "Purchase record removed.", variant: "destructive" });
     } else {
-      dispatch.setPurchaseReturns(purchaseReturns.filter(pr => pr.id !== itemToDelete.id));
+      setPurchaseReturns(prev => prev.filter(pr => pr.id !== itemToDelete.id));
       toast({ title: "Deleted!", description: "Purchase return record removed.", variant: "destructive" });
     }
 
     setItemToDelete(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [itemToDelete, dispatch, toast, sales, purchaseReturns]);
+  }, [itemToDelete, setPurchases, setPurchaseReturns, toast, sales]);
   
   const handleAddOrUpdatePurchaseReturn = React.useCallback((prData: PurchaseReturn) => {
-    dispatch.addReturn(prData);
+    const isEditing = purchaseReturns.some(pr => pr.id === prData.id);
+    if(isEditing) {
+      setPurchaseReturns(prev => prev.map(pr => pr.id === prData.id ? prData : pr));
+    } else {
+      setPurchaseReturns(prev => [prData, ...prev]);
+    }
     setPurchaseReturnToEdit(null);
     setIsAddPurchaseReturnFormOpen(false);
     toast({ title: "Success!", description: "Purchase return saved." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [dispatch, toast]);
+  }, [purchaseReturns, setPurchaseReturns, toast]);
 
   const handleEditPurchaseReturn = React.useCallback((pr: PurchaseReturn) => {
     setPurchaseReturnToEdit(pr);
@@ -181,10 +185,18 @@ export function PurchasesClient() {
   }, []);
 
   const handleMasterDataUpdate = React.useCallback((newItem: MasterItem) => {
-    dispatch.addOrUpdateMaster(newItem);
+    setMasterData(newItem.type, (prev) => {
+      const existingIndex = prev.findIndex(item => item.id === newItem.id);
+      if (existingIndex > -1) {
+        const updated = [...prev];
+        updated[existingIndex] = newItem;
+        return updated;
+      }
+      return [newItem, ...prev];
+    });
     toast({ title: `Master list updated for ${newItem.type}.` });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [dispatch, toast]);
+  }, [setMasterData, toast]);
   
   const addButtonDynamicClass = React.useMemo(() => {
     return activeTab === 'purchases' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-orange-600 hover:bg-orange-700 text-white';
@@ -232,7 +244,7 @@ export function PurchasesClient() {
           masterData={masterData}
           addOrUpdateMaster={handleMasterDataUpdate}
           getAllMasters={getAllMasters}
-          availableStock={inventory || []}
+          availableStock={availableStock || []}
         />
       )}
       
