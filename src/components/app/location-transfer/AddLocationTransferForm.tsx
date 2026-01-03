@@ -174,12 +174,13 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   return (
     <>
     <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={onClose}>
-      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-4">
           <DialogTitle>{transferToEdit ? 'Edit Location Transfer' : 'New Location Transfer'}</DialogTitle>
           <DialogDescription>Move stock between warehouses and account for costs.</DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-1 -mx-6 px-6">
+        <ScrollArea className="flex-1 min-h-0">
+         <div className="px-6 pb-6">
           <FormProvider {...methods}>
             <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 pt-4">
                <FormField
@@ -295,8 +296,9 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
               )} />
             </form>
           </FormProvider>
+          </div>
         </ScrollArea>
-        <DialogFooter className="border-t pt-4 mt-4">
+        <DialogFooter className="p-6 pt-4 border-t">
           <DialogClose asChild><Button variant="outline" type="button">Cancel</Button></DialogClose>
           <Button type="button" onClick={handleSubmit(processSubmit)} disabled={isSubmitting}>
             {isSubmitting ? 'Saving...' : (transferToEdit ? 'Save Changes' : 'Create Transfer')}
@@ -312,6 +314,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
           initialData={masterItemToEdit}
           itemTypeFromButton={masterItemToEdit?.type || "Warehouse"}
           fixedIds={[]}
+          allMasterItems={allMasters}
         />
       )}
     </>
