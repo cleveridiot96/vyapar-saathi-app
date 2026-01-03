@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useAppDataContext } from '@/contexts/AppDataContext';
@@ -48,7 +47,7 @@ export default function PurchasesPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {state.purchases.length > 0 ? (
                 state.purchases.map((purchase: any) => (
-                  <tr key={purchase.id} className="hover:bg-red-50 transition-colors"> {/* Changed hover to red tint */}
+                  <tr key={purchase.id} className="hover:bg-red-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {purchase.date}
                     </td>
