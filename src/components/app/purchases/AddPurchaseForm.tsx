@@ -200,7 +200,9 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     
     toast({ 
       title: "Success", 
-      description: `${newItem.type} "${newItem.name}" added/updated successfully!` 
+      description: `${
+        newItem.type
+      } "${newItem.name}" added/updated successfully!` 
     });
   }, [addOrUpdateMaster, setValue, toast]);
 
@@ -242,7 +244,6 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
 
   const processSubmit = React.useCallback((values: PurchaseFormValues) => {
     setIsSubmitting(true);
-    console.log('🔵 FORM: About to call onSubmit with:', values);
     try {
       const totalAmount = Math.round(summary.totalAmount);
       const effectiveRate = summary.totalNetWeight > 0 ? totalAmount / summary.totalNetWeight : 0;
@@ -281,11 +282,9 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
       };
       
       onSubmit(purchaseData);
-      console.log('🟢 FORM: onSubmit called successfully');
-
       onClose();
     } catch (error) {
-      console.error('🔴 FORM ERROR:', error);
+      console.error('FORM ERROR:', error);
       toast({ 
         title: "Error", 
         description: "Failed to save purchase. Please check console for details.",
