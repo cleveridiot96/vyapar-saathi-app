@@ -1,20 +1,24 @@
+
 "use client";
 
 import { useMemo } from 'react';
-import { useAppState } from './useAppState';
+import { useTransactions } from './useTransactions';
 import type { MasterItem } from '@/lib/types';
 import { useSettings } from '@/contexts/SettingsContext';
 import { isDateInFinancialYear, isDateBeforeFinancialYear } from '@/lib/utils';
 import { parseISO } from 'date-fns';
 
 export function useOutstandingBalances() {
-    const { purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger, getAllMasters, isLoaded } = useAppState();
+    const { purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger, isTransactionsLoaded, customers, suppliers, agents, brokers, transporters, expenses, warehouses } = useTransactions();
     const { financialYear } = useSettings();
 
-    const allMasters = useMemo(() => getAllMasters(), [getAllMasters]);
+    const allMasters = useMemo(() => {
+        return [...customers, ...suppliers, ...agents, ...brokers, ...transporters, ...warehouses, ...expenses].filter(m => !m.name.startsWith('_DELETED_'));
+    }, [customers, suppliers, agents, brokers, transporters, warehouses, expenses]);
+
 
     const balances = useMemo(() => {
-        if (!isLoaded) {
+        if (!isTransactionsLoaded) {
             return new Map<string, number>();
         }
 
@@ -27,12 +31,12 @@ export function useOutstandingBalances() {
             }
         });
         
-        const allTransactions = [
+        const allTxs = [
             ...purchases, ...sales, ...receipts, ...payments, ...purchaseReturns, ...saleReturns, ...ledger
         ].filter(tx => tx && tx.date);
         
         // 2. Process all transactions to establish final balances
-        allTransactions.forEach(tx => {
+        allTxs.forEach(tx => {
             // Sales increase receivables
             if ('billedAmount' in tx && 'isStockPaymentSale' in tx) { // Simple check for Sale
                 const s = tx as typeof sales[0];
@@ -98,7 +102,7 @@ export function useOutstandingBalances() {
 
 
         return balancesMap;
-    }, [allMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger, isLoaded]);
+    }, [allMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger, isTransactionsLoaded]);
 
     const { receivableParties, payableParties } = useMemo(() => {
         const receivableParties: MasterItem[] = [];
@@ -137,6 +141,8 @@ export function useOutstandingBalances() {
         payableParties,
         getPartyName,
         balances,
-        isBalancesLoading: !isLoaded
+        isBalancesLoading: !isTransactionsLoaded
     };
 }
+
+    

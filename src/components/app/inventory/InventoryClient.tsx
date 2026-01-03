@@ -26,7 +26,7 @@ import { PartyBrokerLeaderboard } from "./PartyBrokerLeaderboard";
 import { MergeLotsForm } from "./MergeLotsForm";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LowStockWarning } from "@/components/app/dashboard/LowStockWarning";
-import { useAppState, useAppDispatch } from "@/hooks/useAppState";
+import { useTransactions } from '@/hooks/useTransactions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
@@ -47,9 +47,7 @@ export function InventoryClient() {
   const { toast } = useToast();
   const isHydrated = useHydrated();
   const { financialYear, isAppHydrating, lowStockThreshold } = useSettings();
-  const { masterData, locationTransfers, adjustments } = useAppState();
-  const dispatch = useAppDispatch();
-  const { warehouses = [] } = masterData;
+  const { warehouses = [], locationTransfers, adjustments, setLocationTransfers, setAdjustments } = useTransactions();
   
   const { allAggregatedInventory, isLoading: isInventoryLoading } = useInventory();
 
@@ -177,17 +175,17 @@ export function InventoryClient() {
       date: new Date().toISOString().split('T')[0],
       ...mergeData,
     };
-    dispatch.addTransfer(newTransfer);
+    setLocationTransfers(prev => [newTransfer, ...prev]);
     toast({ title: "Lots Merged", description: `Successfully merged lots into ${mergeData.items[0].newLotNumber}.` });
     setIsMergeFormOpen(false);
     window.dispatchEvent(new CustomEvent('reindex-search'));
   };
   
   const handleAddAdjustment = React.useCallback((newAdjustment: Omit<StockAdjustment, 'id'>) => {
-    dispatch.addAdjustment({ ...newAdjustment, id: `adj-${Date.now()}` });
+    setAdjustments(prev => [{ ...newAdjustment, id: `adj-${Date.now()}` }, ...prev]);
     toast({ title: 'Adjustment Recorded', description: 'The stock adjustment has been successfully saved.' });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [dispatch, toast]);
+  }, [setAdjustments, toast]);
 
   const handleReverseAttempt = (adjustment: StockAdjustment) => {
     if (adjustment.type === 'Reversal') {
@@ -444,7 +442,7 @@ export function InventoryClient() {
             isOpen={isAdjustmentFormOpen}
             onClose={() => setIsAdjustmentFormOpen(false)}
             onSubmit={handleAddAdjustment}
-            warehouses={masterData.Warehouse || []}
+            warehouses={warehouses}
             availableLots={allLotsInSystem}
         />
       )}
