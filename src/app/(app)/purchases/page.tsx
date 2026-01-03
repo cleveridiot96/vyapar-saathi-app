@@ -116,7 +116,7 @@ export default function PurchasesPage() {
       toast({ title: 'Success', description: 'Purchase deleted.', variant: 'destructive'});
     } else {
       // For now, simple filter. In event-sourced, would be an event.
-      // setPurchaseReturns(prev => prev.filter(pr => pr.id !== itemToDelete.id));
+      dispatch.setPurchaseReturns(prev => prev.filter(pr => pr.id !== itemToDelete.id));
       toast({ title: 'Success', description: 'Purchase Return deleted.', variant: 'destructive'});
     }
     setItemToDelete(null);
