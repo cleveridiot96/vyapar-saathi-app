@@ -128,6 +128,7 @@ export function PurchasesClient() {
     if(newLedgerEntries.length > 0) addLedgerEntry(newLedgerEntries);
 
     setPurchaseToEdit(null);
+    setIsAddFormOpen(false);
     toast({ title: "Success!", description: isEditing ? "Purchase updated." : "Purchase added." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
   }, [purchases, addPurchase, updatePurchase, toast, removeLedgerEntries, addLedgerEntry]);
@@ -156,7 +157,7 @@ export function PurchasesClient() {
   }, [itemToDelete, deletePurchase, removeLedgerEntries, toast]);
 
   const handleAddOrUpdatePurchaseReturn = React.useCallback((returnData: PurchaseReturn) => {
-    addPurchaseReturn(returnData);
+     addPurchaseReturn(returnData);
     setIsAddReturnFormOpen(false);
     toast({ title: "Success!", description: "Purchase return recorded." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
@@ -249,3 +250,5 @@ export function PurchasesClient() {
     </div>
   );
 }
+
+    
