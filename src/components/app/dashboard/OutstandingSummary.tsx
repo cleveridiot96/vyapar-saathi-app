@@ -15,7 +15,7 @@ export const OutstandingSummary = () => {
   const { receivableParties, payableParties, isBalancesLoading } = useOutstandingBalances();
 
   const { totalReceivable, totalPayable } = useMemo(() => {
-    if (isBalancesLoading) return { totalReceivable: 0, totalPayable: 0 };
+    if (isBalancesLoading || !receivableParties || !payableParties) return { totalReceivable: 0, totalPayable: 0 };
     
     const totalReceivable = receivableParties.reduce((sum, p) => sum + (p.balance || 0), 0);
     const totalPayable = payableParties.reduce((sum, p) => sum + Math.abs(p.balance || 0), 0);

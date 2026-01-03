@@ -18,7 +18,7 @@ import { DashboardTile } from '@/components/DashboardTile';
 import { WarehouseSummary } from '@/components/app/dashboard/WarehouseSummary';
 import { OutstandingSummary } from '@/components/app/dashboard/OutstandingSummary';
 import { ProfitAnalysisClient } from '../profit-analysis/ProfitAnalysisClient';
-import { useMasters } from '@/hooks/useTransactions';
+import { useMasters, useTransactions } from '@/hooks/useTransactions';
 
 // A "plain" version of the feature without the icon component
 type PlainFeature = Omit<Feature, 'icon'>;
