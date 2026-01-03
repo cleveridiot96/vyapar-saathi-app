@@ -1,9 +1,9 @@
+
 "use client";
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, RotateCcw, ListChecks } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,9 +21,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useTransactions, useMasters } from "@/hooks/useTransactions";
 import type { Sale, SaleReturn, MasterItem } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
-import { useInventory } from "@/hooks/useInventory";
 
 // Dynamic Imports
 const SaleTable = dynamic(() => import('@/components/app/sales/SaleTable').then(mod => mod.SaleTable), { ssr: false });
@@ -100,12 +100,12 @@ export function SalesClient() {
   
   const filteredSales = React.useMemo(() => {
     if (!isTransactionsLoaded) return [];
-    return sales.filter(s => s && s.date && isDateInFinancialYear(s.date, financialYear));
+    return (sales || []).filter(s => s && s.date && isDateInFinancialYear(s.date, financialYear));
   }, [sales, financialYear, isTransactionsLoaded]);
 
   const filteredSaleReturns = React.useMemo(() => {
     if (!isTransactionsLoaded) return [];
-    return saleReturns.filter(sr => sr && sr.date && isDateInFinancialYear(sr.date, financialYear));
+    return (saleReturns || []).filter(sr => sr && sr.date && isDateInFinancialYear(sr.date, financialYear));
   }, [saleReturns, financialYear, isTransactionsLoaded]);
 
   const handleAddOrUpdateSale = React.useCallback(
@@ -217,7 +217,7 @@ export function SalesClient() {
           isOpen={isAddSaleFormOpen}
           onClose={() => setIsAddSaleFormOpen(false)}
           onSubmit={handleAddOrUpdateSale}
-          existingSales={sales}
+          existingSales={sales || []}
           saleToEdit={saleToEdit}
           onMasterDataUpdate={addOrUpdateMaster}
         />
@@ -229,8 +229,8 @@ export function SalesClient() {
             isOpen={isAddSaleReturnFormOpen}
             onClose={() => setIsAddSaleReturnFormOpen(false)}
             onSubmit={handleAddOrUpdateSaleReturn}
-            sales={sales}
-            existingSaleReturns={saleReturns}
+            sales={sales || []}
+            existingSaleReturns={saleReturns || []}
             saleReturnToEdit={saleReturnToEdit}
         />
       )}

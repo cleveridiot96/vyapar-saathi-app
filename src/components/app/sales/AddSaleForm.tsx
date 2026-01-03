@@ -306,7 +306,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
       id: saleToEdit?.id || `sale-${Date.now()}`,
       date: format(values.date, "yyyy-MM-dd"),
       billNumber: values.billNumber,
-      customerId: values.customerId,
+      customerId: values.customerId as string,
       customerName: selectedCustomer?.name,
       brokerId: values.brokerId,
       brokerName: selectedBroker?.name,
@@ -338,7 +338,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
               costBreakdown: stock?.costBreakdown || { baseRate: 0, purchaseExpenses: 0, transferExpenses: 0 },
           };
       }),
-      expenses: values.expenses?.map(exp => ({ ...exp, id: exp.id || `exp-${Date.now()}-${Math.random()}`, partyName: exp.partyName || 'Self' })),
+      expenses: values.expenses?.map(exp => ({ ...exp, id: exp.id || `exp-${Date.now()}-${Math.random()}`, partyName: getAllMasters().find(m => m.id === exp.partyId)?.name || exp.partyName || 'Self' })),
       totalGoodsValue: Math.round(summary.totalGoodsValue),
       billedAmount: Math.round(summary.billedAmount),
       cbAmount: values.cbAmount,
@@ -547,7 +547,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                             </div>
                           );
                         })}
-                      <Button type="button" variant="outline" size="sm" onClick={() => appendExpense({ id: `exp-${Date.now()}`, account: '', amount: 0, paymentMode: "Auto-adjusted" })} className="mt-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => appendExpense({ id: `exp-${Date.now()}`, account: '', amount: undefined, paymentMode: "Auto-adjusted" })} className="mt-2">
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Expense Row
                       </Button>
                   </div>

@@ -24,7 +24,7 @@ import { FIXED_WAREHOUSES, FIXED_EXPENSES } from '@/lib/constants';
 import { cn, debounce } from "@/lib/utils";
 import Fuse from 'fuse.js';
 import { Input } from '@/components/ui/input';
-import { useAppState, useAppDispatch } from '@/hooks/useAppState';
+import { useMasters } from '@/hooks/useTransactions';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,9 +67,7 @@ const DISPLAY_LIMIT_OPTIONS = ["50", "100", "150", "All"];
 
 export default function MastersPage() {
   const { toast } = useToast();
-  const { masterData, isLoaded } = useAppState();
-  const { addOrUpdateMaster } = useAppDispatch();
-  const { Warehouse: warehouses, Expense: expenses } = masterData;
+  const { masterData, isMastersLoaded, addOrUpdateMaster, getAllMasters } = useMasters();
   const hydrated = useHydrated();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -82,8 +80,8 @@ export default function MastersPage() {
   const [displayLimit, setDisplayLimit] = useState(DISPLAY_LIMIT_OPTIONS[1]);
 
   const allMasterItems = useMemo(() => {
-    return Object.values(masterData).flat().filter(validateMasterItem);
-  }, [masterData]);
+    return getAllMasters().filter(validateMasterItem);
+  }, [getAllMasters]);
   
   const getMasterDataStateForTab = useCallback((type: MasterPageTabKey) => {
     if (type === 'All') return allMasterItems.filter(item => !item.name.startsWith('_DELETED_')) || [];
@@ -231,7 +229,7 @@ export default function MastersPage() {
   }, [getMasterDataStateForTab, fuseInstances, searchQuery]);
 
 
-  if (!hydrated || !isLoaded) {
+  if (!hydrated || !isMastersLoaded) {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
             <p className="text-lg text-muted-foreground">Loading master data...</p>

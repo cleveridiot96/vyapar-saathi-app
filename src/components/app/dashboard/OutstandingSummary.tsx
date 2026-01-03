@@ -10,8 +10,8 @@ import type { MasterItem } from '@/lib/types';
 
 
 interface OutstandingSummaryProps {
-    receivableParties: (MasterItem & { balance?: number })[];
-    payableParties: (MasterItem & { balance?: number })[];
+    receivableParties: (MasterItem & { balance: number })[];
+    payableParties: (MasterItem & { balance: number })[];
 }
 
 export const OutstandingSummary: React.FC<OutstandingSummaryProps> = ({ receivableParties, payableParties }) => {

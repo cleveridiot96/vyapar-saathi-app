@@ -173,7 +173,7 @@ export function OutstandingClient() {
   const outstandingData = useMemo(() => {
     const billPaidAmounts = new Map<string, number>();
 
-    receipts.forEach(tx => {
+    (receipts || []).forEach(tx => {
         (tx.againstBills || []).forEach(ab => {
             billPaidAmounts.set(ab.billId, (billPaidAmounts.get(ab.billId) || 0) + ab.amount);
         });
@@ -182,7 +182,7 @@ export function OutstandingClient() {
     const allParties = [...receivableParties, ...payableParties];
 
     return allParties.map(party => {
-      const partySales = sales.filter(s => s.brokerId === party.id || s.customerId === party.id);
+      const partySales = (sales || []).filter(s => s.brokerId === party.id || s.customerId === party.id);
 
       const bills: OutstandingBill[] = partySales.map(s => {
         const paid = billPaidAmounts.get(s.id) || 0;

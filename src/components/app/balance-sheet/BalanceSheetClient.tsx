@@ -4,16 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Landmark, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
 import { useInventory } from '@/hooks/useInventory';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function BalanceSheetClient() {
-    const { receivableParties, payableParties } = useOutstandingBalances();
-    const { allAggregatedInventory } = useInventory();
+    const { receivableParties, payableParties, isBalancesLoading } = useOutstandingBalances();
+    const { allAggregatedInventory, isLoading: isInventoryLoading } = useInventory();
     
     const totalReceivables = receivableParties.reduce((sum, party) => sum + party.balance, 0);
     const totalPayables = payableParties.reduce((sum, party) => sum + party.balance, 0);
     const totalStockValue = (allAggregatedInventory || []).reduce((sum, item) => sum + item.cogs, 0);
 
     const netPosition = totalStockValue + totalReceivables + totalPayables;
+    const isLoading = isBalancesLoading || isInventoryLoading;
 
     return (
         <Card>
@@ -28,8 +30,12 @@ export function BalanceSheetClient() {
                             <CardTitle className="text-blue-800 flex items-center gap-2 text-lg"><Wallet/>Total Stock Value</CardTitle>
                             <CardDescription>Value of all current inventory (Assets)</CardDescription>
                         </CardHeader>
-                        <CardContent className="text-3xl font-bold text-blue-700">
-                            {totalStockValue.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 })}
+                        <CardContent>
+                           {isLoading ? <Skeleton className="h-9 w-3/4" /> : 
+                            <p className="text-3xl font-bold text-blue-700">
+                                {totalStockValue.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 })}
+                            </p>
+                           }
                         </CardContent>
                     </Card>
                      <Card className="bg-green-50 border-green-200">
@@ -37,8 +43,12 @@ export function BalanceSheetClient() {
                             <CardTitle className="text-green-800 flex items-center gap-2 text-lg"><TrendingUp/>Total Receivables</CardTitle>
                              <CardDescription>Money owed to you by customers (Assets)</CardDescription>
                         </CardHeader>
-                        <CardContent className="text-3xl font-bold text-green-700">
-                            {totalReceivables.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 })}
+                        <CardContent>
+                            {isLoading ? <Skeleton className="h-9 w-3/4" /> :
+                            <p className="text-3xl font-bold text-green-700">
+                                {totalReceivables.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 })}
+                            </p>
+                            }
                         </CardContent>
                     </Card>
                      <Card className="bg-red-50 border-red-200">
@@ -46,8 +56,12 @@ export function BalanceSheetClient() {
                             <CardTitle className="text-red-800 flex items-center gap-2 text-lg"><TrendingDown/>Total Payables</CardTitle>
                             <CardDescription>Money you owe to suppliers (Liabilities)</CardDescription>
                         </CardHeader>
-                        <CardContent className="text-3xl font-bold text-red-700">
-                           {Math.abs(totalPayables).toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 })}
+                        <CardContent>
+                            {isLoading ? <Skeleton className="h-9 w-3/4" /> :
+                           <p className="text-3xl font-bold text-red-700">
+                                {Math.abs(totalPayables).toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 })}
+                           </p>
+                           }
                         </CardContent>
                     </Card>
                      <Card className="bg-primary/10 border-primary/20">
@@ -55,8 +69,12 @@ export function BalanceSheetClient() {
                             <CardTitle className="text-primary flex items-center gap-2 text-lg">Net Position</CardTitle>
                             <CardDescription>Assets - Liabilities</CardDescription>
                         </CardHeader>
-                        <CardContent className="text-3xl font-bold text-primary">
-                           {netPosition.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 })}
+                        <CardContent>
+                            {isLoading ? <Skeleton className="h-9 w-3/4" /> :
+                           <p className="text-3xl font-bold text-primary">
+                               {netPosition.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 })}
+                           </p>
+                           }
                         </CardContent>
                     </Card>
                 </div>

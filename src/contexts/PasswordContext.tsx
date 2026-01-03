@@ -3,8 +3,7 @@
 
 import React, { createContext, useState, useCallback, useEffect, useMemo, useContext } from 'react';
 import { useHydrated } from '@/hooks/useHydrated';
-import { db, setSessionKey, clearSessionKey } from '@/lib/db';
-import { deriveKey } from '@/lib/encryption';
+import { db } from '@/lib/db';
 
 interface AuthContextType {
   isAuthenticated: boolean;

@@ -1,20 +1,19 @@
 
 "use client";
 
+import { useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import type { 
     Purchase, Sale, Payment, Receipt, LocationTransfer, PurchaseReturn, SaleReturn, 
     MasterItem, LedgerEntry, StockAdjustment, MasterItemType
 } from '@/lib/types';
-import { useCallback, useMemo } from 'react';
 
 
 /**
  * Primary Hook for all transactional data.
  */
 export const useTransactions = () => {
-  // --- LIVE DATA (Reactive Arrays) ---
   const purchases = useLiveQuery(() => db.purchases.toArray(), []);
   const sales = useLiveQuery(() => db.sales.toArray(), []);
   const payments = useLiveQuery(() => db.payments.toArray(), []);
@@ -25,9 +24,8 @@ export const useTransactions = () => {
   const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
   const ledger = useLiveQuery(() => db.ledger.toArray(), []);
   
-  const isTransactionsLoaded = purchases !== undefined;
+  const isTransactionsLoaded = purchases !== undefined && sales !== undefined;
 
-  // --- ACTIONS ---
   const addPurchase = useCallback(async (data: Purchase) => db.purchases.add(data), []);
   const updatePurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const deletePurchase = useCallback(async (id: string) => db.purchases.delete(id), []);
@@ -75,48 +73,40 @@ export const useTransactions = () => {
   };
 };
 
-/**
- * Separate hook for Master Data to keep things organized.
- */
-export const useMasters = () => {
-    const masters = useLiveQuery(() => db.masters.toArray(), []);
 
-    const customers = useMemo(() => (masters || []).filter(m => m.type === 'Customer'), [masters]);
-    const suppliers = useMemo(() => (masters || []).filter(m => m.type === 'Supplier'), [masters]);
-    const agents = useMemo(() => (masters || []).filter(m => m.type === 'Agent'), [masters]);
-    const transporters = useMemo(() => (masters || []).filter(m => m.type === 'Transporter'), [masters]);
-    const warehouses = useMemo(() => (masters || []).filter(m => m.type === 'Warehouse'), [masters]);
-    const brokers = useMemo(() => (masters || []).filter(m => m.type === 'Broker'), [masters]);
-    const expenses = useMemo(() => (masters || []).filter(m => m.type === 'Expense'), [masters]);
-    
+export const useMasters = () => {
+    const masters = useLiveQuery(() => db.masters.toArray(), []) as MasterItem[] | undefined;
+
+    const masterData = useMemo(() => {
+      const grouped: { [key in MasterItemType]?: MasterItem[] } = {};
+      (masters || []).forEach(m => {
+          if (!grouped[m.type]) {
+              grouped[m.type] = [];
+          }
+          grouped[m.type]!.push(m);
+      });
+      return grouped;
+    }, [masters]);
+
     const isMastersLoaded = masters !== undefined;
 
     const addOrUpdateMaster = useCallback(async (item: MasterItem) => db.masters.put(item), []);
     const getAllMasters = useCallback(() => masters || [], [masters]);
 
-    const masterData = useMemo(() => ({
-        Customer: customers,
-        Supplier: suppliers,
-        Agent: agents,
-        Broker: brokers,
-        Transporter: transporters,
-        Warehouse: warehouses,
-        Expense: expenses,
-        Product: [],
-    }), [customers, suppliers, agents, brokers, transporters, warehouses, expenses]);
-    
     return {
         masters: masters || [],
         masterData,
-        customers,
-        suppliers,
-        agents,
-        transporters,
-        warehouses,
-        brokers,
-        expenses,
+        customers: masterData.Customer || [],
+        suppliers: masterData.Supplier || [],
+        agents: masterData.Agent || [],
+        transporters: masterData.Transporter || [],
+        warehouses: masterData.Warehouse || [],
+        brokers: masterData.Broker || [],
+        expenses: masterData.Expense || [],
         addOrUpdateMaster,
         getAllMasters,
         isMastersLoaded,
-    }
-}
+    };
+};
+
+    
