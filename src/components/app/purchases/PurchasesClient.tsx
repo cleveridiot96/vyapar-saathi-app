@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -20,12 +19,13 @@ import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useAppState, useAppDispatch } from "@/hooks/useAppState";
+import { useAppDataContext } from "@/contexts/AppDataContext";
 import type { Purchase, PurchaseReturn, MasterItem, Sale } from "@/lib/types";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
 import { useInventory } from '@/hooks/useInventory';
 
+// Dynamic Imports
 const PurchaseTable = dynamic(() => import('@/components/app/purchases/PurchaseTable').then(mod => mod.PurchaseTable), { ssr: false });
 const AddPurchaseForm = dynamic(() => import('@/components/app/purchases/AddPurchaseForm').then(mod => mod.AddPurchaseForm), { ssr: false });
 const PurchaseChittiPrint = dynamic(() => import('@/components/app/purchases/PurchaseChittiPrint').then(mod => mod.PurchaseChittiPrint), { ssr: false });
@@ -45,15 +45,8 @@ function openPrintWindow(htmlContent: string, title = "Document") {
         <title>${title}</title>
         <style>
           @media print {
-            @page {
-              size: A5 portrait;
-              margin: 10mm;
-            }
-            body {
-              background: white !important;
-              color: black !important;
-              font-size: 10pt !important;
-            }
+            @page { size: A5 portrait; margin: 10mm; }
+            body { background: white !important; color: black !important; font-size: 10pt !important; }
              .print-chitti-styles { font-family: sans-serif; line-height: 1.4; }
             .print-chitti-styles h1, .print-chitti-styles h2 { margin-top: 0.5em; margin-bottom: 0.25em; }
             .print-chitti-styles table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 10px; }
@@ -83,15 +76,17 @@ export function PurchasesClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
   
+  const { state, dispatch } = useAppDataContext();
+  
   const { 
     purchases, 
     purchaseReturns, 
     isLoaded, 
     sales,
     masterData,
-  } = useAppState();
-  
-  const dispatch = useAppDispatch();
+    getAllMasters,
+    inventory, // FIX: Passing this as availableStock
+  } = state;
   const { availableStock } = useInventory();
 
   const [isAddPurchaseFormOpen, setIsAddPurchaseFormOpen] = React.useState(false);
@@ -104,27 +99,6 @@ export function PurchasesClient() {
   
   const [activeTab, setActiveTab] = React.useState('purchases');
   
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.altKey && e.key.toLowerCase() === 'p') {
-            const activeElement = document.activeElement;
-            if (activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement.tagName)) {
-                return;
-            }
-            e.preventDefault();
-            if(activeTab === 'purchases') {
-              setPurchaseToEdit(null);
-              setIsAddPurchaseFormOpen(true);
-            } else {
-              setPurchaseReturnToEdit(null);
-              setIsAddPurchaseReturnFormOpen(true);
-            }
-        }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTab]);
-
   const filteredPurchases = React.useMemo(() => {
     if (!isLoaded) return [];
     return purchases.filter(p => p && p.date && isDateInFinancialYear(p.date, financialYear));
@@ -173,7 +147,7 @@ export function PurchasesClient() {
     if (!itemToDelete) return;
     
     if (itemToDelete.type === 'purchase') {
-      const saleHasReturn = sales.some(s => s.items.some(i => i.lotNumber.startsWith(itemToDelete.id)));
+      const saleHasReturn = sales.some(s => s.items.some((i: any) => i.lotNumber && i.lotNumber.startsWith(itemToDelete.id)));
       if (saleHasReturn) {
           toast({ title: "Deletion Prohibited", description: "Cannot delete a purchase with linked sales.", variant: "destructive"});
           setItemToDelete(null);
@@ -182,7 +156,6 @@ export function PurchasesClient() {
       dispatch.deletePurchase(itemToDelete.id);
       toast({ title: "Deleted!", description: "Purchase record removed.", variant: "destructive" });
     } else {
-      // This part is tricky with event sourcing. We should dispatch a 'PURCHASE_RETURN_DELETED' event.
       dispatch.setPurchaseReturns(purchaseReturns.filter(pr => pr.id !== itemToDelete.id));
       toast({ title: "Deleted!", description: "Purchase return record removed.", variant: "destructive" });
     }
@@ -260,7 +233,7 @@ export function PurchasesClient() {
           purchaseToEdit={purchaseToEdit}
           masterData={masterData}
           addOrUpdateMaster={handleMasterDataUpdate}
-          getAllMasters={dispatch.getAllMasters}
+          getAllMasters={getAllMasters}
           availableStock={availableStock}
         />
       )}
