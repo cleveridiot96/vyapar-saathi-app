@@ -1,11 +1,8 @@
-
 "use client";
 
-import React, { useRef, type ChangeEvent, useEffect, useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
-
-import { useToast } from "@/hooks/use-toast";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { navItems, type StyledNavItem as Feature } from '@/lib/features';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -18,9 +15,9 @@ import { DashboardTile } from '@/components/DashboardTile';
 import { WarehouseSummary } from '@/components/app/dashboard/WarehouseSummary';
 import { OutstandingSummary } from '@/components/app/dashboard/OutstandingSummary';
 import { ProfitAnalysisClient } from '../profit-analysis/ProfitAnalysisClient';
-import { useMasters, useTransactions } from '@/hooks/useTransactions';
+import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
+import { useInventory } from '@/hooks/useInventory';
 
-// A "plain" version of the feature without the icon component
 type PlainFeature = Omit<Feature, 'icon'>;
 
 export function DashboardClient() {
@@ -32,6 +29,10 @@ export function DashboardClient() {
     );
 
     const [isEditMode, setIsEditMode] = useState(false);
+
+    // --- DATA FETCHING AT THE TOP ---
+    const { receivableParties, payableParties, isBalancesLoading } = useOutstandingBalances();
+    const { allAggregatedInventory, isLoading: isInventoryLoading } = useInventory();
     
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
@@ -99,8 +100,21 @@ export function DashboardClient() {
             </div>
             
             <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4 mx-auto w-full max-w-7xl">
-                <WarehouseSummary />
-                <OutstandingSummary />
+                {isInventoryLoading ? (
+                    <Skeleton className="h-64 rounded-xl" />
+                ) : (
+                    <WarehouseSummary inventory={allAggregatedInventory || []} />
+                )}
+
+                {isBalancesLoading ? (
+                    <Skeleton className="h-64 rounded-xl" />
+                ) : (
+                    <OutstandingSummary 
+                        receivableParties={receivableParties || []} 
+                        payableParties={payableParties || []} 
+                    />
+                )}
+                
                 <div className="lg:col-span-2">
                     <ProfitAnalysisClient />
                 </div>

@@ -1,21 +1,24 @@
 "use client";
 
 import React from 'react';
-import { useInventory } from '@/hooks/useInventory';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Warehouse, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { Skeleton } from '@/components/ui/skeleton';
+import type { AggregatedInventoryItem } from '@/hooks/useInventory';
 
-export const WarehouseSummary = () => {
-    const { allAggregatedInventory, isLoading } = useInventory();
 
+interface WarehouseSummaryProps {
+    inventory: AggregatedInventoryItem[];
+}
+
+export const WarehouseSummary: React.FC<WarehouseSummaryProps> = ({ inventory }) => {
+    
     const warehouseSummary = React.useMemo(() => {
-        if (isLoading || !allAggregatedInventory) return [];
+        if (!inventory) return [];
 
         const summary = new Map<string, { id: string; name: string; bags: number; netWeight: number }>();
 
-        allAggregatedInventory.forEach(item => {
+        inventory.forEach(item => {
             if (item.currentBags > 0) {
                 const existing = summary.get(item.locationId) || { id: item.locationId, name: item.locationName, bags: 0, netWeight: 0 };
                 existing.bags += item.currentBags;
@@ -25,29 +28,7 @@ export const WarehouseSummary = () => {
         });
 
         return Array.from(summary.values()).sort((a, b) => a.name.localeCompare(b.name));
-    }, [allAggregatedInventory, isLoading]);
-
-    if (isLoading) {
-        return (
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-6 w-1/2" />
-                    <Skeleton className="h-4 w-3/4" />
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 gap-2">
-                    {[...Array(3)].map((_, i) => (
-                        <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="space-y-2">
-                                <Skeleton className="h-5 w-24" />
-                                <Skeleton className="h-4 w-16" />
-                            </div>
-                            <Skeleton className="h-8 w-20" />
-                        </div>
-                    ))}
-                </CardContent>
-            </Card>
-        );
-    }
+    }, [inventory]);
     
     if(warehouseSummary.length === 0) {
         return (

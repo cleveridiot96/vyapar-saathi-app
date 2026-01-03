@@ -6,42 +6,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { useSettings } from "@/contexts/SettingsContext";
-import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
-import { Skeleton } from '@/components/ui/skeleton';
+import type { MasterItem } from '@/lib/types';
 
 
-export const OutstandingSummary = () => {
+interface OutstandingSummaryProps {
+    receivableParties: (MasterItem & { balance?: number })[];
+    payableParties: (MasterItem & { balance?: number })[];
+}
+
+export const OutstandingSummary: React.FC<OutstandingSummaryProps> = ({ receivableParties, payableParties }) => {
   const { financialYear } = useSettings();
-  const { receivableParties, payableParties, isBalancesLoading } = useOutstandingBalances();
 
   const { totalReceivable, totalPayable } = useMemo(() => {
-    if (isBalancesLoading || !receivableParties || !payableParties) return { totalReceivable: 0, totalPayable: 0 };
+    if (!receivableParties || !payableParties) return { totalReceivable: 0, totalPayable: 0 };
     
     const totalReceivable = receivableParties.reduce((sum, p) => sum + (p.balance || 0), 0);
     const totalPayable = payableParties.reduce((sum, p) => sum + Math.abs(p.balance || 0), 0);
     
     return { totalReceivable, totalPayable };
 
-  }, [isBalancesLoading, receivableParties, payableParties]);
+  }, [receivableParties, payableParties]);
   
-  if(isBalancesLoading) {
-    return (
-      <Card className="col-span-1">
-        <CardHeader>
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Skeleton className="h-24 rounded-lg" />
-          <Skeleton className="h-24 rounded-lg" />
-        </CardContent>
-        <CardFooter>
-          <Skeleton className="h-10 w-full" />
-        </CardFooter>
-      </Card>
-    )
-  }
-
   return (
     <Card className="col-span-1 lg:col-span-1 text-white" style={{background: 'linear-gradient(to top right, #34d399, #2563eb)'}}>
       <CardHeader>
