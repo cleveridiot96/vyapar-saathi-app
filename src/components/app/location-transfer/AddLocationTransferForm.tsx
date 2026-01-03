@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -174,7 +173,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0">
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-4xl h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-6 pb-4 flex-shrink-0">
             <DialogTitle>{transferToEdit ? 'Edit Location Transfer' : 'New Location Transfer'}</DialogTitle>
             <DialogDescription>Move stock between warehouses and account for costs.</DialogDescription>
@@ -226,7 +225,8 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                                     itemField.onChange(val);
                                     const stock = availableStock.find(s => s.lotNumber === val);
                                     if(stock) {
-                                      setValue(`items.${index}.newLotNumber`, `${stock.lotNumber}-TR`);
+                                      const newLotNumber = `${stock.lotNumber}/${stock.currentBags}`;
+                                      setValue(`items.${index}.newLotNumber`, newLotNumber);
                                       setValue(`items.${index}.quantity`, stock.currentBags);
                                       setValue(`items.${index}.netWeight`, stock.currentWeight);
                                       setValue(`items.${index}.costOfGoods`, stock.cogs);
@@ -248,8 +248,11 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                                         const lotNumber = watch(`items.${index}.originalLotNumber`);
                                         const stock = availableStock.find(s => s.lotNumber === lotNumber);
                                         if (stock) {
-                                            const newWeight = newQuantity * (stock.averageWeightPerBag || 50);
+                                            const avgWeight = stock.averageWeightPerBag || 50;
+                                            const newWeight = newQuantity * avgWeight;
                                             setValue(`items.${index}.netWeight`, parseFloat(newWeight.toFixed(2)));
+                                            const newLotNumber = `${stock.lotNumber}/${newQuantity}`;
+                                            setValue(`items.${index}.newLotNumber`, newLotNumber);
                                             setValue(`items.${index}.costOfGoods`, parseFloat((newWeight * stock.effectiveRate).toFixed(2)));
                                         }
                                    }}
