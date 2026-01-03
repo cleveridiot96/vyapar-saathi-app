@@ -25,7 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PlusCircle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import type { LocationTransfer, MasterItem, ExpenseItem, MasterItemType } from "@/lib/types";
+import type { LocationTransfer, MasterItem, ExpenseItem, MasterItemType, AggregatedInventoryItem } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
@@ -179,125 +179,127 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
           <DialogTitle>{transferToEdit ? 'Edit Location Transfer' : 'New Location Transfer'}</DialogTitle>
           <DialogDescription>Move stock between warehouses and account for costs.</DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-1 min-h-0">
-         <div className="px-6 pb-6">
-          <FormProvider {...methods}>
-            <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 pt-4">
-               <FormField
-                  control={control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Transfer Date</FormLabel>
-                      <DatePicker
-                        date={field.value}
-                        onDateChange={field.onChange}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <FormField control={control} name="fromLocationId" render={({ field }) => (
-                  <FormItem><FormLabel>From Warehouse</FormLabel>
-                    <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" onAddNew={() => handleOpenMasterForm("Warehouse")} onEdit={(id) => handleEditMasterItem(id)} {...field} />
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={control} name="toLocationId" render={({ field }) => (
-                  <FormItem><FormLabel>To Warehouse</FormLabel>
-                    <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" onAddNew={() => handleOpenMasterForm("Warehouse")} onEdit={(id) => handleEditMasterItem(id)} {...field} />
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
-
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Items to Transfer</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  {fields.map((field, index) => (
-                    <div key={field.id} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end p-3 border-b">
-                      <FormField control={control} name={`items.${index}.originalLotNumber`} render={({ field: itemField }) => (
-                        <FormItem className="md:col-span-2"><FormLabel>Original Lot</FormLabel>
-                          <MasterDataCombobox options={stockOptions} placeholder={appState.isCalculating ? "Calculating..." : "Select stock"} {...itemField} 
-                            onChange={(val) => {
-                                itemField.onChange(val);
-                                const stock = availableStock.find(s => s.lotNumber === val);
-                                if(stock) {
-                                  setValue(`items.${index}.newLotNumber`, `${stock.lotNumber}-TR`);
-                                  setValue(`items.${index}.quantity`, stock.currentBags);
-                                  setValue(`items.${index}.netWeight`, stock.currentWeight);
-                                  setValue(`items.${index}.costOfGoods`, stock.cogs);
-                                }
-                            }}
+        <div className="flex-1 min-h-0">
+          <ScrollArea className="h-full">
+            <div className="px-6 pb-6">
+              <FormProvider {...methods}>
+                <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 pt-4">
+                  <FormField
+                      control={control}
+                      name="date"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Transfer Date</FormLabel>
+                          <DatePicker
+                            date={field.value}
+                            onDateChange={field.onChange}
                           />
                           <FormMessage />
                         </FormItem>
-                      )} />
-                      <FormField control={control} name={`items.${index}.newLotNumber`} render={({ field: itemField }) => (
-                        <FormItem><FormLabel>New Lot #</FormLabel><Input placeholder="New lot name" {...itemField} /><FormMessage /></FormItem>
-                      )} />
-                      <FormField control={control} name={`items.${index}.quantity`} render={({ field: itemField }) => (
-                        <FormItem><FormLabel>Bags</FormLabel><Input type="number" placeholder="Bags" {...itemField} /><FormMessage /></FormItem>
-                      )} />
-                      <FormField control={control} name={`items.${index}.netWeight`} render={({ field: itemField }) => (
-                        <FormItem><FormLabel>Net Wt.</FormLabel><Input type="number" step="0.01" placeholder="Weight" {...itemField} /><FormMessage /></FormItem>
-                      )} />
-                      <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}><Trash2 /></Button>
-                    </div>
-                  ))}
-                  <Button type="button" variant="outline" size="sm" onClick={() => append({ originalLotNumber: '', newLotNumber: '', quantity: 0, netWeight: 0, costOfGoods: 0 })}>
-                    <PlusCircle className="mr-2" /> Add Item
-                  </Button>
-                </CardContent>
-              </Card>
+                      )}
+                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <FormField control={control} name="fromLocationId" render={({ field }) => (
+                      <FormItem><FormLabel>From Warehouse</FormLabel>
+                        <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" onAddNew={() => handleOpenMasterForm("Warehouse")} onEdit={(id) => handleEditMasterItem(id)} {...field} />
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={control} name="toLocationId" render={({ field }) => (
+                      <FormItem><FormLabel>To Warehouse</FormLabel>
+                        <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" onAddNew={() => handleOpenMasterForm("Warehouse")} onEdit={(id) => handleEditMasterItem(id)} {...field} />
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
 
-              <Card>
-                  <CardHeader><CardTitle className="text-lg">Expenses</CardTitle></CardHeader>
-                  <CardContent className="space-y-4">
-                  {expenseFields.map((field, index) => (
-                      <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end p-3 border-b last:border-b-0">
-                          <FormField control={control} name={`expenses.${index}.account`} render={({ field: itemField }) => (
-                              <FormItem className="md:col-span-4"><FormLabel>Account</FormLabel>
-                              <Select onValueChange={itemField.onChange} value={itemField.value}>
-                                  <FormControl><SelectTrigger><SelectValue placeholder="Select Account" /></SelectTrigger></FormControl>
-                                  <SelectContent>{(expenseAccounts || []).map(opt => <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>)}</SelectContent>
-                              </Select><FormMessage />
-                              </FormItem>)} />
-                          <FormField control={control} name={`expenses.${index}.amount`} render={({ field: itemField }) => (
-                              <FormItem className="md:col-span-3"><FormLabel>Amount (₹)</FormLabel>
-                              <FormControl><Input type="number" step="0.01" placeholder="Amount" {...itemField} value={itemField.value ?? ''} onChange={e => itemField.onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
-                              <FormMessage /></FormItem>)} />
-                          <FormField control={control} name={`expenses.${index}.paymentMode`} render={({ field: itemField }) => (
-                              <FormItem className="md:col-span-4"><FormLabel>Pay Mode</FormLabel>
-                              <Select onValueChange={itemField.onChange} value={itemField.value}>
-                                  <FormControl><SelectTrigger><SelectValue placeholder="Mode" /></SelectTrigger></FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="Cash">Cash</SelectItem>
-                                    <SelectItem value="Bank">Bank</SelectItem>
-                                    <SelectItem value="Pending">Pending</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              <FormMessage /></FormItem>)} />
-                          <div className="md:col-span-1 flex items-center justify-end">
-                              <Button type="button" variant="destructive" size="icon" onClick={() => removeExpense(index)}><Trash2 className="h-4 w-4" /></Button>
+                  <Card>
+                    <CardHeader><CardTitle className="text-lg">Items to Transfer</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                      {fields.map((field, index) => (
+                        <div key={field.id} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end p-3 border-b">
+                          <FormField control={control} name={`items.${index}.originalLotNumber`} render={({ field: itemField }) => (
+                            <FormItem className="md:col-span-2"><FormLabel>Original Lot</FormLabel>
+                              <MasterDataCombobox options={stockOptions} placeholder={appState.isCalculating ? "Calculating..." : "Select stock"} {...itemField} 
+                                onChange={(val) => {
+                                    itemField.onChange(val);
+                                    const stock = availableStock.find(s => s.lotNumber === val);
+                                    if(stock) {
+                                      setValue(`items.${index}.newLotNumber`, `${stock.lotNumber}-TR`);
+                                      setValue(`items.${index}.quantity`, stock.currentBags);
+                                      setValue(`items.${index}.netWeight`, stock.currentWeight);
+                                      setValue(`items.${index}.costOfGoods`, stock.cogs);
+                                    }
+                                }}
+                              />
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <FormField control={control} name={`items.${index}.newLotNumber`} render={({ field: itemField }) => (
+                            <FormItem><FormLabel>New Lot #</FormLabel><Input placeholder="New lot name" {...itemField} /><FormMessage /></FormItem>
+                          )} />
+                          <FormField control={control} name={`items.${index}.quantity`} render={({ field: itemField }) => (
+                            <FormItem><FormLabel>Bags</FormLabel><Input type="number" placeholder="Bags" {...itemField} /><FormMessage /></FormItem>
+                          )} />
+                          <FormField control={control} name={`items.${index}.netWeight`} render={({ field: itemField }) => (
+                            <FormItem><FormLabel>Net Wt.</FormLabel><Input type="number" step="0.01" placeholder="Weight" {...itemField} /><FormMessage /></FormItem>
+                          )} />
+                          <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}><Trash2 /></Button>
+                        </div>
+                      ))}
+                      <Button type="button" variant="outline" size="sm" onClick={() => append({ originalLotNumber: '', newLotNumber: '', quantity: 0, netWeight: 0, costOfGoods: 0 })}>
+                        <PlusCircle className="mr-2" /> Add Item
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                      <CardHeader><CardTitle className="text-lg">Expenses</CardTitle></CardHeader>
+                      <CardContent className="space-y-4">
+                      {expenseFields.map((field, index) => (
+                          <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end p-3 border-b last:border-b-0">
+                              <FormField control={control} name={`expenses.${index}.account`} render={({ field: itemField }) => (
+                                  <FormItem className="md:col-span-4"><FormLabel>Account</FormLabel>
+                                  <Select onValueChange={itemField.onChange} value={itemField.value}>
+                                      <FormControl><SelectTrigger><SelectValue placeholder="Select Account" /></SelectTrigger></FormControl>
+                                      <SelectContent>{(expenseAccounts || []).map(opt => <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>)}</SelectContent>
+                                  </Select><FormMessage />
+                                  </FormItem>)} />
+                              <FormField control={control} name={`expenses.${index}.amount`} render={({ field: itemField }) => (
+                                  <FormItem className="md:col-span-3"><FormLabel>Amount (₹)</FormLabel>
+                                  <FormControl><Input type="number" step="0.01" placeholder="Amount" {...itemField} value={itemField.value ?? ''} onChange={e => itemField.onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
+                                  <FormMessage /></FormItem>)} />
+                              <FormField control={control} name={`expenses.${index}.paymentMode`} render={({ field: itemField }) => (
+                                  <FormItem className="md:col-span-4"><FormLabel>Pay Mode</FormLabel>
+                                  <Select onValueChange={itemField.onChange} value={itemField.value}>
+                                      <FormControl><SelectTrigger><SelectValue placeholder="Mode" /></SelectTrigger></FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="Cash">Cash</SelectItem>
+                                        <SelectItem value="Bank">Bank</SelectItem>
+                                        <SelectItem value="Pending">Pending</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  <FormMessage /></FormItem>)} />
+                              <div className="md:col-span-1 flex items-center justify-end">
+                                  <Button type="button" variant="destructive" size="icon" onClick={() => removeExpense(index)}><Trash2 className="h-4 w-4" /></Button>
+                              </div>
                           </div>
-                      </div>
-                  ))}
-                  <Button type="button" variant="outline" size="sm" onClick={() => appendExpense({ id: `exp-${Date.now()}`, account: '', amount: 0, paymentMode: "Cash" })} className="mt-2">
-                      <PlusCircle className="mr-2 h-4 w-4" /> Add Expense
-                  </Button>
-                  </CardContent>
-              </Card>
+                      ))}
+                      <Button type="button" variant="outline" size="sm" onClick={() => appendExpense({ id: `exp-${Date.now()}`, account: '', amount: 0, paymentMode: "Cash" })} className="mt-2">
+                          <PlusCircle className="mr-2 h-4 w-4" /> Add Expense
+                      </Button>
+                      </CardContent>
+                  </Card>
 
 
-              <FormField control={control} name="notes" render={({ field }) => (
-                  <FormItem><FormLabel>Notes</FormLabel><Textarea placeholder="Any notes about this transfer..." {...field} /><FormMessage /></FormItem>
-              )} />
-            </form>
-          </FormProvider>
-          </div>
-        </ScrollArea>
+                  <FormField control={control} name="notes" render={({ field }) => (
+                      <FormItem><FormLabel>Notes</FormLabel><Textarea placeholder="Any notes about this transfer..." {...field} /><FormMessage /></FormItem>
+                  )} />
+                </form>
+              </FormProvider>
+            </div>
+          </ScrollArea>
+        </div>
         <DialogFooter className="p-6 pt-4 border-t">
           <DialogClose asChild><Button variant="outline" type="button">Cancel</Button></DialogClose>
           <Button type="button" onClick={handleSubmit(processSubmit)} disabled={isSubmitting}>
