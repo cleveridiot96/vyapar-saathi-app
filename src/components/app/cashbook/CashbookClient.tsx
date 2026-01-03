@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAppState, useAppDispatch } from "@/hooks/useAppState";
+import { useTransactions, useMasters } from "@/hooks/useTransactions";
 import { useOutstandingBalances } from "@/hooks/useOutstandingBalances";
 import dynamic from 'next/dynamic';
 
@@ -42,9 +42,13 @@ export function CashbookClient() {
     receipts, 
     purchases, 
     sales, 
-    isLoaded: isTransactionsLoaded,
-  } = useAppState();
-  const dispatch = useAppDispatch();
+    isTransactionsLoaded,
+    addPayment,
+    updatePayment,
+    addReceipt,
+    updateReceipt,
+  } = useTransactions();
+  const { addOrUpdateMaster } = useMasters();
   const { receivableParties, payableParties } = useOutstandingBalances();
 
 
@@ -133,26 +137,26 @@ export function CashbookClient() {
 
   const handleAddPaymentFromCashbook = React.useCallback((payment: Payment) => {
     if(payments.some(p => p.id === payment.id)) {
-        dispatch.updatePayment(payment);
+        updatePayment(payment);
     } else {
-        dispatch.addPayment(payment);
+        addPayment(payment);
     }
     toast({ title: "Success!", description: "Payment added to cashbook and payments." });
-  }, [payments, dispatch, toast]);
+  }, [payments, addPayment, updatePayment, toast]);
 
   const handleAddReceiptFromCashbook = React.useCallback((receipt: Receipt) => {
     if(receipts.some(r => r.id === receipt.id)) {
-        dispatch.updateReceipt(receipt);
+        updateReceipt(receipt);
     } else {
-        dispatch.addReceipt(receipt);
+        addReceipt(receipt);
     }
     toast({ title: "Success!", description: "Receipt added to cashbook and receipts." });
-  }, [receipts, dispatch, toast]);
+  }, [receipts, addReceipt, updateReceipt, toast]);
 
   const handleMasterDataUpdateFromCashbook = React.useCallback((item: MasterItem) => {
-    dispatch.addOrUpdateMaster(item);
+    addOrUpdateMaster(item);
     toast({title: "Info", description: `Master type ${item.type} updated.`});
-  }, [dispatch, toast]);
+  }, [addOrUpdateMaster, toast]);
 
   if (!isTransactionsLoaded) {
     return (

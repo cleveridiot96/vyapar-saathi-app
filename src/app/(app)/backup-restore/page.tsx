@@ -3,25 +3,44 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Upload, AlertCircle, Save } from "lucide-react";
-import { useAppState, useAppDispatch } from '@/hooks/useAppState';
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import React from "react";
 import { cn } from "@/lib/utils";
-import type { TransactionEvent } from "@/lib/eventStore";
+import { db } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 
 export default function BackupRestorePage() {
-    const appState = useAppState();
-    const appDispatch = useAppDispatch();
     const { toast } = useToast();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
 
-    const { hasUnsavedChanges, setHasUnsavedChanges, loadEvents } = useAppDispatch();
+    // This is a simplified example. A real app might track this more granularly.
+    useLiveQuery(async () => {
+        db.on('changes', () => setHasUnsavedChanges(true));
+    });
 
-    const handleSaveData = () => {
+    const handleSaveData = async () => {
         try {
+            const [
+              masters, purchases, sales, adjustments, locationTransfers,
+              purchaseReturns, saleReturns, payments, receipts, ledger
+            ] = await Promise.all([
+              db.masters.toArray(),
+              db.purchases.toArray(),
+              db.sales.toArray(),
+              db.adjustments.toArray(),
+              db.locationTransfers.toArray(),
+              db.purchaseReturns.toArray(),
+              db.saleReturns.toArray(),
+              db.payments.toArray(),
+              db.receipts.toArray(),
+              db.ledger.toArray(),
+            ]);
+
             const dataToSave = {
-                events: appState.events,
+                masters, purchases, sales, adjustments, locationTransfers,
+                purchaseReturns, saleReturns, payments, receipts, ledger
             };
 
             const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
@@ -29,7 +48,7 @@ export default function BackupRestorePage() {
             const link = document.createElement("a");
             link.href = url;
             const date = format(new Date(), 'yyyy-MM-dd_HH-mm');
-            link.download = `vyapar-saathi-data-${date}.json`;
+            link.download = `vyapar-saathi-data-backup-${date}.json`;
             
             document.body.appendChild(link);
             link.click();
@@ -60,7 +79,7 @@ export default function BackupRestorePage() {
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             try {
                 const text = e.target?.result;
                 if (typeof text !== 'string') {
@@ -68,12 +87,24 @@ export default function BackupRestorePage() {
                 }
                 const data = JSON.parse(text);
 
-                if (data && Array.isArray(data.events)) {
-                    loadEvents(data.events as TransactionEvent[]);
+                if (data && typeof data === 'object') {
+                    await db.transaction('rw', db.tables, async () => {
+                      for (const tableName of Object.keys(data)) {
+                        const table = db.table(tableName);
+                        if (table) {
+                          await table.clear();
+                          await table.bulkAdd(data[tableName]);
+                        }
+                      }
+                    });
+
                     toast({
                         title: "Data Loaded",
-                        description: "Your data has been successfully loaded into the application.",
+                        description: "Your data has been successfully loaded. The application will now reload.",
                     });
+
+                    setTimeout(() => window.location.reload(), 2000);
+
                 } else {
                     throw new Error("Invalid data format in file.");
                 }

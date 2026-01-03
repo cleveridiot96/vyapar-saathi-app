@@ -20,7 +20,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
-import { useAppState, useAppDispatch } from "@/hooks/useAppState";
+import { useTransactions, useMasters } from "@/hooks/useTransactions";
 import dynamic from 'next/dynamic';
 
 const PaymentTable = dynamic(() => import('./PaymentTable').then(mod => mod.PaymentTable), { ssr: false });
@@ -30,8 +30,8 @@ const AddPaymentForm = dynamic(() => import('./AddPaymentForm').then(mod => mod.
 export function PaymentsClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
-  const { payments, purchases, sales, isLoaded } = useAppState();
-  const dispatch = useAppDispatch();
+  const { payments, purchases, sales, isTransactionsLoaded, updatePayment, addPayment, deletePayment, addSale, updateSale, deleteSale } = useTransactions();
+  const { addOrUpdateMaster } = useMasters();
   
   const { payableParties } = useOutstandingBalances();
 
@@ -42,9 +42,9 @@ export function PaymentsClient() {
   const [paymentToDeleteId, setPaymentToDeleteId] = React.useState<string | null>(null);
 
   const filteredPayments = React.useMemo(() => {
-    if (!isLoaded) return [];
+    if (!isTransactionsLoaded) return [];
     return payments.filter(payment => payment && payment.date && isDateInFinancialYear(payment.date, financialYear));
-  }, [payments, financialYear, isLoaded]);
+  }, [payments, financialYear, isTransactionsLoaded]);
 
   const handleAddOrUpdatePayment = React.useCallback((payment: Payment) => {
     const isEditing = payments.some(p => p.id === payment.id);
@@ -72,23 +72,23 @@ export function PaymentsClient() {
       
       const existingSaleIndex = sales.findIndex(s => s.id === internalSale.id);
       if(existingSaleIndex > -1) {
-        dispatch.updateSale(internalSale);
+        updateSale(internalSale);
       } else {
-        dispatch.addSale(internalSale);
+        addSale(internalSale);
       }
     }
 
     if(isEditing) {
-        dispatch.updatePayment(payment);
+        updatePayment(payment);
     } else {
-        dispatch.addPayment(payment);
+        addPayment(payment);
     }
 
     setPaymentToEdit(null);
     setIsAddPaymentFormOpen(false);
     toast({ title: "Success!", description: isEditing ? "Payment updated successfully." : "Payment added successfully." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [payments, sales, dispatch, toast]);
+  }, [payments, sales, addPayment, updatePayment, addSale, updateSale, toast]);
 
   const handleEditPayment = React.useCallback((payment: Payment) => {
     setPaymentToEdit(payment);
@@ -105,19 +105,19 @@ export function PaymentsClient() {
       const paymentToDelete = payments.find(p => p.id === paymentToDeleteId);
       if (paymentToDelete?.paymentType === 'Stock') {
         const internalSaleId = `sale-for-payment-${paymentToDelete.id}`;
-        dispatch.deleteSale(internalSaleId);
+        deleteSale(internalSaleId);
       }
 
-      dispatch.deletePayment(paymentToDeleteId);
+      deletePayment(paymentToDeleteId);
       toast({ title: "Success!", description: "Payment deleted successfully.", variant: "destructive" });
       setPaymentToDeleteId(null);
       setShowDeleteConfirm(false);
       window.dispatchEvent(new CustomEvent('reindex-search'));
     }
-  }, [paymentToDeleteId, payments, dispatch, toast]);
+  }, [paymentToDeleteId, payments, deletePayment, deleteSale, toast]);
   
   const handleMasterDataUpdate = (item: MasterItem) => {
-    dispatch.addOrUpdateMaster(item);
+    addOrUpdateMaster(item);
     toast({ title: `Master list updated for ${item.type}.`});
   };
 

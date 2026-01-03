@@ -7,7 +7,6 @@ import { useAuth } from '@/contexts/PasswordContext';
 import { useRouter } from 'next/navigation';
 import { useHydrated } from '@/hooks/useHydrated';
 import { Loader2 } from 'lucide-react';
-import { AppProvider } from '@/hooks/useAppState';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();

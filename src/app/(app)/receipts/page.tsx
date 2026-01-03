@@ -2,15 +2,15 @@
 "use client";
 
 import { ReceiptsClient } from "@/components/app/receipts/ReceiptsClient";
-import { useAppState } from "@/hooks/useAppState";
+import { useTransactions } from "@/hooks/useTransactions";
 import { useHydrated } from "@/hooks/useHydrated";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ReceiptsPage() {
-    const { isLoaded } = useAppState();
+    const { isTransactionsLoaded } = useTransactions();
     const hydrated = useHydrated();
 
-    if (!isLoaded || !hydrated) {
+    if (!isTransactionsLoaded || !hydrated) {
         return (
             <div className="space-y-4 p-4">
                 <div className="flex justify-between items-center">

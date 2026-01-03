@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AddAdjustmentForm } from './AddAdjustmentForm';
 import { isDateInFinancialYear } from '@/lib/utils';
-import { useAppState, useAppDispatch } from '@/hooks/useAppState';
+import { useTransactions, useMasters } from '@/hooks/useTransactions';
 import { useToast } from "@/hooks/use-toast";
 import type { StockAdjustment } from '@/lib/types';
 
@@ -26,9 +26,9 @@ export function StockAdjustmentsClient() {
       adjustments,
       purchases,
       locationTransfers,
-      masterData
-  } = useAppState();
-  const dispatch = useAppDispatch();
+      addAdjustment,
+  } = useTransactions();
+  const { masterData } = useMasters();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [itemToReverse, setItemToReverse] = useState<StockAdjustment | null>(null);
@@ -53,9 +53,9 @@ export function StockAdjustmentsClient() {
   }, [adjustments, financialYear, hydrated]);
 
   const handleAddAdjustment = useCallback((newAdjustment: Omit<StockAdjustment, 'id'>) => {
-    dispatch.addAdjustment({ ...newAdjustment, id: `adj-${Date.now()}` });
+    addAdjustment({ ...newAdjustment, id: `adj-${Date.now()}` });
     toast({ title: 'Adjustment Recorded', description: 'The stock adjustment has been successfully saved.' });
-  }, [dispatch, toast]);
+  }, [addAdjustment, toast]);
 
   const handleReverseAttempt = (adjustment: StockAdjustment) => {
     if (adjustment.type === 'Reversal') {
@@ -160,7 +160,7 @@ export function StockAdjustmentsClient() {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleAddAdjustment}
-        warehouses={masterData.Warehouse}
+        warehouses={masterData.Warehouse || []}
         availableLots={allLotsInSystem}
       />
       

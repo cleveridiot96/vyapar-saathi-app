@@ -20,7 +20,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
-import { useAppState, useAppDispatch } from "@/hooks/useAppState";
+import { useTransactions, useMasters } from "@/hooks/useTransactions";
 import dynamic from 'next/dynamic';
 
 const ReceiptTable = dynamic(() => import('./ReceiptTable').then(mod => mod.ReceiptTable), { ssr: false });
@@ -30,8 +30,8 @@ const AddReceiptForm = dynamic(() => import('./AddReceiptForm').then(mod => mod.
 export function ReceiptsClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
-  const { receipts, sales, isLoaded } = useAppState();
-  const dispatch = useAppDispatch();
+  const { receipts, sales, isTransactionsLoaded, updateReceipt, addReceipt, deleteReceipt } = useTransactions();
+  const { addOrUpdateMaster } = useMasters();
   
   const { receivableParties } = useOutstandingBalances();
 
@@ -42,23 +42,23 @@ export function ReceiptsClient() {
   const [receiptToDeleteId, setReceiptToDeleteId] = React.useState<string | null>(null);
 
   const filteredReceipts = React.useMemo(() => {
-    if (!isLoaded) return [];
+    if (!isTransactionsLoaded) return [];
     return receipts.filter(receipt => receipt && receipt.date && isDateInFinancialYear(receipt.date, financialYear));
-  }, [receipts, financialYear, isLoaded]);
+  }, [receipts, financialYear, isTransactionsLoaded]);
 
   const handleAddOrUpdateReceipt = React.useCallback((receipt: Receipt) => {
     const isEditing = receipts.some(r => r.id === receipt.id);
     if(isEditing) {
-        dispatch.updateReceipt(receipt);
+        updateReceipt(receipt);
     } else {
-        dispatch.addReceipt(receipt);
+        addReceipt(receipt);
     }
 
     setReceiptToEdit(null);
     setIsAddReceiptFormOpen(false);
     toast({ title: "Success!", description: isEditing ? "Receipt updated successfully." : "Receipt added successfully." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [receipts, dispatch, toast]); 
+  }, [receipts, addReceipt, updateReceipt, toast]); 
 
   const handleEditReceipt = React.useCallback((receipt: Receipt) => {
     setReceiptToEdit(receipt);
@@ -72,16 +72,16 @@ export function ReceiptsClient() {
 
   const confirmDeleteReceipt = React.useCallback(() => {
     if (receiptToDeleteId) {
-      dispatch.deleteReceipt(receiptToDeleteId);
+      deleteReceipt(receiptToDeleteId);
       toast({ title: "Success!", description: "Receipt deleted successfully.", variant: "destructive" });
       setReceiptToDeleteId(null);
       setShowDeleteConfirm(false);
       window.dispatchEvent(new CustomEvent('reindex-search'));
     }
-  }, [receiptToDeleteId, dispatch, toast]);
+  }, [receiptToDeleteId, deleteReceipt, toast]);
   
   const handleMasterDataUpdate = (item: MasterItem) => {
-    dispatch.addOrUpdateMaster(item);
+    addOrUpdateMaster(item);
     toast({ title: `Master list updated for ${item.type}.`});
   };
 
