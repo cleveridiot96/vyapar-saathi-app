@@ -34,6 +34,8 @@ export default function PurchasesPage() {
   const { financialYear } = useSettings();
   const hydrated = useHydrated();
 
+  // --- THE FIX ---
+  // Read directly from the central state provider. No local state for the list.
   const {
     purchases,
     purchaseReturns,
@@ -44,14 +46,8 @@ export default function PurchasesPage() {
     isLoaded,
   } = useAppState();
 
-  const {
-    addPurchase,
-    updatePurchase,
-    deletePurchase,
-    addReturn,
-    addOrUpdateMaster,
-  } = useAppDispatch();
-
+  const dispatch = useAppDispatch();
+  // --- END OF FIX ---
 
   const [isAddPurchaseFormOpen, setIsAddPurchaseFormOpen] = React.useState(false);
   const [purchaseToEdit, setPurchaseToEdit] = React.useState<Purchase | null>(null);
@@ -63,6 +59,7 @@ export default function PurchasesPage() {
   } | null>(null);
   const [activeTab, setActiveTab] = React.useState("purchases");
   
+  // This useMemo now correctly recalculates whenever the `purchases` from the context changes.
   const filteredPurchases = React.useMemo(() => {
     if (!isLoaded) return [];
     return purchases.filter(
@@ -86,21 +83,17 @@ export default function PurchasesPage() {
       const isEditing = purchases.some(p => p.id === purchase.id);
       
       if (isEditing) {
-        updatePurchase(purchase);
+        dispatch.updatePurchase(purchase);
         toast({ title: "Success!", description: "Purchase updated successfully." });
       } else {
-        addPurchase(purchase);
+        dispatch.addPurchase(purchase);
         toast({ title: "Success!", description: "Purchase added successfully." });
       }
       
       setPurchaseToEdit(null);
       setIsAddPurchaseFormOpen(false);
-      
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent("reindex-search"));
-      }, 100);
     },
-    [purchases, addPurchase, updatePurchase, toast]
+    [purchases, dispatch, toast]
   );
 
   const handleDeletePurchaseAttempt = React.useCallback(
@@ -148,7 +141,7 @@ export default function PurchasesPage() {
   const confirmDelete = React.useCallback(() => {
     if (itemToDelete) {
       if (itemToDelete.type === "purchase") {
-        deletePurchase(itemToDelete.id);
+        dispatch.deletePurchase(itemToDelete.id);
         toast({
           title: "Deleted!",
           description: "Purchase record removed.",
@@ -160,22 +153,20 @@ export default function PurchasesPage() {
         toast({ title: "Info", description: "Deletion for purchase returns is not yet implemented.", variant: "default" });
       }
       setItemToDelete(null);
-      window.dispatchEvent(new CustomEvent("reindex-search"));
     }
-  }, [itemToDelete, deletePurchase, toast]);
+  }, [itemToDelete, dispatch, toast]);
 
     const handleAddOrUpdatePurchaseReturn = React.useCallback(
     (prData: PurchaseReturn) => {
-      addReturn(prData);
+      dispatch.addReturn(prData);
       setPurchaseReturnToEdit(null);
       setIsAddPurchaseReturnFormOpen(false);
       toast({
         title: "Success!",
         description: "Purchase return updated.",
       });
-      window.dispatchEvent(new CustomEvent("reindex-search"));
     },
-    [addReturn, toast]
+    [dispatch, toast]
   );
 
   const handleEditPurchaseReturn = React.useCallback((pr: PurchaseReturn) => {
@@ -311,7 +302,7 @@ export default function PurchasesPage() {
           onSubmit={handleAddOrUpdatePurchase}
           purchaseToEdit={purchaseToEdit}
           masterData={masterData}
-          addOrUpdateMaster={addOrUpdateMaster}
+          addOrUpdateMaster={dispatch.addOrUpdateMaster}
           getAllMasters={getAllMasters}
         />
       )}
