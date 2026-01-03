@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -15,6 +16,7 @@ import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { DatePicker } from "@/components/ui/date-picker";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface AddPurchaseReturnFormProps {
   isOpen: boolean;
@@ -169,117 +171,123 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(openState) => { if (!openState) onClose(); }}>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-4">
           <DialogTitle>{purchaseReturnToEdit ? "Edit Purchase Return" : "New Purchase Return"}</DialogTitle>
           <DialogDescription>Record items returned from a previous purchase.</DialogDescription>
         </DialogHeader>
-        <FormProvider {...formMethods}>
-          <Form {...formMethods}>
-            <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1 pr-3">
-              <FormField
-                  control={control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Return Date</FormLabel>
-                       <DatePicker
-                          date={field.value}
-                          onDateChange={field.onChange}
-                        />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              <FormField control={control} name="originalPurchaseId" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Original Purchase</FormLabel>
-                  <MasterDataCombobox
-                    value={field.value}
-                    onChange={field.onChange}
-                    options={purchaseOptions}
-                    placeholder="Select Original Purchase"
-                  />
-                  <FormMessage />
-                </FormItem>)}
-              />
-              {selectedOriginalPurchase && selectedOriginalPurchase.items.length > 1 && (
-                <FormField
-                  control={control}
-                  name="originalLotNumber"
-                  render={({ field }) => (
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-6 pb-6">
+            <FormProvider {...formMethods}>
+              <Form {...formMethods}>
+                <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 pt-4">
+                  <FormField
+                      control={control}
+                      name="date"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Return Date</FormLabel>
+                          <DatePicker
+                              date={field.value}
+                              onDateChange={field.onChange}
+                            />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  <FormField control={control} name="originalPurchaseId" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Vakkal/Lot to Return</FormLabel>
+                      <FormLabel>Original Purchase</FormLabel>
                       <MasterDataCombobox
                         value={field.value}
                         onChange={field.onChange}
-                        options={lotOptions}
-                        placeholder="Select Lot to Return"
+                        options={purchaseOptions}
+                        placeholder="Select Original Purchase"
                       />
                       <FormMessage />
-                    </FormItem>
+                    </FormItem>)}
+                  />
+                  {selectedOriginalPurchase && selectedOriginalPurchase.items.length > 1 && (
+                    <FormField
+                      control={control}
+                      name="originalLotNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Vakkal/Lot to Return</FormLabel>
+                          <MasterDataCombobox
+                            value={field.value}
+                            onChange={field.onChange}
+                            options={lotOptions}
+                            placeholder="Select Lot to Return"
+                          />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   )}
-                />
-              )}
-              {selectedOriginalPurchase && (
-                <div className="p-3 border rounded-md bg-muted/50 text-sm uppercase">
-                  <p><strong>Selected Lot:</strong> {watchedOriginalLotNumber || selectedOriginalPurchase.items[0]?.lotNumber || 'N/A'}</p>
-                  <p><strong>Supplier:</strong> {selectedOriginalPurchase.supplierName || selectedOriginalPurchase.supplierId}</p>
-                  <p><strong>Original Rate:</strong> ₹{selectedOriginalPurchase.items.find(i => i.lotNumber === (watchedOriginalLotNumber || selectedOriginalPurchase.items[0]?.lotNumber))?.rate.toFixed(2)}/kg</p>
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={control} name="quantityReturned" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity Returned (Bags)</FormLabel>
-                    <FormControl><Input type="number" placeholder="Bags" {...field} value={field.value ?? ''}
-                      onChange={e => {
-                        const val = parseFloat(e.target.value) || undefined;
-                        field.onChange(val);
-                        setNetWeightReturnedManuallySet(false);
-                      }}
-                    /></FormControl>
-                    <FormMessage />
-                  </FormItem>)}
-                />
-                <FormField control={control} name="netWeightReturned" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Net Weight Returned (kg)</FormLabel>
-                    <FormControl><Input type="number" step="0.01" placeholder="Weight" {...field} value={field.value ?? ''}
-                      onChange={e => {
-                        field.onChange(parseFloat(e.target.value) || undefined);
-                        setNetWeightReturnedManuallySet(true);
-                      }}
-                      onFocus={() => setNetWeightReturnedManuallySet(true)}
-                    /></FormControl>
-                    <FormMessage />
-                  </FormItem>)}
-                />
-              </div>
-              <FormField control={control} name="returnReason" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Reason for Return (Optional)</FormLabel>
-                  <FormControl><Input placeholder="e.g., Damaged goods" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>)}
-              />
-              <FormField control={control} name="notes" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes (Optional)</FormLabel>
-                  <FormControl><Textarea placeholder="Additional details..." {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>)}
-              />
-              <DialogFooter>
-                <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (purchaseReturnToEdit ? "Saving..." : "Creating...") : (purchaseReturnToEdit ? "Save Changes" : "Create Return")}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </FormProvider>
+                  {selectedOriginalPurchase && (
+                    <div className="p-3 border rounded-md bg-muted/50 text-sm uppercase">
+                      <p><strong>Selected Lot:</strong> {watchedOriginalLotNumber || selectedOriginalPurchase.items[0]?.lotNumber || 'N/A'}</p>
+                      <p><strong>Supplier:</strong> {selectedOriginalPurchase.supplierName || selectedOriginalPurchase.supplierId}</p>
+                      <p><strong>Original Rate:</strong> ₹{selectedOriginalPurchase.items.find(i => i.lotNumber === (watchedOriginalLotNumber || selectedOriginalPurchase.items[0]?.lotNumber))?.rate.toFixed(2)}/kg</p>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={control} name="quantityReturned" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Quantity Returned (Bags)</FormLabel>
+                        <FormControl><Input type="number" placeholder="Bags" {...field} value={field.value ?? ''}
+                          onChange={e => {
+                            const val = parseFloat(e.target.value) || undefined;
+                            field.onChange(val);
+                            setNetWeightReturnedManuallySet(false);
+                          }}
+                        /></FormControl>
+                        <FormMessage />
+                      </FormItem>)}
+                    />
+                    <FormField control={control} name="netWeightReturned" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Net Weight Returned (kg)</FormLabel>
+                        <FormControl><Input type="number" step="0.01" placeholder="Weight" {...field} value={field.value ?? ''}
+                          onChange={e => {
+                            field.onChange(parseFloat(e.target.value) || undefined);
+                            setNetWeightReturnedManuallySet(true);
+                          }}
+                          onFocus={() => setNetWeightReturnedManuallySet(true)}
+                        /></FormControl>
+                        <FormMessage />
+                      </FormItem>)}
+                    />
+                  </div>
+                  <FormField control={control} name="returnReason" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reason for Return (Optional)</FormLabel>
+                      <FormControl><Input placeholder="e.g., Damaged goods" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>)}
+                  />
+                  <FormField control={control} name="notes" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Notes (Optional)</FormLabel>
+                      <FormControl><Textarea placeholder="Additional details..." {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>)}
+                  />
+                </form>
+              </Form>
+            </FormProvider>
+          </div>
+        </ScrollArea>
+        <DialogFooter className="p-6 pt-4 border-t">
+          <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
+          <Button type="button" onClick={handleSubmit(processSubmit)} disabled={isSubmitting}>
+            {isSubmitting ? (purchaseReturnToEdit ? "Saving..." : "Creating...") : (purchaseReturnToEdit ? "Save Changes" : "Create Return")}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
+
+    

@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -37,6 +38,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useInventory } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
 import { DatePicker } from "@/components/ui/date-picker";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 const MasterForm = dynamic(() => import('../masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
@@ -265,234 +267,237 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6 pb-4">
             <DialogTitle>{paymentToEdit ? 'Edit Payment' : 'Add New Payment'}</DialogTitle>
             <DialogDescription>
               Record a payment made to a supplier, agent, or other party.
             </DialogDescription>
           </DialogHeader>
-          <FormProvider {...methods}>
-            <Form {...methods}>
-              <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto p-1 pr-3">
-                <FormField
-                  control={control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Payment Date</FormLabel>
-                      <DatePicker
-                        date={field.value}
-                        onDateChange={field.onChange}
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="px-6 pb-6">
+              <FormProvider {...methods}>
+                <Form {...methods}>
+                  <form onSubmit={handleSubmit(processSubmit)} className="space-y-4">
+                    <FormField
+                      control={control}
+                      name="date"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Payment Date</FormLabel>
+                          <DatePicker
+                            date={field.value}
+                            onDateChange={field.onChange}
+                          />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={control}
+                      name="paymentType"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <FormLabel>Payment Type</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                              className="flex space-x-4"
+                            >
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl><RadioGroupItem value="Cash" /></FormControl>
+                                <FormLabel className="font-normal">Cash Payment</FormLabel>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl><RadioGroupItem value="Stock" /></FormControl>
+                                <FormLabel className="font-normal">Payment with Stock</FormLabel>
+                              </FormItem>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField control={control} name="partyId" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Party</FormLabel>
+                          <MasterDataCombobox value={field.value} onChange={field.onChange}
+                            options={parties.map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
+                            placeholder="Select Party" searchPlaceholder="Search parties..." notFoundMessage="No party found." 
+                            addNewLabel="Add New Party"
+                            onAddNew={(e) => handleOpenMasterForm("Supplier", e)}
+                            onEdit={(id, e) => handleEditMasterItem(id, e)}
+                          /> <FormMessage />
+                        </FormItem>)}
                       />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={control}
-                  name="paymentType"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Payment Type</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex space-x-4"
-                        >
-                          <FormItem className="flex items-center space-x-2">
-                            <FormControl><RadioGroupItem value="Cash" /></FormControl>
-                            <FormLabel className="font-normal">Cash Payment</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2">
-                            <FormControl><RadioGroupItem value="Stock" /></FormControl>
-                            <FormLabel className="font-normal">Payment with Stock</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField control={control} name="partyId" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Party</FormLabel>
-                      <MasterDataCombobox value={field.value} onChange={field.onChange}
-                        options={parties.map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
-                        placeholder="Select Party" searchPlaceholder="Search parties..." notFoundMessage="No party found." 
-                        addNewLabel="Add New Party"
-                        onAddNew={(e) => handleOpenMasterForm("Supplier", e)}
-                        onEdit={(id, e) => handleEditMasterItem(id, e)}
-                      /> <FormMessage />
-                    </FormItem>)}
-                  />
-                </div>
+                    {watchedPaymentType === 'Cash' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border rounded-md bg-muted/20">
+                        <FormField control={control} name="amount" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Amount (₹)</FormLabel>
+                            <FormControl><Input type="number" step="0.01" placeholder="Enter amount" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
+                            <FormMessage />
+                          </FormItem>)}
+                        />
+                        <FormField control={control} name="paymentMethod" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Payment Method</FormLabel>
+                            <ShadSelect onValueChange={field.onChange} value={field.value || 'Cash'}>
+                              <FormControl><SelectTrigger><SelectValue placeholder="Select payment method" /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                <SelectItem value="Cash">Cash</SelectItem><SelectItem value="Bank">Bank</SelectItem><SelectItem value="UPI">UPI</SelectItem>
+                              </SelectContent>
+                            </ShadSelect><FormMessage />
+                          </FormItem>)}
+                        />
+                      </div>
+                    ) : (
+                      <Card className="p-4">
+                        <CardHeader className="p-0 mb-3"><CardTitle className="text-md flex items-center gap-2"><Package className="h-5 w-5"/>Stock Items for Payment</CardTitle></CardHeader>
+                        <CardContent className="p-0 space-y-2">
+                          {stockItemFields.map((item, index) => (
+                              <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end p-2 border-b last:border-b-0">
+                                <FormField control={control} name={`stockItems.${index}.lotNumber`} render={({ field }) => (
+                                  <FormItem className="md:col-span-3"><FormLabel>Lot</FormLabel>
+                                    <MasterDataCombobox options={availableStock.map(s => ({value: s.lotNumber, label: s.lotNumber}))} placeholder="Select Lot" {...field} />
+                                    <FormMessage />
+                                  </FormItem>)} />
+                                <FormField control={control} name={`stockItems.${index}.quantity`} render={({ field }) => (
+                                  <FormItem className="md:col-span-2"><FormLabel>Bags</FormLabel><FormControl><Input type="number" placeholder="Qty" {...field} value={field.value ?? ''} 
+                                    onChange={e => {
+                                      const qty = parseFloat(e.target.value) || 0;
+                                      field.onChange(qty);
+                                      const lotNum = getValues(`stockItems.${index}.lotNumber`);
+                                      const stockInfo = availableStock.find(s => s.lotNumber === lotNum);
+                                      if (stockInfo) {
+                                        setValue(`stockItems.${index}.netWeight`, qty * stockInfo.averageWeightPerBag);
+                                        const rate = getValues(`stockItems.${index}.rate`) || 0;
+                                        setValue(`stockItems.${index}.value`, (qty * stockInfo.averageWeightPerBag) * rate);
+                                      }
+                                    }}
+                                  /></FormControl><FormMessage /></FormItem>)} />
+                                  <FormField control={control} name={`stockItems.${index}.rate`} render={({ field }) => (
+                                  <FormItem className="md:col-span-2"><FormLabel>Rate (₹)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="Rate" {...field} value={field.value ?? ''}
+                                      onChange={e => {
+                                          const rate = parseFloat(e.target.value) || 0;
+                                          field.onChange(rate);
+                                          const netWeight = getValues(`stockItems.${index}.netWeight`) || 0;
+                                          setValue(`stockItems.${index}.value`, netWeight * rate);
+                                      }}
+                                  /></FormControl><FormMessage /></FormItem>)} />
+                                  <FormField control={control} name={`stockItems.${index}.netWeight`} render={({ field }) => (
+                                    <FormItem className="md:col-span-2"><FormLabel>Weight (Kg)</FormLabel><FormControl><Input readOnly className="bg-muted/50" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
+                                  <FormField control={control} name={`stockItems.${index}.value`} render={({ field }) => (
+                                    <FormItem className="md:col-span-2"><FormLabel>Value (₹)</FormLabel><FormControl><Input readOnly className="bg-muted/50" {...field} value={field.value ?? ''}/></FormControl></FormItem>)} />
+                                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive self-center" onClick={() => removeStockItem(index)}><Trash2 className="h-4 w-4" /></Button>
+                              </div>
+                          ))}
+                          <Button type="button" variant="outline" size="sm" onClick={() => appendStockItem({ lotNumber: "", quantity: 0, netWeight: 0, rate: 0, value: 0})}><PlusCircle className="mr-2 h-4 w-4"/>Add Stock Item</Button>
+                          <div className="text-right font-bold text-lg mt-2">Total Stock Value: ₹{stockPaymentTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                        </CardContent>
+                      </Card>
+                    )}
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField control={control} name="transactionType" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Payment Allocation</FormLabel>
+                          <ShadSelect onValueChange={field.onChange} value={field.value || 'On Account'}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select payment type" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              <SelectItem value="On Account">On Account</SelectItem><SelectItem value="Against Bill">Against Bill</SelectItem>
+                            </SelectContent>
+                          </ShadSelect><FormMessage />
+                        </FormItem>)}
+                      />
+                      <FormField control={control} name="source" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Source (Optional)</FormLabel>
+                          <FormControl><Input placeholder="e.g., Self, Bank Deposit" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>)}
+                      />
+                    </div>
 
-                {watchedPaymentType === 'Cash' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border rounded-md bg-muted/20">
-                    <FormField control={control} name="amount" render={({ field }) => (
+                    {watchedTransactionType === 'Against Bill' && (
+                      <Card className="mt-4 p-4 space-y-4">
+                        <CardHeader className="p-0 mb-2"><CardTitle className="text-md">Bill Allocation</CardTitle></CardHeader>
+                        <CardContent className="p-0">
+                          <div className="space-y-2">
+                            {billFields.map((item, index) => (
+                              <div key={item.id} className="flex items-center gap-2 p-2 border rounded-md">
+                                <div className="flex-grow">
+                                    <p className="font-semibold">{item.billVakkal}</p>
+                                    <p className="text-xs text-muted-foreground">Due: ₹{pendingBills.find(b=>b.id === item.billId)?.due.toLocaleString('en-IN') || item.billTotal?.toLocaleString('en-IN')} | Date: {item.billDate ? format(parseISO(item.billDate), 'dd/MM/yy') : ''}</p>
+                                </div>
+                                <Controller control={control} name={`againstBills.${index}.amount`}
+                                    render={({ field }) => (
+                                        <Input type="number" step="0.01" className="w-32" placeholder="Allocate" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                                    )}
+                                />
+                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeBill(index)}><Trash2 className="h-4 w-4" /></Button>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          <div className="flex items-center gap-2 mt-2">
+                            <Popover open={isBillPopoverOpen} onOpenChange={setIsBillPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button type="button" variant="outline" size="sm" disabled={!watchedPartyId}><PlusCircle className="mr-2 h-4 w-4"/>Add Bill</Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[400px] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Search bills..."/>
+                                        <CommandList className="max-h-48">
+                                            <CommandEmpty>No pending bills found.</CommandEmpty>
+                                            {pendingBills.filter(pb => !billFields.some(f => f.billId === pb.id)).map(bill => (
+                                                <CommandItem key={bill.id} onSelect={() => { addBillToAllocate(bill); setIsBillPopoverOpen(false); }}>
+                                                    <div className="flex justify-between w-full">
+                                                        <span>{bill.items.map(i=>i.lotNumber).join(', ')} ({format(parseISO(bill.date), 'dd/MM/yy')})</span>
+                                                        <span className="font-semibold">₹{bill.due.toLocaleString('en-IN')}</span>
+                                                    </div>
+                                                </CommandItem>
+                                            ))}
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <Button type="button" variant="secondary" size="sm" onClick={autoAllocate} disabled={!(watchedAmount || stockPaymentTotal > 0) || !pendingBills.length}>Auto-Allocate</Button>
+                          </div>
+
+                          <div className="text-right text-sm font-semibold mt-4">
+                            <p>Total Allocated: ₹{totalAllocated.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+                            <p className={totalAllocated > (watchedPaymentType === 'Cash' ? (watchedAmount || 0) : stockPaymentTotal) ? "text-destructive" : "text-muted-foreground"}>
+                                Remaining: ₹{(((watchedPaymentType === 'Cash' ? (watchedAmount || 0) : stockPaymentTotal)) - totalAllocated).toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    <FormField control={control} name="notes" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Amount (₹)</FormLabel>
-                        <FormControl><Input type="number" step="0.01" placeholder="Enter amount" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
+                        <FormLabel>Notes (Optional)</FormLabel>
+                        <FormControl><Textarea placeholder="Add any notes for this payment..." {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>)}
                     />
-                    <FormField control={control} name="paymentMethod" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Payment Method</FormLabel>
-                        <ShadSelect onValueChange={field.onChange} value={field.value || 'Cash'}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select payment method" /></SelectTrigger></FormControl>
-                          <SelectContent>
-                            <SelectItem value="Cash">Cash</SelectItem><SelectItem value="Bank">Bank</SelectItem><SelectItem value="UPI">UPI</SelectItem>
-                          </SelectContent>
-                        </ShadSelect><FormMessage />
-                      </FormItem>)}
-                    />
-                  </div>
-                ) : (
-                  <Card className="p-4">
-                    <CardHeader className="p-0 mb-3"><CardTitle className="text-md flex items-center gap-2"><Package className="h-5 w-5"/>Stock Items for Payment</CardTitle></CardHeader>
-                    <CardContent className="p-0 space-y-2">
-                      {stockItemFields.map((item, index) => (
-                          <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end p-2 border-b last:border-b-0">
-                            <FormField control={control} name={`stockItems.${index}.lotNumber`} render={({ field }) => (
-                              <FormItem className="md:col-span-3"><FormLabel>Lot</FormLabel>
-                                <MasterDataCombobox options={availableStock.map(s => ({value: s.lotNumber, label: s.lotNumber}))} placeholder="Select Lot" {...field} />
-                                <FormMessage />
-                              </FormItem>)} />
-                            <FormField control={control} name={`stockItems.${index}.quantity`} render={({ field }) => (
-                              <FormItem className="md:col-span-2"><FormLabel>Bags</FormLabel><FormControl><Input type="number" placeholder="Qty" {...field} value={field.value ?? ''} 
-                                onChange={e => {
-                                  const qty = parseFloat(e.target.value) || 0;
-                                  field.onChange(qty);
-                                  const lotNum = getValues(`stockItems.${index}.lotNumber`);
-                                  const stockInfo = availableStock.find(s => s.lotNumber === lotNum);
-                                  if (stockInfo) {
-                                    setValue(`stockItems.${index}.netWeight`, qty * stockInfo.averageWeightPerBag);
-                                    const rate = getValues(`stockItems.${index}.rate`) || 0;
-                                    setValue(`stockItems.${index}.value`, (qty * stockInfo.averageWeightPerBag) * rate);
-                                  }
-                                }}
-                              /></FormControl><FormMessage /></FormItem>)} />
-                              <FormField control={control} name={`stockItems.${index}.rate`} render={({ field }) => (
-                              <FormItem className="md:col-span-2"><FormLabel>Rate (₹)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="Rate" {...field} value={field.value ?? ''}
-                                  onChange={e => {
-                                      const rate = parseFloat(e.target.value) || 0;
-                                      field.onChange(rate);
-                                      const netWeight = getValues(`stockItems.${index}.netWeight`) || 0;
-                                      setValue(`stockItems.${index}.value`, netWeight * rate);
-                                  }}
-                              /></FormControl><FormMessage /></FormItem>)} />
-                              <FormField control={control} name={`stockItems.${index}.netWeight`} render={({ field }) => (
-                                <FormItem className="md:col-span-2"><FormLabel>Weight (Kg)</FormLabel><FormControl><Input readOnly className="bg-muted/50" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
-                              <FormField control={control} name={`stockItems.${index}.value`} render={({ field }) => (
-                                <FormItem className="md:col-span-2"><FormLabel>Value (₹)</FormLabel><FormControl><Input readOnly className="bg-muted/50" {...field} value={field.value ?? ''}/></FormControl></FormItem>)} />
-                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive self-center" onClick={() => removeStockItem(index)}><Trash2 className="h-4 w-4" /></Button>
-                          </div>
-                      ))}
-                      <Button type="button" variant="outline" size="sm" onClick={() => appendStockItem({ lotNumber: "", quantity: 0, netWeight: 0, rate: 0, value: 0})}><PlusCircle className="mr-2 h-4 w-4"/>Add Stock Item</Button>
-                      <div className="text-right font-bold text-lg mt-2">Total Stock Value: ₹{stockPaymentTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
-                    </CardContent>
-                  </Card>
-                )}
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField control={control} name="transactionType" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Payment Allocation</FormLabel>
-                      <ShadSelect onValueChange={field.onChange} value={field.value || 'On Account'}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select payment type" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value="On Account">On Account</SelectItem><SelectItem value="Against Bill">Against Bill</SelectItem>
-                        </SelectContent>
-                      </ShadSelect><FormMessage />
-                    </FormItem>)}
-                  />
-                  <FormField control={control} name="source" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Source (Optional)</FormLabel>
-                      <FormControl><Input placeholder="e.g., Self, Bank Deposit" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>)}
-                  />
-                </div>
-
-                {watchedTransactionType === 'Against Bill' && (
-                  <Card className="mt-4 p-4 space-y-4">
-                    <CardHeader className="p-0 mb-2"><CardTitle className="text-md">Bill Allocation</CardTitle></CardHeader>
-                    <CardContent className="p-0">
-                      <div className="space-y-2">
-                        {billFields.map((item, index) => (
-                          <div key={item.id} className="flex items-center gap-2 p-2 border rounded-md">
-                            <div className="flex-grow">
-                                <p className="font-semibold">{item.billVakkal}</p>
-                                <p className="text-xs text-muted-foreground">Due: ₹{pendingBills.find(b=>b.id === item.billId)?.due.toLocaleString('en-IN') || item.billTotal?.toLocaleString('en-IN')} | Date: {item.billDate ? format(parseISO(item.billDate), 'dd/MM/yy') : ''}</p>
-                            </div>
-                            <Controller control={control} name={`againstBills.${index}.amount`}
-                                render={({ field }) => (
-                                    <Input type="number" step="0.01" className="w-32" placeholder="Allocate" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                                )}
-                            />
-                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeBill(index)}><Trash2 className="h-4 w-4" /></Button>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <div className="flex items-center gap-2 mt-2">
-                        <Popover open={isBillPopoverOpen} onOpenChange={setIsBillPopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <Button type="button" variant="outline" size="sm" disabled={!watchedPartyId}><PlusCircle className="mr-2 h-4 w-4"/>Add Bill</Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[400px] p-0">
-                                <Command>
-                                    <CommandInput placeholder="Search bills..."/>
-                                    <CommandList className="max-h-48">
-                                        <CommandEmpty>No pending bills found.</CommandEmpty>
-                                        {pendingBills.filter(pb => !billFields.some(f => f.billId === pb.id)).map(bill => (
-                                            <CommandItem key={bill.id} onSelect={() => { addBillToAllocate(bill); setIsBillPopoverOpen(false); }}>
-                                                <div className="flex justify-between w-full">
-                                                    <span>{bill.items.map(i=>i.lotNumber).join(', ')} ({format(parseISO(bill.date), 'dd/MM/yy')})</span>
-                                                    <span className="font-semibold">₹{bill.due.toLocaleString('en-IN')}</span>
-                                                </div>
-                                            </CommandItem>
-                                        ))}
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                        <Button type="button" variant="secondary" size="sm" onClick={autoAllocate} disabled={!(watchedAmount || stockPaymentTotal > 0) || !pendingBills.length}>Auto-Allocate</Button>
-                      </div>
-
-                      <div className="text-right text-sm font-semibold mt-4">
-                        <p>Total Allocated: ₹{totalAllocated.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
-                        <p className={totalAllocated > (watchedPaymentType === 'Cash' ? (watchedAmount || 0) : stockPaymentTotal) ? "text-destructive" : "text-muted-foreground"}>
-                            Remaining: ₹{(((watchedPaymentType === 'Cash' ? (watchedAmount || 0) : stockPaymentTotal)) - totalAllocated).toLocaleString('en-IN', {minimumFractionDigits: 2})}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                <FormField control={control} name="notes" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes (Optional)</FormLabel>
-                    <FormControl><Textarea placeholder="Add any notes for this payment..." {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>)}
-                />
-
-                <DialogFooter className="pt-4">
-                  <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? (paymentToEdit ? "Saving..." : "Adding...") : (paymentToEdit ? "Save Changes" : "Add Payment")}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </FormProvider>
+                  </form>
+                </Form>
+              </FormProvider>
+            </div>
+          </ScrollArea>
+          <DialogFooter className="pt-4 p-6 border-t">
+            <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
+            <Button type="button" onClick={handleSubmit(processSubmit)} disabled={isSubmitting}>
+              {isSubmitting ? (paymentToEdit ? "Saving..." : "Adding...") : (paymentToEdit ? "Save Changes" : "Add Payment")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -503,8 +508,11 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
           onSubmit={handleMasterFormSubmit}
           initialData={masterItemToEdit}
           itemTypeFromButton={masterFormItemType!}
+          allMasterItems={parties}
         />
       )}
     </>
   );
 };
+
+    
