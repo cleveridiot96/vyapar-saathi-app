@@ -32,7 +32,7 @@ import { CalendarIcon, Info, Percent, PlusCircle, Trash2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { saleSchema, type SaleFormValues } from '@/lib/schemas/saleSchema';
-import type { MasterItem, MasterItemType, Sale, ExpenseItem, CostBreakdown, AggregatedInventoryItem } from '@/lib/types';
+import type { MasterItem, MasterItemType, Sale, ExpenseItem, CostBreakdown } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import {
   Accordion,
@@ -40,8 +40,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useInventory, type AggregatedInventoryItem } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
 import { DatePicker } from "@/components/ui/date-picker";
+import { useMasters } from "@/hooks/useTransactions";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -56,14 +58,6 @@ interface AddSaleFormProps {
   existingSales: Sale[];
   saleToEdit?: Sale | null;
   onMasterDataUpdate: (newItem: MasterItem) => void;
-  availableStock: AggregatedInventoryItem[];
-  masterData: {
-      Customer?: MasterItem[];
-      Transporter?: MasterItem[];
-      Broker?: MasterItem[];
-      Expense?: MasterItem[];
-      Warehouse?: MasterItem[];
-  };
 }
 
 const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
@@ -73,11 +67,11 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   existingSales,
   saleToEdit,
   onMasterDataUpdate,
-  availableStock,
-  masterData,
 }) => {
   const { toast } = useToast();
+  const { masterData } = useMasters();
   const { Customer: customers, Transporter: transporters, Broker: brokers, Expense: expenses, Warehouse: warehouses } = masterData || {};
+  const { availableStock } = useInventory(saleToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
@@ -375,8 +369,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
             <DialogTitle>{saleToEdit ? 'Edit Sale' : 'Add New Sale'}</DialogTitle>
             <DialogDescription>Create a sale with one or more items.</DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[80vh]">
-            <div className="p-1 pr-3">
+          <div className="max-h-[80vh] overflow-y-auto p-1 pr-3">
           <TooltipProvider>
               <Form {...methods}>
                 <form onSubmit={handleSubmit(processSubmit)} className="space-y-4">
@@ -424,6 +417,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
 
                   <div className="p-4 border rounded-md shadow-sm">
                     <h3 className="text-lg font-medium text-primary">Quantity &amp; Rate</h3>
+                    <ScrollArea className="h-48">
                     {fields.map((field, index) => (
                       <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start p-3 border-b last:border-b-0">
                         <FormField control={control} name={`items.${index}.lotNumber`} render={({ field: itemField }) => (
@@ -502,6 +496,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                         </div>
                       </div>
                     ))}
+                    </ScrollArea>
                     <div className="flex justify-between items-start mt-2">
                       <Button type="button" variant="outline" onClick={() => append({ lotNumber: "", quantity: undefined, netWeight: undefined, rate: undefined })}><PlusCircle className="mr-2 h-4 w-4" /> Add Item</Button>
                     </div>
@@ -639,8 +634,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                 </form>
               </Form>
           </TooltipProvider>
-            </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
       {isMasterFormOpen && (
