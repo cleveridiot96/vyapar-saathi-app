@@ -174,14 +174,12 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={onClose}>
-        {/* FIX 1: Added h-full flex-col to make ScrollArea work */}
         <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-6 pb-4 flex-shrink-0">
             <DialogTitle>{transferToEdit ? 'Edit Location Transfer' : 'New Location Transfer'}</DialogTitle>
             <DialogDescription>Move stock between warehouses and account for costs.</DialogDescription>
           </DialogHeader>
           
-          {/* FIX 2: Added flex-1 min-h-0 to enable scrolling */}
           <ScrollArea className="flex-1 min-h-0">
               <div className="px-6 pb-6">
                 <FormProvider {...methods}>
@@ -242,13 +240,28 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                               <FormItem><FormLabel>New Lot #</FormLabel><Input placeholder="New lot name" {...itemField} /><FormMessage /></FormItem>
                             )} />
                             <FormField control={control} name={`items.${index}.quantity`} render={({ field: itemField }) => (
-                              <FormItem><FormLabel>Bags</FormLabel><Input type="number" placeholder="Bags" {...itemField} /><FormMessage /></FormItem>
+                              <FormItem><FormLabel>Bags</FormLabel>
+                                <Input type="number" placeholder="Bags" {...itemField} 
+                                   onChange={(e) => {
+                                        const newQuantity = parseFloat(e.target.value) || 0;
+                                        itemField.onChange(newQuantity);
+                                        const lotNumber = watch(`items.${index}.originalLotNumber`);
+                                        const stock = availableStock.find(s => s.lotNumber === lotNumber);
+                                        if (stock) {
+                                            const newWeight = newQuantity * (stock.averageWeightPerBag || 50);
+                                            setValue(`items.${index}.netWeight`, parseFloat(newWeight.toFixed(2)));
+                                            setValue(`items.${index}.costOfGoods`, parseFloat((newWeight * stock.effectiveRate).toFixed(2)));
+                                        }
+                                   }}
+                                />
+                                <FormMessage />
+                              </FormItem>
                             )} />
                             <FormField control={control} name={`items.${index}.netWeight`} render={({ field: itemField }) => (
                               <FormItem><FormLabel>Net Wt.</FormLabel><Input type="number" step="0.01" placeholder="Weight" {...itemField} /><FormMessage /></FormItem>
                             )} />
                             <FormField control={control} name={`items.${index}.costOfGoods`} render={({ field: itemField }) => (
-                              <FormItem><FormLabel>Cost of Goods</FormLabel><Input type="number" step="0.01" placeholder="Cost" {...itemField} /><FormMessage /></FormItem>
+                              <FormItem><FormLabel>Cost of Goods</FormLabel><Input type="number" step="0.01" placeholder="Cost" {...itemField} readOnly className="bg-muted/50" /><FormMessage /></FormItem>
                             )} />
                             <div className="md:col-span-1 flex items-end justify-end">
                               <Button
@@ -356,5 +369,3 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
 };
 
 export const AddLocationTransferForm = React.memo(AddLocationTransferFormComponent);
-
-    
