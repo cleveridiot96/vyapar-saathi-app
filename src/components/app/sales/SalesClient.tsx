@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -20,7 +19,7 @@ import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useAppState, useAppDispatch } from "@/hooks/useAppState";
+import { useAppDataContext } from "@/contexts/AppDataContext";
 import type { Sale, SaleReturn, MasterItem } from "@/lib/types";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
@@ -88,13 +87,13 @@ export function SalesClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
   
+  const { state, dispatch } = useAppDataContext();
   const { 
-    sales, 
+    sales,
     saleReturns, 
     isLoaded, 
-  } = useAppState();
+  } = state;
   
-  const dispatch = useAppDispatch();
   const { availableStock } = useInventory();
 
 
@@ -191,8 +190,6 @@ export function SalesClient() {
       dispatch.deleteSale(itemToDelete.id);
       toast({ title: "Deleted!", description: "Sale record removed.", variant: "destructive" });
     } else {
-      // This part is tricky with event sourcing. We should dispatch a 'SALE_RETURN_DELETED' event.
-      // For now, we'll use the setter.
       dispatch.setSaleReturns(saleReturns.filter(sr => sr.id !== itemToDelete.id));
       toast({ title: "Deleted!", description: "Sale return record removed.", variant: "destructive" });
     }
@@ -204,7 +201,7 @@ export function SalesClient() {
   const handleAddOrUpdateSaleReturn = React.useCallback((srData: SaleReturn) => {
     dispatch.addReturn(srData);
     setSaleReturnToEdit(null);
-    setIsAddSaleReturnFormOpen(true);
+    setIsAddSaleReturnFormOpen(false);
     toast({ title: "Success!", description: "Sale return updated." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
   }, [dispatch, toast]);
@@ -228,6 +225,10 @@ export function SalesClient() {
   const addButtonDynamicClass = React.useMemo(() => {
     return activeTab === 'sales' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-yellow-600 hover:bg-yellow-700 text-white';
   }, [activeTab]);
+
+  if (!isLoaded) {
+    return null; // Or skeleton
+  }
 
   return (
     <div className="space-y-2 print-area">
