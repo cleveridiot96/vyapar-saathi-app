@@ -23,7 +23,6 @@ import { useAppDataContext } from "@/contexts/AppDataContext";
 import type { Purchase, PurchaseReturn, MasterItem, Sale } from "@/lib/types";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
-import { useInventory } from '@/hooks/useInventory';
 
 // Dynamic Imports
 const PurchaseTable = dynamic(() => import('@/components/app/purchases/PurchaseTable').then(mod => mod.PurchaseTable), { ssr: false });
@@ -85,9 +84,8 @@ export function PurchasesClient() {
     sales,
     masterData,
     getAllMasters,
-    inventory, // FIX: Passing this as availableStock
+    inventory,
   } = state;
-  const { availableStock } = useInventory();
 
   const [isAddPurchaseFormOpen, setIsAddPurchaseFormOpen] = React.useState(false);
   const [purchaseToEdit, setPurchaseToEdit] = React.useState<Purchase | null>(null);
@@ -234,7 +232,7 @@ export function PurchasesClient() {
           masterData={masterData}
           addOrUpdateMaster={handleMasterDataUpdate}
           getAllMasters={getAllMasters}
-          availableStock={availableStock}
+          availableStock={inventory || []}
         />
       )}
       
