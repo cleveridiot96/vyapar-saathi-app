@@ -24,6 +24,7 @@ import { useAppState, useAppDispatch } from "@/hooks/useAppState";
 import type { Sale, SaleReturn, MasterItem } from "@/lib/types";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
+import { useInventory } from '@/hooks/useInventory';
 
 const SaleTable = dynamic(() => import('@/components/app/sales/SaleTable').then(mod => mod.SaleTable), { ssr: false });
 const AddSaleForm = dynamic(() => import('@/components/app/sales/AddSaleForm').then(mod => mod.AddSaleForm), { ssr: false });
@@ -94,6 +95,7 @@ export function SalesClient() {
   } = useAppState();
   
   const dispatch = useAppDispatch();
+  const { availableStock } = useInventory();
 
 
   const [isAddSaleFormOpen, setIsAddSaleFormOpen] = React.useState(false);
@@ -268,6 +270,7 @@ export function SalesClient() {
           existingSales={sales}
           saleToEdit={saleToEdit}
           onMasterDataUpdate={handleMasterDataUpdate}
+          availableStock={availableStock}
         />
       )}
       

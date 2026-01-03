@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -25,7 +26,7 @@ import { Info, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { purchaseSchema, type PurchaseFormValues } from "@/lib/schemas/purchaseSchema";
-import type { MasterItem, Purchase, MasterItemType, Agent, ExpenseItem } from "@/lib/types";
+import type { MasterItem, Purchase, MasterItemType, Agent, ExpenseItem, AggregatedInventoryItem } from "@/lib/types";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { useToast } from "@/hooks/use-toast";
 import { MasterForm } from "@/components/app/masters/MasterForm";
@@ -50,6 +51,7 @@ interface AddPurchaseFormProps {
   };
   addOrUpdateMaster: (item: MasterItem) => void;
   getAllMasters: () => MasterItem[];
+  availableStock: AggregatedInventoryItem[];
 }
 
 export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
@@ -59,7 +61,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   purchaseToEdit,
   masterData,
   addOrUpdateMaster,
-  getAllMasters
+  getAllMasters,
+  availableStock,
 }) => {
   const { toast } = useToast();
   const { Supplier: suppliers = [], Agent: agents = [], Warehouse: warehouses = [], Transporter: transporters = [], Expense: expenses = [] } = masterData;
@@ -314,7 +317,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
             </div>
           </DialogHeader>
           
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <ScrollArea className="flex-1 -mx-6 px-6">
               <div className="px-6 pb-6">
               <FormProvider {...formMethods}>
                 <form onSubmit={formHandleSubmit(processSubmit)} className="space-y-4 pt-4">
@@ -716,7 +719,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                 </form>
               </FormProvider>
               </div>
-          </div>
+          </ScrollArea>
            <DialogFooter className="p-6 pt-4 border-t">
               <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
               <Button type="button" onClick={formHandleSubmit(processSubmit)} disabled={isSubmitting}>
@@ -739,6 +742,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
           onSubmit={handleMasterFormSubmit}
           initialData={masterItemToEdit}
           itemTypeFromButton={masterFormItemType}
+          fixedIds={[]}
+          allMasterItems={getAllMasters()}
         />
       )}
     </>

@@ -32,7 +32,7 @@ import { CalendarIcon, Info, Percent, PlusCircle, Trash2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { saleSchema, type SaleFormValues } from '@/lib/schemas/saleSchema';
-import type { MasterItem, MasterItemType, Sale, ExpenseItem, CostBreakdown } from '@/lib/types';
+import type { MasterItem, MasterItemType, Sale, ExpenseItem, CostBreakdown, AggregatedInventoryItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import {
   Accordion,
@@ -40,11 +40,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useInventory, type AggregatedInventoryItem } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
 import { DatePicker } from "@/components/ui/date-picker";
 import { useAppState, useAppDispatch } from "@/hooks/useAppState";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
@@ -57,6 +57,7 @@ interface AddSaleFormProps {
   existingSales: Sale[];
   saleToEdit?: Sale | null;
   onMasterDataUpdate: (newItem: MasterItem) => void;
+  availableStock: AggregatedInventoryItem[];
 }
 
 const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
@@ -66,11 +67,11 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   existingSales,
   saleToEdit,
   onMasterDataUpdate,
+  availableStock,
 }) => {
   const { toast } = useToast();
   const { masterData } = useAppState();
   const { Customer: customers, Transporter: transporters, Broker: brokers, Expense: expenses, Warehouse: warehouses } = masterData || {};
-  const { availableStock } = useInventory(saleToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
@@ -368,9 +369,11 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
             <DialogTitle>{saleToEdit ? 'Edit Sale' : 'Add New Sale'}</DialogTitle>
             <DialogDescription>Create a sale with one or more items.</DialogDescription>
           </DialogHeader>
+          <ScrollArea className="max-h-[80vh]">
+            <div className="p-1 pr-3">
           <TooltipProvider>
               <Form {...methods}>
-                <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto p-1 pr-3">
+                <form onSubmit={handleSubmit(processSubmit)} className="space-y-4">
                   <div className="p-4 border rounded-md shadow-sm">
                     <h3 className="text-lg font-medium mb-3 text-primary">Sale Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -630,6 +633,8 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                 </form>
               </Form>
           </TooltipProvider>
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
       {isMasterFormOpen && (
@@ -640,6 +645,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
             initialData={masterItemToEdit}
             itemTypeFromButton={masterFormItemType!}
             fixedIds={[]}
+            allMasterItems={getAllMasters()}
         />
       )}
     </>
@@ -647,5 +653,3 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
 };
 
 export const AddSaleForm = React.memo(AddSaleFormComponent);
-
-    

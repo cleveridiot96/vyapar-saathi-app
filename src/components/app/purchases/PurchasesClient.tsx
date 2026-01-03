@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -23,6 +24,7 @@ import { useAppState, useAppDispatch } from "@/hooks/useAppState";
 import type { Purchase, PurchaseReturn, MasterItem, Sale } from "@/lib/types";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
+import { useInventory } from '@/hooks/useInventory';
 
 const PurchaseTable = dynamic(() => import('@/components/app/purchases/PurchaseTable').then(mod => mod.PurchaseTable), { ssr: false });
 const AddPurchaseForm = dynamic(() => import('@/components/app/purchases/AddPurchaseForm').then(mod => mod.AddPurchaseForm), { ssr: false });
@@ -90,6 +92,7 @@ export function PurchasesClient() {
   } = useAppState();
   
   const dispatch = useAppDispatch();
+  const { availableStock } = useInventory();
 
   const [isAddPurchaseFormOpen, setIsAddPurchaseFormOpen] = React.useState(false);
   const [purchaseToEdit, setPurchaseToEdit] = React.useState<Purchase | null>(null);
@@ -258,6 +261,7 @@ export function PurchasesClient() {
           masterData={masterData}
           addOrUpdateMaster={handleMasterDataUpdate}
           getAllMasters={dispatch.getAllMasters}
+          availableStock={availableStock}
         />
       )}
       
