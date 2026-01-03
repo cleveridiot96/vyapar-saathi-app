@@ -166,18 +166,16 @@ export function StockAdjustmentsClient() {
       
       {itemToReverse && (
         <AlertDialog open={!!itemToReverse} onOpenChange={(open) => !open && setItemToReverse(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Reverse this Stock Adjustment?</AlertDialogTitle>
-              <AlertDialogDescription>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reverse this Stock Adjustment?</AlertDialogTitle>
+            <AlertDialogDescription>
                 This will create a new, opposite adjustment transaction to cancel out the selected one. The original record will remain for audit purposes.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmReversal}>Confirm Reversal</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmReversal}>Confirm Reversal</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialog>
       )}
     </div>
