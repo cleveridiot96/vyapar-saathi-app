@@ -173,12 +173,14 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={onClose}>
-        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-4xl h-[90vh] flex flex-col p-0">
+        {/* FIX 1: Added h-full flex-col to make ScrollArea work */}
+        <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-6 pb-4 flex-shrink-0">
             <DialogTitle>{transferToEdit ? 'Edit Location Transfer' : 'New Location Transfer'}</DialogTitle>
             <DialogDescription>Move stock between warehouses and account for costs.</DialogDescription>
           </DialogHeader>
           
+          {/* FIX 2: Added flex-1 min-h-0 to enable scrolling */}
           <ScrollArea className="flex-1 min-h-0">
               <div className="px-6 pb-6">
                 <FormProvider {...methods}>
@@ -264,7 +266,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                               <FormItem><FormLabel>Net Wt.</FormLabel><Input type="number" step="0.01" placeholder="Weight" {...itemField} /><FormMessage /></FormItem>
                             )} />
                             <FormField control={control} name={`items.${index}.costOfGoods`} render={({ field: itemField }) => (
-                              <FormItem><FormLabel>Cost of Goods</FormLabel><Input type="number" step="0.01" placeholder="Cost" {...itemField} readOnly className="bg-muted/50" /><FormMessage /></FormItem>
+                              <FormItem><FormLabel>Cost of Goods</FormLabel><Input type="number" step="0.01" placeholder="Cost" readOnly className="bg-muted/50" {...itemField} /><FormMessage /></FormItem>
                             )} />
                             <div className="md:col-span-1 flex items-end justify-end">
                               <Button
@@ -293,7 +295,13 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                                       <FormItem className="md:col-span-4"><FormLabel>Account</FormLabel>
                                       <Select onValueChange={itemField.onChange} value={itemField.value}>
                                           <FormControl><SelectTrigger><SelectValue placeholder="Select Account" /></SelectTrigger></FormControl>
-                                          <SelectContent>{(expenseAccounts || []).map(opt => <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>)}</SelectContent>
+                                          <SelectContent>
+                                            {(expenseAccounts || [])
+                                              .filter((v, i, a) => a.findIndex(t => t.name === v.name) === i)
+                                              .map(opt => (
+                                                <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>
+                                            ))}
+                                          </SelectContent>
                                       </Select><FormMessage />
                                       </FormItem>)} />
                                   <FormField control={control} name={`expenses.${index}.amount`} render={({ field: itemField }) => (
