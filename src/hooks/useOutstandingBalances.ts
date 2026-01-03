@@ -2,23 +2,24 @@
 "use client";
 
 import { useMemo } from 'react';
-import { useTransactions } from './useTransactions';
+import { useTransactions, useMasters } from './useTransactions';
 import type { MasterItem } from '@/lib/types';
 import { useSettings } from '@/contexts/SettingsContext';
 import { isDateInFinancialYear, isDateBeforeFinancialYear } from '@/lib/utils';
 import { parseISO } from 'date-fns';
 
 export function useOutstandingBalances() {
-    const { purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger, isTransactionsLoaded, customers, suppliers, agents, brokers, transporters, expenses, warehouses } = useTransactions();
+    const { purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger, isTransactionsLoaded } = useTransactions();
+    const { customers, suppliers, agents, brokers, transporters, expenses, warehouses, isMastersLoaded } = useMasters();
     const { financialYear } = useSettings();
 
     const allMasters = useMemo(() => {
-        return [...customers, ...suppliers, ...agents, ...brokers, ...transporters, ...warehouses, ...expenses].filter(m => !m.name.startsWith('_DELETED_'));
+        return [...(customers || []), ...(suppliers || []), ...(agents || []), ...(brokers || []), ...(transporters || []), ...(warehouses || []), ...(expenses || [])].filter(m => m && !m.name.startsWith('_DELETED_'));
     }, [customers, suppliers, agents, brokers, transporters, warehouses, expenses]);
 
 
     const balances = useMemo(() => {
-        if (!isTransactionsLoaded) {
+        if (!isTransactionsLoaded || !isMastersLoaded) {
             return new Map<string, number>();
         }
 
@@ -32,7 +33,7 @@ export function useOutstandingBalances() {
         });
         
         const allTxs = [
-            ...purchases, ...sales, ...receipts, ...payments, ...purchaseReturns, ...saleReturns, ...ledger
+            ...(purchases || []), ...(sales || []), ...(receipts || []), ...(payments || []), ...(purchaseReturns || []), ...(saleReturns || []), ...(ledger || [])
         ].filter(tx => tx && tx.date);
         
         // 2. Process all transactions to establish final balances
@@ -73,9 +74,9 @@ export function useOutstandingBalances() {
                 }
             }
             // Purchase Returns decrease payables
-            else if ('originalPurchaseId' in tx) { // Purchase Return
+            else if ('originalPurchaseId' in tx && 'returnAmount' in tx) { // Purchase Return
                  const pr = tx as typeof purchaseReturns[0];
-                 const p = purchases.find(p => p.id === pr.originalPurchaseId);
+                 const p = (purchases || []).find(p => p.id === pr.originalPurchaseId);
                  if (p) {
                     const primaryCreditorId = p.agentId || p.supplierId;
                     if(primaryCreditorId) {
@@ -84,9 +85,9 @@ export function useOutstandingBalances() {
                 }
             } 
             // Sale Returns decrease receivables
-            else if ('originalSaleId' in tx) { // Sale Return
+            else if ('originalSaleId' in tx && 'returnAmount' in tx) { // Sale Return
                 const sr = tx as typeof saleReturns[0];
-                const s = sales.find(s => s.id === sr.originalSaleId);
+                const s = (sales || []).find(s => s.id === sr.originalSaleId);
                 if (s) {
                     const primaryDebtorId = s.brokerId || s.customerId;
                     if(primaryDebtorId) {
@@ -95,14 +96,14 @@ export function useOutstandingBalances() {
                 }
             }
             // Pending expenses increase payables
-            else if ('relatedVoucher' in tx && tx.type === 'Expense' && tx.partyId && tx.paymentMode === 'Pending') { // Ledger Entry
+            else if ('relatedVoucher' in tx && 'type' in tx && tx.type === 'Expense' && 'partyId' in tx && tx.partyId && 'paymentMode' in tx && tx.paymentMode === 'Pending') { // Ledger Entry
                  balancesMap.set(tx.partyId, (balancesMap.get(tx.partyId) || 0) - (tx.debit - tx.credit)); // Expense is a debit, so it's payable
             }
         });
 
 
         return balancesMap;
-    }, [allMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger, isTransactionsLoaded]);
+    }, [allMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger, isTransactionsLoaded, isMastersLoaded]);
 
     const { receivableParties, payableParties } = useMemo(() => {
         const receivableParties: MasterItem[] = [];
@@ -141,8 +142,6 @@ export function useOutstandingBalances() {
         payableParties,
         getPartyName,
         balances,
-        isBalancesLoading: !isTransactionsLoaded
+        isBalancesLoading: !isTransactionsLoaded || !isMastersLoaded
     };
 }
-
-    

@@ -1,16 +1,17 @@
+
 "use client";
 
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { useFinancialYear } from "@/contexts/SettingsContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
 export const OutstandingSummary = () => {
-  const { financialYear: currentFinancialYearString } = useFinancialYear();
+  const { financialYear } = useSettings();
   const { receivableParties, payableParties, isBalancesLoading } = useOutstandingBalances();
 
   const { totalReceivable, totalPayable } = useMemo(() => {
@@ -44,7 +45,7 @@ export const OutstandingSummary = () => {
   return (
     <Card className="col-span-1 lg:col-span-1 text-white" style={{background: 'linear-gradient(to top right, #34d399, #2563eb)'}}>
       <CardHeader>
-        <CardTitle className="text-xl font-semibold">OUTSTANDING BALANCES (FY {currentFinancialYearString})</CardTitle>
+        <CardTitle className="text-xl font-semibold">OUTSTANDING BALANCES (FY {financialYear})</CardTitle>
         <CardDescription className="text-white/80">A SUMMARY OF TOTAL MONEY TO BE PAID AND RECEIVED. CLICK A CARD TO SEE DETAILS.</CardDescription>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
