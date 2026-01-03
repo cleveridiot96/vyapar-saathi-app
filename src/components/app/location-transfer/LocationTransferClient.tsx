@@ -1,7 +1,8 @@
+
 "use client";
 
 import * as React from "react";
-import type { LocationTransfer, LedgerEntry } from "@/lib/types";
+import type { LocationTransfer, LedgerEntry, MasterItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, ArrowRightLeft, ListChecks, Boxes, Printer, Trash2, Edit, Download, MoreVertical } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +33,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { cn } from "@/lib/utils";
-import { useAppDataContext } from "@/contexts/AppDataContext";
+import { useTransactions } from "@/hooks/useTransactions";
 import { useInventory } from '@/hooks/useInventory';
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
@@ -100,8 +101,26 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 export function LocationTransferClient() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
-  const { state, dispatch } = useAppDataContext();
-  const { locationTransfers } = state;
+  const { 
+    locationTransfers, 
+    setLocationTransfers, 
+    setLedger,
+    setPurchases,
+    setSales,
+    setPayments,
+    setReceipts,
+    setAdjustments,
+    setPurchaseReturns,
+    setSaleReturns,
+    setCustomers,
+    setSuppliers,
+    setAgents,
+    setBrokers,
+    setTransporters,
+    setWarehouses,
+    setExpenses,
+    ...masterDataSets
+  } = useTransactions();
   
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [transferToEdit, setTransferToEdit] = React.useState<LocationTransfer | null>(null);
@@ -112,6 +131,39 @@ export function LocationTransferClient() {
   
   const { availableStock, isLoading: isInventoryLoading } = useInventory(transferToEdit?.id);
 
+  const getAllMasters = React.useCallback(() => {
+    return [
+        ...masterDataSets.customers, ...masterDataSets.suppliers, ...masterDataSets.agents,
+        ...masterDataSets.brokers, ...masterDataSets.transporters, ...masterDataSets.warehouses,
+        ...masterDataSets.expenses
+    ];
+  }, [masterDataSets]);
+
+  const addOrUpdateMaster = (item: MasterItem) => {
+    const setterMap = {
+        Customer: setCustomers,
+        Supplier: setSuppliers,
+        Agent: setAgents,
+        Broker: setBrokers,
+        Transporter: setTransporters,
+        Warehouse: setWarehouses,
+        Expense: setExpenses,
+        Product: () => {},
+    };
+    const setter = setterMap[item.type];
+    if (setter) {
+        setter(prev => {
+            const index = prev.findIndex(m => m.id === item.id);
+            if (index > -1) {
+                const newItems = [...prev];
+                newItems[index] = item;
+                return newItems;
+            }
+            return [item, ...prev];
+        });
+    }
+  };
+
   React.useEffect(() => {
     if (! dateRange) {
         const today = new Date();
@@ -120,11 +172,19 @@ export function LocationTransferClient() {
   }, [dateRange]);
 
   const handleAddOrUpdateTransfer = React.useCallback((transfer: LocationTransfer) => {
-    dispatch.addTransfer(transfer);
+    setLocationTransfers(prev => {
+        const index = prev.findIndex(t => t.id === transfer.id);
+        if (index > -1) {
+            const newTransfers = [...prev];
+            newTransfers[index] = transfer;
+            return newTransfers;
+        }
+        return [transfer, ...prev];
+    });
     toast({ title: transferToEdit ? "Transfer Updated" : "Transfer Created", description: transferToEdit ? "Location transfer details saved." : "New location transfer recorded successfully." });
     setTransferToEdit(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [dispatch, toast, transferToEdit]);
+  }, [setLocationTransfers, toast, transferToEdit]);
 
 
   const handleEditTransfer = React.useCallback((transfer: LocationTransfer) => { setTransferToEdit(transfer); setIsAddFormOpen(true); }, []);
@@ -350,6 +410,14 @@ export function LocationTransferClient() {
           }}
           onSubmit={handleAddOrUpdateTransfer}
           transferToEdit={transferToEdit}
+          masterData={{
+            Warehouse: masterDataSets.warehouses,
+            Transporter: masterDataSets.transporters,
+            Expense: masterDataSets.expenses
+          }}
+          addOrUpdateMaster={addOrUpdateMaster}
+          getAllMasters={getAllMasters}
+          availableStock={availableStock}
         />
       )}
 

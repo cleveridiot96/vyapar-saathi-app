@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -32,7 +33,6 @@ import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useAppDataContext } from "@/contexts/AppDataContext";
 import dynamic from 'next/dynamic';
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
@@ -43,6 +43,14 @@ interface AddLocationTransferFormProps {
   onClose: () => void;
   onSubmit: (data: LocationTransfer) => void;
   transferToEdit?: LocationTransfer | null;
+  masterData: {
+    Warehouse?: MasterItem[];
+    Transporter?: MasterItem[];
+    Expense?: MasterItem[];
+  };
+  addOrUpdateMaster: (item: MasterItem) => void;
+  getAllMasters: () => MasterItem[];
+  availableStock: AggregatedInventoryItem[];
 }
 
 const locationTransferSchema = z.object({
@@ -72,13 +80,19 @@ const locationTransferSchema = z.object({
 });
 type LocationTransferFormValues = z.infer<typeof locationTransferSchema>;
 
-const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> = ({ isOpen, onClose, onSubmit, transferToEdit }) => {
+const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSubmit, 
+  transferToEdit,
+  masterData,
+  addOrUpdateMaster,
+  getAllMasters,
+  availableStock
+}) => {
   const { toast } = useToast();
-  const { state: appState, dispatch } = useAppDataContext();
-  
-  const { masterData, inventory: availableStock } = appState;
   const { Warehouse: warehouses = [], Transporter: transporters = [], Expense: expenseAccounts = [] } = masterData;
-  const allMasters = appState.getAllMasters();
+  const allMasters = getAllMasters();
   
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isMasterFormOpen, setIsMasterFormOpen] = React.useState(false);
@@ -132,10 +146,10 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   }, [allMasters]);
 
   const handleMasterFormSubmit = React.useCallback((newItem: MasterItem) => {
-      dispatch.addOrUpdateMaster(newItem);
+      addOrUpdateMaster(newItem);
       toast({ title: "Success", description: `${newItem.type} added/updated.` });
       setIsMasterFormOpen(false);
-  }, [dispatch, toast]);
+  }, [addOrUpdateMaster, toast]);
 
   const processSubmit = (values: LocationTransferFormValues) => {
     setIsSubmitting(true);
@@ -222,7 +236,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                           <div key={field.id} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end p-3 border-b">
                             <FormField control={control} name={`items.${index}.originalLotNumber`} render={({ field: itemField }) => (
                               <FormItem className="md:col-span-2"><FormLabel>Original Lot</FormLabel>
-                                <MasterDataCombobox options={stockOptions} placeholder={appState.isCalculating ? "Calculating..." : "Select stock"} {...itemField} 
+                                <MasterDataCombobox options={stockOptions} placeholder={"Select stock"} {...itemField} 
                                   onChange={(val) => {
                                     itemField.onChange(val);
                                     const stock = availableStock.find(s => s.lotNumber === val);
