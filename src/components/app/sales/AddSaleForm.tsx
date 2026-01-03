@@ -42,7 +42,6 @@ import {
 } from "@/components/ui/accordion";
 import dynamic from 'next/dynamic';
 import { DatePicker } from "@/components/ui/date-picker";
-import { useAppState, useAppDispatch } from "@/hooks/useAppState";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -58,6 +57,13 @@ interface AddSaleFormProps {
   saleToEdit?: Sale | null;
   onMasterDataUpdate: (newItem: MasterItem) => void;
   availableStock: AggregatedInventoryItem[];
+  masterData: {
+      Customer?: MasterItem[];
+      Transporter?: MasterItem[];
+      Broker?: MasterItem[];
+      Expense?: MasterItem[];
+      Warehouse?: MasterItem[];
+  };
 }
 
 const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
@@ -68,9 +74,9 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   saleToEdit,
   onMasterDataUpdate,
   availableStock,
+  masterData,
 }) => {
   const { toast } = useToast();
-  const { masterData } = useAppState();
   const { Customer: customers, Transporter: transporters, Broker: brokers, Expense: expenses, Warehouse: warehouses } = masterData || {};
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -645,7 +651,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
             initialData={masterItemToEdit}
             itemTypeFromButton={masterFormItemType!}
             fixedIds={[]}
-            allMasterItems={getAllMasters()}
+            allMasterItems={Object.values(masterData).flat()}
         />
       )}
     </>
@@ -653,5 +659,3 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
 };
 
 export const AddSaleForm = React.memo(AddSaleFormComponent);
-
-    
