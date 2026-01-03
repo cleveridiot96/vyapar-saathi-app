@@ -20,6 +20,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAppState } from '@/hooks/useAppState';
 import { format } from 'date-fns';
+import { db } from '@/lib/db';
 
 export function FormatButton() {
   const { printSettings, setPrintSettings } = useSettings();
@@ -34,13 +35,38 @@ export function FormatButton() {
     }));
   };
 
-  const handleEmergencyFormat = () => {
+  const handleEmergencyFormat = async () => {
     setIsFormatting(true);
     
     try {
-      // 1. Create backup data from events
+      // 1. Create a complete backup from all Dexie tables
+      const [
+          allMasters, allPurchases, allSales, allAdjustments, allTransfers,
+          allPurchaseReturns, allSaleReturns, allPayments, allReceipts, allLedger
+        ] = await Promise.all([
+          db.masters.toArray(),
+          db.purchases.toArray(),
+          db.sales.toArray(),
+          db.adjustments.toArray(),
+          db.locationTransfers.toArray(),
+          db.purchaseReturns.toArray(),
+          db.saleReturns.toArray(),
+          db.payments.toArray(),
+          db.receipts.toArray(),
+          db.ledger.toArray(),
+        ]);
+      
       const dataToBackup = {
-        events: appState.events,
+        masters: allMasters,
+        purchases: allPurchases,
+        sales: allSales,
+        adjustments: allAdjustments,
+        locationTransfers: allTransfers,
+        purchaseReturns: allPurchaseReturns,
+        saleReturns: allSaleReturns,
+        payments: allPayments,
+        receipts: allReceipts,
+        ledger: allLedger,
       };
 
       const blob = new Blob([JSON.stringify(dataToBackup, null, 2)], { type: "application/json" });
@@ -63,11 +89,11 @@ export function FormatButton() {
 
       // 3. Proceed with format after a short delay
       setTimeout(() => {
-        // Clear IndexedDB by deleting the database
-        const deleteRequest = indexedDB.deleteDatabase('InventoryDB');
+        // Clear IndexedDB by deleting the correct database
+        const deleteRequest = indexedDB.deleteDatabase('vyapar-saathi-db');
         
         deleteRequest.onsuccess = () => {
-            console.log("Database deleted successfully");
+            console.log("Database 'vyapar-saathi-db' deleted successfully");
 
             toast({
               title: "Format Complete",
