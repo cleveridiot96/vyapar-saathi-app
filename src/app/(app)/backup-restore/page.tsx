@@ -17,31 +17,20 @@ export default function BackupRestorePage() {
 
     // This is a simplified example. A real app might track this more granularly.
     useLiveQuery(async () => {
-        db.on('changes', () => setHasUnsavedChanges(true));
+        const checkChanges = () => setHasUnsavedChanges(true);
+        db.on('changes', checkChanges);
+        return () => db.on('changes').unsubscribe(checkChanges);
     });
 
     const handleSaveData = async () => {
         try {
-            const [
-              masters, purchases, sales, adjustments, locationTransfers,
-              purchaseReturns, saleReturns, payments, receipts, ledger
-            ] = await Promise.all([
-              db.masters.toArray(),
-              db.purchases.toArray(),
-              db.sales.toArray(),
-              db.adjustments.toArray(),
-              db.locationTransfers.toArray(),
-              db.purchaseReturns.toArray(),
-              db.saleReturns.toArray(),
-              db.payments.toArray(),
-              db.receipts.toArray(),
-              db.ledger.toArray(),
-            ]);
+            const allTables = db.tables.map(table => table.name);
+            const dataToSave: { [key: string]: any[] } = {};
 
-            const dataToSave = {
-                masters, purchases, sales, adjustments, locationTransfers,
-                purchaseReturns, saleReturns, payments, receipts, ledger
-            };
+            for (const tableName of allTables) {
+                const table = db.table(tableName);
+                dataToSave[tableName] = await table.toArray();
+            }
 
             const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
