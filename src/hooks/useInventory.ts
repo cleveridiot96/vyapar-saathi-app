@@ -1,13 +1,11 @@
-
 "use client";
 
-import { useAppDataContext } from '@/contexts/AppDataContext';
+import { useAppState } from '@/hooks/useAppState';
 import type { AggregatedInventoryItem } from '@/lib/types';
 import { useMemo } from 'react';
 
 export function useInventory(saleToEditId?: string | null) {
-  const { state } = useAppDataContext();
-  const { inventory, sales, isLoaded, isCalculating } = state;
+  const { inventory, sales, isLoaded, isCalculating } = useAppState();
 
   const adjustedInventory = useMemo(() => {
     if (!saleToEditId || !isLoaded) {

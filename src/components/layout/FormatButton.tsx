@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -18,7 +19,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { useAppState } from '@/hooks/useAppState';
 import { format } from 'date-fns';
 import { db } from '@/lib/db';
 
@@ -26,7 +26,6 @@ export function FormatButton() {
   const { printSettings, setPrintSettings } = useSettings();
   const { toast } = useToast();
   const [isFormatting, setIsFormatting] = useState(false);
-  const appState = useAppState();
 
   const handleToggle = (key: keyof typeof printSettings) => {
     setPrintSettings(prev => ({

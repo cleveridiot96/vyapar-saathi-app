@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { initSearchEngine, searchData, type SearchableItem } from '@/lib/searchEngine';
-import { useAppState } from '@/hooks/useAppState';
+import { db } from '@/lib/db';
 import { buildSearchData } from '@/lib/buildSearchData';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from '@/components/ui/command';
 import { Search as SearchIcon } from 'lucide-react';
@@ -42,29 +42,29 @@ const SearchBar = () => {
   const router = useRouter();
   const commandRef = useRef<HTMLDivElement>(null);
   
-  const { 
-    purchases,
-    sales, 
-    payments, 
-    receipts, 
-    getAllMasters, 
-    locationTransfers,
-    isLoaded,
-    adjustments,
-    purchaseReturns,
-    saleReturns,
-  } = useAppState();
-  
-  const initializeIndex = useCallback(() => {
-    if (isLoaded) {
-      try {
-        const allMasters = getAllMasters() ?? [];
+  const initializeIndex = useCallback(async () => {
+    try {
+        const [
+          purchases, sales, payments, receipts, masters,
+          locationTransfers, adjustments, purchaseReturns, saleReturns
+        ] = await Promise.all([
+          db.purchases.toArray(),
+          db.sales.toArray(),
+          db.payments.toArray(),
+          db.receipts.toArray(),
+          db.masters.toArray(),
+          db.locationTransfers.toArray(),
+          db.adjustments.toArray(),
+          db.purchaseReturns.toArray(),
+          db.saleReturns.toArray(),
+        ]);
+        
         const searchDataPayload = buildSearchData({
           sales,
           purchases,
           payments,
           receipts,
-          masters: allMasters,
+          masters,
           locationTransfers,
           adjustments,
           purchaseReturns,
@@ -74,8 +74,7 @@ const SearchBar = () => {
       } catch(error) {
         console.error("Search initialization failed:", error);
       }
-    }
-  }, [isLoaded, sales, purchases, payments, receipts, getAllMasters, locationTransfers, adjustments, purchaseReturns, saleReturns]);
+  }, []);
 
   useEffect(() => {
     initializeIndex();
