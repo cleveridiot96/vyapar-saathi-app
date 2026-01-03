@@ -23,7 +23,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { LocationTransfer, MasterItem, ExpenseItem, MasterItemType, AggregatedInventoryItem } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -32,7 +31,7 @@ import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useAppState, useAppDispatch } from "@/hooks/useAppState";
+import { useAppDataContext } from "@/contexts/AppDataContext";
 import dynamic from 'next/dynamic';
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
@@ -41,6 +40,7 @@ const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').t
 interface AddLocationTransferFormProps {
   isOpen: boolean;
   onClose: () => void;
+  onSubmit: (data: LocationTransfer) => void;
   transferToEdit?: LocationTransfer | null;
 }
 
@@ -65,21 +65,19 @@ const locationTransferSchema = z.object({
     partyName: z.string().optional(),
   })).optional(),
   notes: z.string().optional(),
+}).refine(data => data.fromLocationId !== data.toLocationId, {
+    message: "Source and destination warehouses cannot be the same.",
+    path: ["toLocationId"],
 });
 type LocationTransferFormValues = z.infer<typeof locationTransferSchema>;
 
-const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> = ({ isOpen, onClose, transferToEdit }) => {
+const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> = ({ isOpen, onClose, onSubmit, transferToEdit }) => {
   const { toast } = useToast();
-  const appState = useAppState();
-  const dispatch = useAppDispatch();
+  const { state: appState, dispatch } = useAppDataContext();
   
-  const { masterData } = appState;
+  const { masterData, inventory: availableStock } = appState;
   const { Warehouse: warehouses = [], Transporter: transporters = [], Expense: expenseAccounts = [] } = masterData;
   const allMasters = appState.getAllMasters();
-  
-  const availableStock = React.useMemo(() => 
-    appState.inventory.filter(item => item.currentBags > 0.01)
-  , [appState.inventory]);
   
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isMasterFormOpen, setIsMasterFormOpen] = React.useState(false);
@@ -160,14 +158,14 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
       transporterId: values.transporterId,
     };
     
-    dispatch.addTransfer(transferData);
+    onSubmit(transferData);
     setIsSubmitting(false);
     onClose();
   };
 
   const stockOptions = React.useMemo(() => 
     availableStock
-      .filter(s => s.locationId === fromLocationId)
+      .filter(s => s.locationId === fromLocationId && s.currentBags > 0.01)
       .map(s => ({ value: s.lotNumber, label: `${s.lotNumber} (${s.currentBags} bags)`}))
   , [availableStock, fromLocationId]);
 
@@ -179,8 +177,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
           <DialogTitle>{transferToEdit ? 'Edit Location Transfer' : 'New Location Transfer'}</DialogTitle>
           <DialogDescription>Move stock between warehouses and account for costs.</DialogDescription>
         </DialogHeader>
-        <div className="flex-1 min-h-0">
-          <ScrollArea className="h-full">
+        <ScrollArea className="flex-1 min-h-0">
             <div className="px-6 pb-6">
               <FormProvider {...methods}>
                 <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 pt-4">
@@ -198,7 +195,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                         </FormItem>
                       )}
                     />
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
                     <FormField control={control} name="fromLocationId" render={({ field }) => (
                       <FormItem><FormLabel>From Warehouse</FormLabel>
                         <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" onAddNew={() => handleOpenMasterForm("Warehouse")} onEdit={(id) => handleEditMasterItem(id)} {...field} />
@@ -299,7 +296,6 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
               </FormProvider>
             </div>
           </ScrollArea>
-        </div>
         <DialogFooter className="p-6 pt-4 border-t">
           <DialogClose asChild><Button variant="outline" type="button">Cancel</Button></DialogClose>
           <Button type="button" onClick={handleSubmit(processSubmit)} disabled={isSubmitting}>

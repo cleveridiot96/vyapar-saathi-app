@@ -32,7 +32,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { cn } from "@/lib/utils";
-import { useAppState, useAppDispatch } from "@/hooks/useAppState";
+import { useAppDataContext } from "@/contexts/AppDataContext";
 import { useInventory } from '@/hooks/useInventory';
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
@@ -50,7 +50,7 @@ interface ExpandedTransferHistoryItem extends LocationTransfer {
 
 function openPrintWindow(htmlContent: string, title = "Document") {
   const printWindow = window.open("", "_blank", "noopener,noreferrer");
-  if (! printWindow) {
+  if (!printWindow) {
     alert("Please allow pop-ups to print this document.");
     return;
   }
@@ -100,8 +100,8 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 export function LocationTransferClient() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
-  const { locationTransfers, addTransfer } = useAppDispatch();
-  const appState = useAppState();
+  const { state, dispatch } = useAppDataContext();
+  const { locationTransfers } = state;
   
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [transferToEdit, setTransferToEdit] = React.useState<LocationTransfer | null>(null);
@@ -120,12 +120,11 @@ export function LocationTransferClient() {
   }, [dateRange]);
 
   const handleAddOrUpdateTransfer = React.useCallback((transfer: LocationTransfer) => {
-    // This now just dispatches an event
-    addTransfer(transfer);
+    dispatch.addTransfer(transfer);
     toast({ title: transferToEdit ? "Transfer Updated" : "Transfer Created", description: transferToEdit ? "Location transfer details saved." : "New location transfer recorded successfully." });
     setTransferToEdit(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [addTransfer, toast, transferToEdit]);
+  }, [dispatch, toast, transferToEdit]);
 
 
   const handleEditTransfer = React.useCallback((transfer: LocationTransfer) => { setTransferToEdit(transfer); setIsAddFormOpen(true); }, []);
@@ -133,8 +132,6 @@ export function LocationTransferClient() {
 
   const confirmDeleteTransfer = React.useCallback(() => {
     if (itemToDelete) {
-      // In a real event-sourced system, you'd dispatch a 'TRANSFER_DELETED' event
-      // For now, this is a placeholder.
       toast({ title:  "Deletion not implemented", description: "This is a prototype.", variant: "destructive" });
       setItemToDelete(null);
     }
@@ -148,7 +145,7 @@ export function LocationTransferClient() {
   const expandedTransfers = React.useMemo(() => {
     if (isAppHydrating || !dateRange?. from) return [];
     
-    const filtered = appState.locationTransfers.filter(lt => isDateInFinancialYear(lt.date, financialYear) && new Date(lt.date) >= dateRange.from!  && new Date(lt.date) <= (dateRange. to || new Date()));
+    const filtered = locationTransfers.filter(lt => isDateInFinancialYear(lt.date, financialYear) && new Date(lt.date) >= dateRange.from!  && new Date(lt.date) <= (dateRange. to || new Date()));
     
     const flatList:  ExpandedTransferHistoryItem[] = [];
     filtered.forEach(transfer => {
@@ -160,7 +157,7 @@ export function LocationTransferClient() {
     });
 
     return flatList. sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [appState.locationTransfers, financialYear, isAppHydrating, dateRange]);
+  }, [locationTransfers, financialYear, isAppHydrating, dateRange]);
   
   const transferHistoryTotals = React.useMemo(() => {
     if (! expandedTransfers || expandedTransfers.length === 0) {
@@ -172,29 +169,20 @@ export function LocationTransferClient() {
         totalWeight += transfer.item.netWeight;
         const totalWeightForCalc = transfer.items.reduce((sum, i) => sum + i.netWeight, 0);
         const perKgExpense = (transfer.totalTransferCost && totalWeightForCalc > 0) ? transfer.totalTransferCost / totalWeightForCalc : 0;
-        const finalLandedCost = (transfer.item as any).preTransferLandedCost || 0 + perKgExpense;
+        const sourceStock = availableStock.find(s => s.lotNumber === transfer.item.originalLotNumber);
+        const originalLandedCost = sourceStock?.effectiveRate || 0;
+        const finalLandedCost = originalLandedCost + perKgExpense;
         totalValue += finalLandedCost * transfer.item.netWeight;
     });
     const weightedAverageLandedCost = totalWeight > 0 ? totalValue / totalWeight :  0;
     return { totalBags, totalWeight, totalValue, weightedAverageLandedCost };
-  }, [expandedTransfers]);
+  }, [expandedTransfers, availableStock]);
   
   const addButtonDynamicClass = React.useMemo(() => {
     if (activeTab === 'stockOverview') return 'bg-sky-600 hover:bg-sky-700 text-white';
     if (activeTab === 'transferHistory') return 'bg-teal-600 hover:bg-teal-700 text-white';
     return 'bg-primary hover:bg-primary/90';
   }, [activeTab]);
-
-  const setDateQuickFilter = (preset: 'today' | 'yesterday' | 'dayBeforeYesterday') => {
-    const today = new Date();
-    let from, to;
-    switch (preset) {
-      case 'today':  from = startOfDay(today); to = endOfDay(today); break;
-      case 'yesterday': from = startOfDay(subDays(today, 1)); to = endOfDay(subDays(today, 1)); break;
-      case 'dayBeforeYesterday': from = startOfDay(subDays(today, 2)); to = endOfDay(subDays(today, 2)); break;
-    }
-    setDateRange({ from, to });
-  };
 
   if (isAppHydrating || isInventoryLoading) {
     return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p className="text-lg text-muted-foreground">Loading data...</p></div>;
@@ -230,7 +218,7 @@ export function LocationTransferClient() {
           </CardHeader>
           <TabsContent value="stockOverview">
             <CardContent className="pt-6">
-                <CardDescription className="mb-4 text-sm no-print">Current stock levels for FY {financialYear}.  Hover over landed rate for cost breakdown.</CardDescription>
+                <CardDescription className="mb-4 text-sm no-print">Current stock levels for FY {financialYear}. Hover over landed rate for cost breakdown.</CardDescription>
                 <ScrollArea className="h-[400px] border rounded-md print:h-auto print:overflow-visible">
                     <Table size="sm"><TableHeader><TableRow>
                         <TableHead>WAREHOUSE</TableHead>
@@ -246,7 +234,7 @@ export function LocationTransferClient() {
                                     <TableCell><Tooltip><TooltipTrigger asChild><span className="truncate max-w-[150px] inline-block">{item.locationName || item.locationId}</span></TooltipTrigger><TooltipContent><p>{item.locationName || item.locationId}</p></TooltipContent></Tooltip></TableCell>
                                     <TableCell><Tooltip><TooltipTrigger asChild><span className="truncate max-w-[150px] inline-block">{item. lotNumber}</span></TooltipTrigger><TooltipContent><p>{item.lotNumber}</p></TooltipContent></Tooltip></TableCell>
                                     <TableCell className="text-right font-medium">{Math.round(item.currentBags).toLocaleString()}</TableCell>
-                                    <TableCell className="text-right">{item.averageWeightPerBag ?  (item.currentBags * item.averageWeightPerBag).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}) : 'N/A'}</TableCell>
+                                    <TableCell className="text-right">{item.currentWeight ? (item.currentWeight).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}) : 'N/A'}</TableCell>
                                     <TableCell className="text-right font-semibold text-primary">
                                         <Tooltip>
                                             <TooltipTrigger asChild>
@@ -272,13 +260,6 @@ export function LocationTransferClient() {
             <CardContent className="pt-6">
               <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-2 no-print">
                 <DatePickerWithRange date={dateRange} onDateChange={setDateRange} className="max-w-sm w-full"/>
-                 <div className="flex gap-1 ml-auto">
-                    <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('today')}>Today</Button>
-                    <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('yesterday')}>Yesterday</Button>
-                    <Button variant="outline" size="sm" onClick={() => setDateQuickFilter('dayBeforeYesterday')}>
-                        {formatDateFn(subDays(new Date(), 2), 'EEEE')}
-                    </Button>
-                </div>
               </div>
               <ScrollArea className="h-[400px] border rounded-md print:h-auto print:overflow-visible">
                 <Table size="sm">
@@ -298,7 +279,9 @@ export function LocationTransferClient() {
                     {expandedTransfers.map(transfer => {
                        const totalWeightForCalc = transfer.items.reduce((sum, i) => sum + i.netWeight, 0);
                        const perKgExpense = (transfer.totalTransferCost && totalWeightForCalc > 0) ? transfer.totalTransferCost / totalWeightForCalc : 0;
-                       const finalLandedCost = ((transfer.item as any).preTransferLandedCost || 0) + perKgExpense;
+                       const sourceStock = availableStock.find(s => s.lotNumber === transfer.item.originalLotNumber);
+                       const originalLandedCost = sourceStock?.effectiveRate || 0;
+                       const finalLandedCost = originalLandedCost + perKgExpense;
                        const totalValue = finalLandedCost * transfer.item.netWeight;
                        return (
                       <TableRow key={`${transfer.id}${KEY_SEPARATOR}${transfer.item.originalLotNumber}`} className="uppercase">
@@ -365,6 +348,7 @@ export function LocationTransferClient() {
             setIsAddFormOpen(false);
             setTransferToEdit(null);
           }}
+          onSubmit={handleAddOrUpdateTransfer}
           transferToEdit={transferToEdit}
         />
       )}
