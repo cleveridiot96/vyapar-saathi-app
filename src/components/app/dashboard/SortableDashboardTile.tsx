@@ -20,7 +20,7 @@ export function SortableDashboardTile({ id, children, isEditMode }: SortableDash
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+  } = useSortable({ id, disabled: !isEditMode });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
