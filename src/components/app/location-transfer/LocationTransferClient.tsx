@@ -100,8 +100,9 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 export function LocationTransferClient() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
-  const { locationTransfers, addTransfer } = useAppDispatch();
+  const { addTransfer } = useAppDispatch();
   const appState = useAppState();
+  const { locationTransfers } = appState;
   
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [transferToEdit, setTransferToEdit] = React.useState<LocationTransfer | null>(null);

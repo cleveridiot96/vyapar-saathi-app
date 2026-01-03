@@ -52,10 +52,10 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
         }
       : {
           date: new Date(),
-          originalPurchaseId: undefined,
-          originalLotNumber: undefined,
-          quantityReturned: undefined,
-          netWeightReturned: undefined,
+          originalPurchaseId: "",
+          originalLotNumber: "",
+          quantityReturned: 0,
+          netWeightReturned: 0,
           returnReason: "",
           notes: "",
         },
@@ -78,7 +78,7 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
             returnReason: purchaseReturnToEdit.returnReason || "",
             notes: purchaseReturnToEdit.notes || "",
           }
-        : { date: new Date(), originalPurchaseId: undefined, originalLotNumber: undefined, quantityReturned: undefined, netWeightReturned: undefined, returnReason: "", notes: "" };
+        : { date: new Date(), originalPurchaseId: "", originalLotNumber: "", quantityReturned: 0, netWeightReturned: 0, returnReason: "", notes: "" };
       reset(defaultVals);
       setSelectedOriginalPurchase(purchaseReturnToEdit ? purchases.find(p => p.id === purchaseReturnToEdit.originalPurchaseId) || null : null);
       setNetWeightReturnedManuallySet(!!purchaseReturnToEdit?.netWeightReturned);

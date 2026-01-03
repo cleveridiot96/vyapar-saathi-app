@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { MasterDataCombobox } from '@/components/shared/MasterDataCombobox';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useAppState } from '@/hooks/useAppState';
 import { useHydrated } from '@/hooks/useHydrated';
 
 interface LotHistoryEntry {
@@ -42,7 +42,7 @@ export function LotLedgerClient() {
   const [activeLot, setActiveLot] = useState(lotFromQuery || '');
   const hydrated = useHydrated();
 
-  const { purchases, sales, locationTransfers, purchaseReturns, saleReturns, isTransactionsLoaded } = useTransactions();
+  const { purchases, sales, locationTransfers, purchaseReturns, saleReturns, isLoaded } = useAppState();
 
   useEffect(() => {
     if (lotFromQuery) {
@@ -61,7 +61,7 @@ export function LotLedgerClient() {
   };
 
   const lotHistory = useMemo(() => {
-    if (!activeLot || !hydrated || !isTransactionsLoaded) return [];
+    if (!activeLot || !hydrated || !isLoaded) return [];
     
     const history: LotHistoryEntry[] = [];
 
@@ -152,10 +152,10 @@ export function LotLedgerClient() {
     });
 
     return history.sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime());
-  }, [activeLot, hydrated, purchases, sales, locationTransfers, purchaseReturns, saleReturns, isTransactionsLoaded]);
+  }, [activeLot, hydrated, purchases, sales, locationTransfers, purchaseReturns, saleReturns, isLoaded]);
   
   const allSystemLots = useMemo(() => {
-    if (!hydrated || !isTransactionsLoaded) return [];
+    if (!hydrated || !isLoaded) return [];
     const lots = new Set<string>();
     purchases.forEach(p => p.items.forEach(i => lots.add(i.lotNumber)));
     locationTransfers.forEach(lt => {

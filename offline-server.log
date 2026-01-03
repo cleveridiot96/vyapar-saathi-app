@@ -1,0 +1,123 @@
+
+> nextn@0.1.0 offline-start
+> node offline-server.js
+
+Building the Next.js application for production...
+
+> nextn@0.1.0 build
+> NODE_ENV=production next build
+
+
+   ▲ Next.js 15.0.7
+
+
+
+   Creating an optimized production build ...
+
+ ✓ Compiled successfully
+
+   Skipping validation of types
+
+   Skipping linting
+
+   Collecting page data ...
+
+   Generating static pages (0/23) ...
+
+   Generating static pages (5/23)
+
+   Generating static pages (11/23)
+
+   Generating static pages (17/23)
+
+ ✓ Generating static pages (23/23)
+
+   Finalizing page optimization ...
+
+   Collecting build traces ...
+
+
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    141 B           101 kB
+├ ○ /_not-found                          905 B           101 kB
+├ ○ /accounts-ledger                     6.88 kB         132 kB
+├ ○ /backup-restore                      4.26 kB         123 kB
+├ ○ /cash-book                           12.6 kB         186 kB
+├ ○ /dashboard                           22.8 kB         231 kB
+├ ○ /daybook                             24.8 kB         209 kB
+├ ○ /financial-summary                   3.35 kB         116 kB
+├ ○ /inventory                           13.6 kB         233 kB
+├ ○ /location-transfer                   8.75 kB         258 kB
+├ ○ /lot-ledger                          7 kB            168 kB
+├ ○ /masters                             7.75 kB         212 kB
+├ ○ /outstanding                         15.4 kB         141 kB
+├ ○ /payments                            6.34 kB         132 kB
+├ ○ /profit-analysis                     4.96 kB         210 kB
+├ ○ /purchases                           17 kB           257 kB
+├ ○ /receipts                            5.93 kB         132 kB
+├ ○ /sales                               5.65 kB         185 kB
+├ ○ /stock-adjustments                   14.6 kB         235 kB
+└ ○ /stock-ledger                        12.2 kB         206 kB
++ First Load JS shared by all            101 kB
+  ├ chunks/1517-9910d183b1d339aa.js      45.4 kB
+  ├ chunks/4bd1b696-f36ff67e75f1a0d3.js  52.5 kB
+  └ other shared chunks (total)          2.68 kB
+
+
+
+○  (Static)  prerendered as static content
+
+
+
+> nextn@0.1.0 build
+> NODE_ENV=production next build
+
+   ▲ Next.js 15.0.7
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/23) ...
+   Generating static pages (5/23)
+   Generating static pages (11/23)
+   Generating static pages (17/23)
+ ✓ Generating static pages (23/23)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    141 B           101 kB
+├ ○ /_not-found                          905 B           101 kB
+├ ○ /accounts-ledger                     6.88 kB         132 kB
+├ ○ /backup-restore                      4.26 kB         123 kB
+├ ○ /cash-book                           12.6 kB         186 kB
+├ ○ /dashboard                           22.8 kB         231 kB
+├ ○ /daybook                             24.8 kB         209 kB
+├ ○ /financial-summary                   3.35 kB         116 kB
+├ ○ /inventory                           13.6 kB         233 kB
+├ ○ /location-transfer                   8.75 kB         258 kB
+├ ○ /lot-ledger                          7 kB            168 kB
+├ ○ /masters                             7.75 kB         212 kB
+├ ○ /outstanding                         15.4 kB         141 kB
+├ ○ /payments                            6.34 kB         132 kB
+├ ○ /profit-analysis                     4.96 kB         210 kB
+├ ○ /purchases                           17 kB           257 kB
+├ ○ /receipts                            5.93 kB         132 kB
+├ ○ /sales                               5.65 kB         185 kB
+├ ○ /stock-adjustments                   14.6 kB         235 kB
+└ ○ /stock-ledger                        12.2 kB         206 kB
++ First Load JS shared by all            101 kB
+  ├ chunks/1517-9910d183b1d339aa.js      45.4 kB
+  ├ chunks/4bd1b696-f36ff67e75f1a0d3.js  52.5 kB
+  └ other shared chunks (total)          2.68 kB
+
+
+○  (Static)  prerendered as static content
+
+
+Build complete.
+> Ready on http://localhost:39165
+Opening the application in your default browser...

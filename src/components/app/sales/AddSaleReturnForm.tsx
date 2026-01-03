@@ -52,13 +52,13 @@ export const AddSaleReturnForm: React.FC<AddSaleReturnFormProps> = ({
         }
       : {
           date: new Date(),
-          originalSaleId: undefined,
-          originalLotNumber: undefined,
-          quantityReturned: undefined,
-          netWeightReturned: undefined,
+          originalSaleId: "",
+          originalLotNumber: "",
+          quantityReturned: 0,
+          netWeightReturned: 0,
           returnReason: "",
           notes: "",
-          restockingFee: undefined,
+          restockingFee: 0,
         },
   });
 
@@ -78,9 +78,9 @@ export const AddSaleReturnForm: React.FC<AddSaleReturnFormProps> = ({
             netWeightReturned: saleReturnToEdit.netWeightReturned,
             returnReason: saleReturnToEdit.returnReason || "",
             notes: saleReturnToEdit.notes || "",
-            restockingFee: saleReturnToEdit.restockingFee || undefined,
+            restockingFee: saleReturnToEdit.restockingFee || 0,
           }
-        : { date: new Date(), originalSaleId: undefined, originalLotNumber: undefined, quantityReturned: undefined, netWeightReturned: undefined, returnReason: "", notes: "", restockingFee: undefined }
+        : { date: new Date(), originalSaleId: "", originalLotNumber: "", quantityReturned: 0, netWeightReturned: 0, returnReason: "", notes: "", restockingFee: 0 }
       );
       setSelectedOriginalSale(saleReturnToEdit ? sales.find(s => s.id === saleReturnToEdit.originalSaleId) || null : null);
     }
