@@ -28,30 +28,30 @@ export const useTransactions = () => {
   const isTransactionsLoaded = purchases !== undefined;
 
   // --- ACTIONS ---
-  const addPurchase = useCallback((data: Purchase) => db.purchases.add(data), []);
-  const updatePurchase = useCallback((data: Purchase) => db.purchases.put(data), []);
-  const deletePurchase = useCallback((id: string) => db.purchases.delete(id), []);
+  const addPurchase = useCallback(async (data: Purchase) => db.purchases.add(data), []);
+  const updatePurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
+  const deletePurchase = useCallback(async (id: string) => db.purchases.delete(id), []);
 
-  const addSale = useCallback((data: Sale) => db.sales.add(data), []);
-  const updateSale = useCallback((data: Sale) => db.sales.put(data), []);
-  const deleteSale = useCallback((id: string) => db.sales.delete(id), []);
+  const addSale = useCallback(async (data: Sale) => db.sales.add(data), []);
+  const updateSale = useCallback(async (data: Sale) => db.sales.put(data), []);
+  const deleteSale = useCallback(async (id: string) => db.sales.delete(id), []);
 
-  const addPayment = useCallback((data: Payment) => db.payments.add(data), []);
-  const updatePayment = useCallback((data: Payment) => db.payments.put(data), []);
-  const deletePayment = useCallback((id: string) => db.payments.delete(id), []);
+  const addPayment = useCallback(async (data: Payment) => db.payments.add(data), []);
+  const updatePayment = useCallback(async (data: Payment) => db.payments.put(data), []);
+  const deletePayment = useCallback(async (id: string) => db.payments.delete(id), []);
   
-  const addReceipt = useCallback((data: Receipt) => db.receipts.add(data), []);
-  const updateReceipt = useCallback((data: Receipt) => db.receipts.put(data), []);
-  const deleteReceipt = useCallback((id: string) => db.receipts.delete(id), []);
+  const addReceipt = useCallback(async (data: Receipt) => db.receipts.add(data), []);
+  const updateReceipt = useCallback(async (data: Receipt) => db.receipts.put(data), []);
+  const deleteReceipt = useCallback(async (id: string) => db.receipts.delete(id), []);
 
-  const addLocationTransfer = useCallback((data: LocationTransfer) => db.locationTransfers.add(data), []);
-  const addAdjustment = useCallback((data: StockAdjustment) => db.adjustments.add(data), []);
+  const addLocationTransfer = useCallback(async (data: LocationTransfer) => db.locationTransfers.add(data), []);
+  const addAdjustment = useCallback(async (data: StockAdjustment) => db.adjustments.add(data), []);
   
-  const addPurchaseReturn = useCallback((data: PurchaseReturn) => db.purchaseReturns.add(data), []);
-  const addSaleReturn = useCallback((data: SaleReturn) => db.saleReturns.add(data), []);
+  const addPurchaseReturn = useCallback(async (data: PurchaseReturn) => db.purchaseReturns.add(data), []);
+  const addSaleReturn = useCallback(async (data: SaleReturn) => db.saleReturns.add(data), []);
 
-  const addLedgerEntry = useCallback((data: LedgerEntry[] | LedgerEntry) => db.ledger.bulkAdd(Array.isArray(data) ? data : [data]), []);
-  const removeLedgerEntries = useCallback((voucherId: string) => db.ledger.where('relatedVoucher').equals(voucherId).delete(), []);
+  const addLedgerEntry = useCallback(async (data: LedgerEntry[] | LedgerEntry) => db.ledger.bulkAdd(Array.isArray(data) ? data : [data]), []);
+  const removeLedgerEntries = useCallback(async (voucherId: string) => db.ledger.where('relatedVoucher').equals(voucherId).delete(), []);
 
   return {
     purchases: purchases || [],
@@ -91,7 +91,7 @@ export const useMasters = () => {
     
     const isMastersLoaded = masters !== undefined;
 
-    const addOrUpdateMaster = useCallback((item: MasterItem) => db.masters.put(item), []);
+    const addOrUpdateMaster = useCallback(async (item: MasterItem) => db.masters.put(item), []);
     const getAllMasters = useCallback(() => masters || [], [masters]);
 
     const masterData = useMemo(() => ({
