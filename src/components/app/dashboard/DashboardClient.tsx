@@ -72,7 +72,7 @@ export function DashboardClient() {
                             items={orderedNavItems.map(item => item.title)}
                             strategy={verticalListSortingStrategy}
                         >
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
                                 {orderedNavItems.map((plainFeature) => {
                                     const feature = navItems.find(f => f.title === plainFeature.title);
                                     if (!feature) return null;
