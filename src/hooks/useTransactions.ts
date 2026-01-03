@@ -1,23 +1,11 @@
 
 "use client";
 
-/**
- * LIFETIME STABLE STATE MANAGEMENT
- * 
- * This hook replaces ALL previous state management strategies (useAppState, useLocalStorageState).
- * It provides a direct, reactive connection to the IndexedDB via Dexie's useLiveQuery.
- * 
- * Benefits:
- * 1. No Infinite Loops: Updates are pushed by DB, not by reading localStorage.
- * 2. No "Update Depth Exceeded": We don't have nested useEffect triggers.
- * 3. Single Source of Truth: If it's in DB, it's in the UI.
- */
-
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import type { 
     Purchase, Sale, Payment, Receipt, LocationTransfer, PurchaseReturn, SaleReturn, 
-    MasterItem, LedgerEntry, StockAdjustment
+    MasterItem, LedgerEntry, StockAdjustment, MasterItemType
 } from '@/lib/types';
 import { useCallback, useMemo } from 'react';
 
@@ -118,7 +106,7 @@ export const useMasters = () => {
     }), [customers, suppliers, agents, brokers, transporters, warehouses, expenses]);
     
     return {
-        masters,
+        masters: masters || [],
         masterData,
         customers,
         suppliers,
