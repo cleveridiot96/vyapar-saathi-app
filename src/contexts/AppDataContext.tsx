@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useCallback, useEffect, useState, useMemo, useContext } from 'react';
@@ -8,7 +9,7 @@ import type {
 import type { AppState, AppDispatch } from '@/hooks/useAppState';
 import { calculateInventory } from '@/lib/inventoryEngine';
 import { groupMasters } from '@/lib/utils';
-import { useHydrated } from '@/hooks/useHydrated';
+import { useAuth } from './PasswordContext';
 
 const AppDataContext = createContext<{
   state: AppState;
@@ -16,7 +17,7 @@ const AppDataContext = createContext<{
 } | undefined>(undefined);
 
 export const AppDataProvider = ({ children }: { children: React.ReactNode }) => {
-  const isHydrated = useHydrated();
+  const { isAuthenticated } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCalculating, setIsCalculating] = useState(true);
 
@@ -35,43 +36,66 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
   });
 
   useEffect(() => {
-    if (!isHydrated) return;
-    // Load all data from Dexie on initial mount
+    if (!isAuthenticated) {
+        // If we are not authenticated, clear the state
+        if(isLoaded) {
+            setPurchases([]);
+            setSales([]);
+            setAdjustments([]);
+            setLocationTransfers([]);
+            setPurchaseReturns([]);
+            setSaleReturns([]);
+            setPayments([]);
+            setReceipts([]);
+            setLedger([]);
+            setMasterData({ Customer: [], Supplier: [], Agent: [], Transporter: [], Warehouse: [], Broker: [], Expense: [], Product: [] });
+            setIsLoaded(false);
+        }
+        return;
+    };
+    
+    // Load all data from Dexie on initial mount or after authentication
     const loadData = async () => {
       setIsCalculating(true);
-      const [
-        allMasters, allPurchases, allSales, allAdjustments, allTransfers,
-        allPurchaseReturns, allSaleReturns, allPayments, allReceipts, allLedger
-      ] = await Promise.all([
-        db.masters.toArray(),
-        db.purchases.toArray(),
-        db.sales.toArray(),
-        db.adjustments.toArray(),
-        db.locationTransfers.toArray(),
-        db.purchaseReturns.toArray(),
-        db.saleReturns.toArray(),
-        db.payments.toArray(),
-        db.receipts.toArray(),
-        db.ledger.toArray(),
-      ]);
+      try {
+        const [
+          allMasters, allPurchases, allSales, allAdjustments, allTransfers,
+          allPurchaseReturns, allSaleReturns, allPayments, allReceipts, allLedger
+        ] = await Promise.all([
+          db.masters.toArray(),
+          db.purchases.toArray(),
+          db.sales.toArray(),
+          db.adjustments.toArray(),
+          db.locationTransfers.toArray(),
+          db.purchaseReturns.toArray(),
+          db.saleReturns.toArray(),
+          db.payments.toArray(),
+          db.receipts.toArray(),
+          db.ledger.toArray(),
+        ]);
 
-      setMasterData(groupMasters(allMasters));
-      setPurchases(allPurchases.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-      setSales(allSales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-      setAdjustments(allAdjustments);
-      setLocationTransfers(allTransfers);
-      setPurchaseReturns(allPurchaseReturns);
-      setSaleReturns(allSaleReturns);
-      setPayments(allPayments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-      setReceipts(allReceipts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-      setLedger(allLedger);
-      
-      setIsLoaded(true);
-      setIsCalculating(false);
+        setMasterData(groupMasters(allMasters));
+        setPurchases(allPurchases.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setSales(allSales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setAdjustments(allAdjustments);
+        setLocationTransfers(allTransfers);
+        setPurchaseReturns(allPurchaseReturns);
+        setSaleReturns(allSaleReturns);
+        setPayments(allPayments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setReceipts(allReceipts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setLedger(allLedger);
+        
+        setIsLoaded(true);
+      } catch (error) {
+        console.error("Failed to load data, likely due to decryption error:", error);
+        // Handle decryption error, maybe force logout
+      } finally {
+        setIsCalculating(false);
+      }
     };
 
     loadData();
-  }, [isHydrated]);
+  }, [isAuthenticated, isLoaded]);
 
   const inventory = useMemo(() => {
     if (!isLoaded) return [];
@@ -129,12 +153,12 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
     addTransfer: async (payload) => { await db.locationTransfers.add(payload); setLocationTransfers(t => [payload, ...t]); },
     addAdjustment: async (payload) => { await db.adjustments.add(payload); setAdjustments(a => [payload, ...a]); },
     addReturn: async (payload) => {
-      if ('originalPurchaseId' in payload) {
-        await db.purchaseReturns.add(payload as PurchaseReturn);
-        setPurchaseReturns(pr => [payload as PurchaseReturn, ...pr]);
+      if (payload.type === 'PurchaseReturn') {
+        await db.purchaseReturns.add(payload);
+        setPurchaseReturns(pr => [payload, ...pr]);
       } else {
         await db.saleReturns.add(payload as SaleReturn);
-        setSaleReturns(sr => [payload as SaleReturn, ...sr]);
+        setSaleReturns(sr => [...sr, payload as SaleReturn]);
       }
     },
     addOrUpdateMaster: async (payload) => { 
@@ -161,10 +185,6 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
     setSaleReturns,
   }), [setPurchases, setSales, setPurchaseReturns, setSaleReturns]);
   
-  if (!isHydrated) {
-    return null; 
-  }
-
   return (
     <AppDataContext.Provider value={{ state, dispatch }}>
       {children}

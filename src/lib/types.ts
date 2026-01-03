@@ -1,3 +1,4 @@
+
 export type MasterItemType = "Supplier" | "Customer" | "Agent" | "Warehouse" | "Transporter" | "Expense" | "Product" | "Broker";
 
 export interface MasterItem {
@@ -85,6 +86,7 @@ export interface Purchase {
 }
 
 export interface PurchaseReturn {
+  type: 'PurchaseReturn';
   id: string;
   date: string;
   originalPurchaseId: string;
@@ -145,6 +147,7 @@ export interface Sale {
 }
 
 export interface SaleReturn {
+    type: 'SaleReturn';
     id: string;
     date: string;
     originalSaleId: string;
@@ -250,6 +253,7 @@ export type LedgerEntry = {
     voucherId: string;
   };
   remarks: string;
+  voucherType?: 'Purchase' | 'Sale' | 'Transfer' | 'Payment' | 'Receipt';
 };
 
 export interface AggregatedInventoryItem {

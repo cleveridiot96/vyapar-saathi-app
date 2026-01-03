@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useMemo, useCallback } from 'react';
@@ -66,10 +67,10 @@ export type AppDispatch = {
   addOrUpdateMaster: (master: MasterItem) => void;
   loadEvents: (events: TransactionEvent[]) => void;
   setHasUnsavedChanges: (hasChanges: boolean) => void;
-  setPurchases: (updater: React.SetStateAction<Purchase[]>) => void;
-  setSales: (updater: React.SetStateAction<Sale[]>) => void;
-  setPurchaseReturns: (updater: React.SetStateAction<PurchaseReturn[]>) => void;
-  setSaleReturns: (updater: React.SetStateAction<SaleReturn[]>) => void;
+  setPurchases: React.Dispatch<React.SetStateAction<Purchase[]>>;
+  setSales: React.Dispatch<React.SetStateAction<Sale[]>>;
+  setPurchaseReturns: React.Dispatch<React.SetStateAction<PurchaseReturn[]>>;
+  setSaleReturns: React.Dispatch<React.SetStateAction<SaleReturn[]>>;
 };
 
 
