@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -200,9 +199,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     
     toast({ 
       title: "Success", 
-      description: `${
-        newItem.type
-      } "${newItem.name}" added/updated successfully!` 
+      description: `${newItem.type} "${newItem.name}" added/updated successfully!` 
     });
   }, [addOrUpdateMaster, setValue, toast]);
 
@@ -316,7 +313,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
             </div>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 -mx-6 px-6">
+          <ScrollArea className="flex-1 min-h-0">
               <div className="px-6 pb-6">
               <FormProvider {...formMethods}>
                 <form onSubmit={formHandleSubmit(processSubmit)} className="space-y-4 pt-4">
@@ -347,7 +344,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             <MasterDataCombobox
                               value={field.value}
                               onChange={field.onChange}
-                              options={suppliers.map(s => ({ value: s.id, label: s.name }))}
+                              options={(suppliers || []).map((s: MasterItem) => ({ value: s.id, label: s.name }))}
                               placeholder="Select Supplier"
                               searchPlaceholder="Search Suppliers..."
                               notFoundMessage="No Supplier found."
@@ -369,7 +366,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             <MasterDataCombobox
                               value={field.value}
                               onChange={field.onChange}
-                              options={agents.map(a => ({ value: a.id, label: a.name }))}
+                              options={(agents || []).map((a: MasterItem) => ({ value: a.id, label: a.name }))}
                               placeholder="Select Agent"
                               searchPlaceholder="Search Agents..."
                               notFoundMessage="No Agent found."
@@ -391,7 +388,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                             <MasterDataCombobox
                               value={field.value}
                               onChange={field.onChange}
-                              options={warehouses.map(w => ({ value: w.id, label: w.name }))}
+                              options={(warehouses || []).map((w: MasterItem) => ({ value: w.id, label: w.name }))}
                               placeholder="Select Location"
                               searchPlaceholder="Search Locations..."
                               notFoundMessage="No Location found."
