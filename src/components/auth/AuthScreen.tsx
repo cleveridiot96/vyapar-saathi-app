@@ -21,15 +21,19 @@ export function AuthScreen() {
     const [password, setPasswordInput] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [passwordExists, setPasswordExists] = useState(true); // Default to true to avoid flash of wrong content
 
     useEffect(() => {
         if (isHydrated) {
-            setIsLoading(false);
-            if (isAuthenticated) {
-                router.replace('/dashboard');
-            }
+            hasPassword().then(exists => {
+                setPasswordExists(exists);
+                setIsLoading(false);
+                if (isAuthenticated) {
+                    router.replace('/dashboard');
+                }
+            });
         }
-    }, [isHydrated, isAuthenticated, router]);
+    }, [isHydrated, isAuthenticated, router, hasPassword]);
     
     const handleSetup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,25 +72,25 @@ export function AuthScreen() {
                     <div className="mx-auto bg-primary text-primary-foreground rounded-full h-16 w-16 flex items-center justify-center mb-4">
                        <KeyRound className="h-8 w-8"/>
                     </div>
-                    <CardTitle className="text-2xl">{hasPassword ? 'Welcome Back!' : 'Set Up Your Secure Password'}</CardTitle>
+                    <CardTitle className="text-2xl">{passwordExists ? 'Welcome Back!' : 'Set Up Your Secure Password'}</CardTitle>
                     <CardDescription>
-                        {hasPassword ? 'Enter your password to unlock your data.' : 'Your data is encrypted locally. This password is the only way to access it.'}
+                        {passwordExists ? 'Enter your password to unlock your data.' : 'Your data is encrypted locally. This password is the only way to access it.'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={hasPassword ? handleLogin : handleSetup} className="space-y-4">
+                    <form onSubmit={passwordExists ? handleLogin : handleSetup} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="password">Password</Label>
                             <Input id="password" type="password" value={password} onChange={e => setPasswordInput(e.target.value)} required />
                         </div>
-                        {!hasPassword && (
+                        {!passwordExists && (
                             <div className="space-y-2">
                                 <Label htmlFor="confirm-password">Confirm Password</Label>
                                 <Input id="confirm-password" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
                             </div>
                         )}
                         <Button type="submit" className="w-full" disabled={isUnlocked}>
-                            {isUnlocked ? <Loader2 className="animate-spin mr-2" /> : (hasPassword ? 'Unlock' : 'Set Password & Encrypt')}
+                            {isUnlocked ? <Loader2 className="animate-spin mr-2" /> : (passwordExists ? 'Unlock' : 'Set Password & Encrypt')}
                         </Button>
                     </form>
                 </CardContent>
@@ -99,4 +103,3 @@ export function AuthScreen() {
         </main>
     );
 }
-
