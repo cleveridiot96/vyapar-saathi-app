@@ -7,6 +7,7 @@ import { AppHeader } from '@/components/layout/AppHeader';
 import { useAuth } from '@/contexts/PasswordContext';
 import { useRouter } from 'next/navigation';
 import { useHydrated } from '@/hooks/useHydrated';
+import { Loader2 } from 'lucide-react';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -20,10 +21,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, router, isHydrated]);
 
   if (!isHydrated || !isAuthenticated) {
-    // You can render a loading spinner here while checking auth state
     return (
-        <div className="flex items-center justify-center h-screen">
-            <p>Loading...</p>
+        <div className="flex flex-col items-center justify-center h-screen bg-background text-foreground">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Loading application data...</p>
         </div>
     );
   }

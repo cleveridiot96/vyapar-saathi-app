@@ -47,12 +47,16 @@ export function AuthScreen() {
         }
         await setPassword(password);
         toast({ title: "Password set!", description: "You can now log in." });
+        // After setting password, the user is authenticated, so redirect.
+        router.replace('/dashboard');
     };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         const success = await unlock(password);
-        if (!success) {
+        if (success) {
+             router.replace('/dashboard');
+        } else {
             toast({ title: "Invalid password", variant: 'destructive' });
         }
     };
@@ -90,7 +94,7 @@ export function AuthScreen() {
                             </div>
                         )}
                         <Button type="submit" className="w-full" disabled={isUnlocked}>
-                            {isUnlocked ? <Loader2 className="animate-spin mr-2" /> : (passwordExists ? 'Unlock' : 'Set Password & Encrypt')}
+                            {isUnlocked ? <><Loader2 className="animate-spin mr-2" /> Unlocking...</> : (passwordExists ? 'Unlock' : 'Set Password & Encrypt')}
                         </Button>
                     </form>
                 </CardContent>

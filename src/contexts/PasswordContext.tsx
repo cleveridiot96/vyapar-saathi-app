@@ -33,17 +33,20 @@ export const PasswordProvider = ({ children }: { children: React.ReactNode }) =>
     setIsUnlocked(true);
     try {
       const saltEntry = await db.keyval.get(SALT_KEY);
-      if (!saltEntry) {
+      if (!saltEntry?.value) {
+        console.error("Salt not found. Cannot unlock.");
         return false;
       }
       const key = await deriveKey(password, saltEntry.value);
       setSessionKey(key);
-      // Test decryption with a random piece of data to verify key
+      
+      // Test decryption to verify the key.
       await db.masters.limit(1).first(); 
+      
       setIsAuthenticated(true);
       return true;
     } catch (error) {
-      console.error("Unlock failed:", error);
+      console.error("Unlock failed, likely incorrect password:", error);
       clearSessionKey();
       setIsAuthenticated(false);
       return false;
@@ -57,8 +60,7 @@ export const PasswordProvider = ({ children }: { children: React.ReactNode }) =>
     await db.keyval.put({ key: SALT_KEY, value: salt });
     const key = await deriveKey(password, salt);
     setSessionKey(key);
-    // Here you might want to re-encrypt data if it existed before,
-    // but for initial setup, this is sufficient.
+    // After setting the password, we are authenticated.
     setIsAuthenticated(true);
   }, []);
 

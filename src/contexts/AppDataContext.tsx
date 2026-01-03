@@ -37,8 +37,7 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
 
   useEffect(() => {
     if (!isAuthenticated) {
-        // If we are not authenticated, clear the state
-        if(isLoaded) {
+        if(isLoaded) { // Only clear if data was previously loaded
             setPurchases([]);
             setSales([]);
             setAdjustments([]);
@@ -54,7 +53,6 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
         return;
     };
     
-    // Load all data from Dexie on initial mount or after authentication
     const loadData = async () => {
       setIsCalculating(true);
       try {
@@ -88,13 +86,15 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
         setIsLoaded(true);
       } catch (error) {
         console.error("Failed to load data, likely due to decryption error:", error);
-        // Handle decryption error, maybe force logout
+        // This will be caught by the encryption middleware which reloads the page
       } finally {
         setIsCalculating(false);
       }
     };
 
-    loadData();
+    if (!isLoaded) {
+      loadData();
+    }
   }, [isAuthenticated, isLoaded]);
 
   const inventory = useMemo(() => {
@@ -124,13 +124,13 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
     isLoaded,
     isInitialized: isLoaded,
     isCalculating,
-    hasUnsavedChanges: false, // Direct DB ops mean we're always "saved"
+    hasUnsavedChanges: false,
     getAllMasters: useCallback(() => {
       const all: MasterItem[] = [];
       Object.values(masterData).forEach(arr => all.push(...(arr || [])));
       return all;
     }, [masterData]),
-    events: [], // Events are no longer the source of truth
+    events: [],
   };
 
   const dispatch: AppDispatch = useMemo(() => ({
@@ -153,7 +153,7 @@ export const AppDataProvider = ({ children }: { children: React.ReactNode }) => 
     addTransfer: async (payload) => { await db.locationTransfers.add(payload); setLocationTransfers(t => [payload, ...t]); },
     addAdjustment: async (payload) => { await db.adjustments.add(payload); setAdjustments(a => [payload, ...a]); },
     addReturn: async (payload) => {
-      if (payload.type === 'PurchaseReturn') {
+      if ('originalPurchaseId' in payload) {
         await db.purchaseReturns.add(payload);
         setPurchaseReturns(pr => [payload, ...pr]);
       } else {
