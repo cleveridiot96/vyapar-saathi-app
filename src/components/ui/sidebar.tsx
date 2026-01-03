@@ -26,6 +26,7 @@ const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3.5rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+const INACTIVITY_TIMEOUT = 5000; // 5 seconds
 
 type SidebarContext = {
   state: "expanded" | "collapsed"
@@ -91,6 +92,35 @@ const SidebarProvider = React.forwardRef<
         ? setOpenMobile((open) => !open)
         : setOpen((open) => !open)
     }, [isMobile, setOpen, setOpenMobile])
+    
+    // Inactivity timer logic
+    const inactivityTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    const resetInactivityTimer = React.useCallback(() => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+      if (open && !isMobile) { // Only run the timer if the sidebar is open and on desktop
+        inactivityTimerRef.current = setTimeout(() => {
+          setOpen(false);
+        }, INACTIVITY_TIMEOUT);
+      }
+    }, [open, isMobile, setOpen]);
+
+    React.useEffect(() => {
+      resetInactivityTimer();
+      
+      const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+      activityEvents.forEach(event => window.addEventListener(event, resetInactivityTimer));
+
+      return () => {
+        if (inactivityTimerRef.current) {
+          clearTimeout(inactivityTimerRef.current);
+        }
+        activityEvents.forEach(event => window.removeEventListener(event, resetInactivityTimer));
+      };
+    }, [resetInactivityTimer]);
+
 
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
@@ -264,10 +294,10 @@ SidebarTrigger.displayName = "SidebarTrigger"
 
 const SidebarInset = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"main">
+  React.ComponentProps<"div">
 >(({ className, ...props }, ref) => {
   return (
-    <main
+    <div
       ref={ref}
       className={cn(
         "relative flex min-h-svh flex-1 flex-col bg-background transition-[margin-left] duration-200 ease-in-out",
