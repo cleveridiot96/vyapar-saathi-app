@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
-import { useAppDataContext, useAppDispatch, useAppState } from '@/hooks/useAppState';
+import { useAppDispatch, useAppState } from '@/hooks/useAppState';
 import { Button } from '@/components/ui/button';
 import { Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
@@ -32,7 +32,7 @@ import { MasterForm } from "@/components/app/masters/MasterForm";
 
 // --- 1. MAIN PAGE COMPONENT ---
 export default function PurchasesPage() {
-  const { state } = useAppDataContext();
+  const state = useAppState();
   const dispatch = useAppDispatch();
   const [isPurchaseFormOpen, setIsPurchaseFormOpen] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
