@@ -118,36 +118,33 @@ class MyDatabase extends Dexie {
   constructor() {
     super('vyapar-saathi-db');
     this.version(3).stores({
-      masters: 'id, type, name, _encryptedData',
-      purchases: 'id, date, supplierId, agentId, _encryptedData',
-      sales: 'id, date, customerId, brokerId, _encryptedData',
-      adjustments: 'id, date, _encryptedData',
-      locationTransfers: 'id, date, fromLocationId, toLocationId, _encryptedData',
-      purchaseReturns: 'id, date, originalPurchaseId, originalSupplierId, _encryptedData',
-      saleReturns: 'id, date, originalSaleId, originalCustomerId, _encryptedData',
-      payments: 'id, date, partyId, _encryptedData',
-      receipts: 'id, date, partyId, _encryptedData',
-      ledger: '++id, date, partyId, _encryptedData',
+      masters: 'id, type, name',
+      purchases: 'id, date, supplierId, agentId',
+      sales: 'id, date, customerId, brokerId',
+      adjustments: 'id, date',
+      locationTransfers: 'id, date, fromLocationId, toLocationId',
+      purchaseReturns: 'id, date, originalPurchaseId, originalSupplierId',
+      saleReturns: 'id, date, originalSaleId, originalCustomerId',
+      payments: 'id, date, partyId',
+      receipts: 'id, date, partyId',
+      ledger: '++id, date, partyId, relatedVoucher',
       keyval: 'key',
     });
-    
-    // Apply middleware
-    this.use(encryptionMiddleware);
-  }
 
-  async on(event: 'ready', subscriber: () => any): Promise<void> {
-    const subscribed = super.on(event, subscriber);
-    
-    this.masters.count().then(count => {
-        if (count === 0) {
-            console.log("Database is empty. Populating with initial data...");
-            this.masters.bulkAdd([...FIXED_WAREHOUSES, ...FIXED_EXPENSES]).catch(err => {
-                console.error("Failed to populate initial master data", err);
-            });
-        }
+    // This event handler runs only when the database is first created.
+    this.on('populate', () => {
+        this.populate();
     });
-
-    return subscribed;
+  }
+  
+  async populate() {
+    try {
+        console.log("Database is being created. Populating with initial master data...");
+        await this.masters.bulkAdd([...FIXED_WAREHOUSES, ...FIXED_EXPENSES]);
+        console.log("Initial master data populated successfully.");
+    } catch(err) {
+        console.error("Failed to populate initial master data", err);
+    }
   }
 }
 

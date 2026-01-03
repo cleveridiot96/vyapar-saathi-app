@@ -1,48 +1,42 @@
 
 "use client";
 
+/**
+ * LIFETIME STABLE STATE MANAGEMENT
+ * 
+ * This hook replaces ALL previous state management strategies (useAppState, useLocalStorageState).
+ * It provides a direct, reactive connection to the IndexedDB via Dexie's useLiveQuery.
+ * 
+ * Benefits:
+ * 1. No Infinite Loops: Updates are pushed by DB, not by reading localStorage.
+ * 2. No "Update Depth Exceeded": We don't have nested useEffect triggers.
+ * 3. Single Source of Truth: If it's in DB, it's in the UI.
+ */
+
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import type { 
     Purchase, Sale, Payment, Receipt, LocationTransfer, PurchaseReturn, SaleReturn, 
-    MasterItem, LedgerEntry, StockAdjustment, MasterItemType
+    MasterItem, LedgerEntry, StockAdjustment
 } from '@/lib/types';
 import { useCallback, useMemo } from 'react';
-import type Dexie from 'dexie';
-
-/**
- * FAIL-SAFE LIVE QUERIES
- * Wraps useLiveQuery in a try-catch block.
- * Returns [] if the DB throws an error (e.g. "Table not found" or "Decryption failed").
- * This prevents the "TypeError: ... is not iterable" crash.
- */
-const safeLiveQuery = <T,>(query: () => Promise<T[]>, defaultValue: T[]): T[] => {
-  try {
-    // Note: useLiveQuery can return undefined while the query is running.
-    // The || operator provides our default value during this initial phase and on error.
-    return useLiveQuery(query, defaultValue) ?? defaultValue;
-  } catch (error) {
-    console.error(`A database query failed:`, error);
-    // If an error is thrown during the query, return the default value.
-    return defaultValue;
-  }
-};
 
 
 /**
  * Primary Hook for all transactional data.
  */
 export const useTransactions = () => {
-  // --- LIVE DATA (Fail-Safe) ---
-  const purchases: Purchase[] = safeLiveQuery(() => db.purchases.toArray(), []);
-  const sales: Sale[] = safeLiveQuery(() => db.sales.toArray(), []);
-  const payments: Payment[] = safeLiveQuery(() => db.payments.toArray(), []);
-  const receipts: Receipt[] = safeLiveQuery(() => db.receipts.toArray(), []);
-  const locationTransfers: LocationTransfer[] = safeLiveQuery(() => db.locationTransfers.toArray(), []);
-  const adjustments: StockAdjustment[] = safeLiveQuery(() => db.adjustments.toArray(), []);
-  const purchaseReturns: PurchaseReturn[] = safeLiveQuery(() => db.purchaseReturns.toArray(), []);
-  const saleReturns: SaleReturn[] = safeLiveQuery(() => db.saleReturns.toArray(), []);
-  const ledger: LedgerEntry[] = safeLiveQuery(() => db.ledger.toArray(), []);
+  // --- LIVE DATA (Reactive Arrays) ---
+  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
+  const sales = useLiveQuery(() => db.sales.toArray(), []);
+  const payments = useLiveQuery(() => db.payments.toArray(), []);
+  const receipts = useLiveQuery(() => db.receipts.toArray(), []);
+  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
+  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []);
+  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
+  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
+  const ledger = useLiveQuery(() => db.ledger.toArray(), []);
+  
   const isTransactionsLoaded = purchases !== undefined;
 
   // --- ACTIONS ---
@@ -72,15 +66,15 @@ export const useTransactions = () => {
   const removeLedgerEntries = useCallback((voucherId: string) => db.ledger.where('relatedVoucher').equals(voucherId).delete(), []);
 
   return {
-    purchases,
-    sales,
-    payments,
-    receipts,
-    locationTransfers,
-    purchaseReturns,
-    saleReturns,
-    ledger,
-    adjustments,
+    purchases: purchases || [],
+    sales: sales || [],
+    payments: payments || [],
+    receipts: receipts || [],
+    locationTransfers: locationTransfers || [],
+    purchaseReturns: purchaseReturns || [],
+    saleReturns: saleReturns || [],
+    ledger: ledger || [],
+    adjustments: adjustments || [],
     
     addPurchase, updatePurchase, deletePurchase,
     addSale, updateSale, deleteSale,
@@ -97,20 +91,20 @@ export const useTransactions = () => {
  * Separate hook for Master Data to keep things organized.
  */
 export const useMasters = () => {
-    const masters = safeLiveQuery(() => db.masters.toArray(), []);
+    const masters = useLiveQuery(() => db.masters.toArray(), []);
 
-    const customers = useMemo(() => masters.filter(m => m.type === 'Customer'), [masters]);
-    const suppliers = useMemo(() => masters.filter(m => m.type === 'Supplier'), [masters]);
-    const agents = useMemo(() => masters.filter(m => m.type === 'Agent'), [masters]);
-    const transporters = useMemo(() => masters.filter(m => m.type === 'Transporter'), [masters]);
-    const warehouses = useMemo(() => masters.filter(m => m.type === 'Warehouse'), [masters]);
-    const brokers = useMemo(() => masters.filter(m => m.type === 'Broker'), [masters]);
-    const expenses = useMemo(() => masters.filter(m => m.type === 'Expense'), [masters]);
+    const customers = useMemo(() => (masters || []).filter(m => m.type === 'Customer'), [masters]);
+    const suppliers = useMemo(() => (masters || []).filter(m => m.type === 'Supplier'), [masters]);
+    const agents = useMemo(() => (masters || []).filter(m => m.type === 'Agent'), [masters]);
+    const transporters = useMemo(() => (masters || []).filter(m => m.type === 'Transporter'), [masters]);
+    const warehouses = useMemo(() => (masters || []).filter(m => m.type === 'Warehouse'), [masters]);
+    const brokers = useMemo(() => (masters || []).filter(m => m.type === 'Broker'), [masters]);
+    const expenses = useMemo(() => (masters || []).filter(m => m.type === 'Expense'), [masters]);
     
     const isMastersLoaded = masters !== undefined;
 
     const addOrUpdateMaster = useCallback((item: MasterItem) => db.masters.put(item), []);
-    const getAllMasters = useCallback(() => masters, [masters]);
+    const getAllMasters = useCallback(() => masters || [], [masters]);
 
     const masterData = useMemo(() => ({
         Customer: customers,
