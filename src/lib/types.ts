@@ -83,6 +83,8 @@ export interface Purchase {
   totalNetWeight: number;
   totalAmount: number;
   effectiveRate: number;
+  invoiceNo?: string;
+  partyName?: string;
 }
 
 export interface PurchaseReturn {

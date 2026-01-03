@@ -1,10 +1,11 @@
-
 "use client";
 
-import React, { createContext, useContext, useMemo, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useMemo, ReactNode } from 'react';
+import { liveQuery } from 'dexie';
+import { useLiveQuery } from 'dexie-react-hooks'; // Standard lightweight hook
 import { db } from '@/lib/db';
 import type { 
-  Purchase, Sale, StockAdjustment, LocationTransfer, PurchaseReturn, SaleReturn, Payment, Receipt, LedgerEntry, MasterItem, MasterItemType
+  Purchase, Sale, StockAdjustment, LocationTransfer, PurchaseReturn, SaleReturn, Payment, Receipt, LedgerEntry, MasterItem, AggregatedInventoryItem, MasterItemType, TransactionEvent
 } from '@/lib/types';
 import type { AppState, AppDispatch } from '@/hooks/useAppState';
 import { calculateInventory } from '@/lib/inventoryEngine';
@@ -18,92 +19,52 @@ const AppDataContext = createContext<{
 
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const { isAuthenticated } = useAuth();
-  const [isLoaded, setIsLoaded] = useState(false);
+
+  // --- 1. THE INNOVATION: LIVE QUERIES ---
+  // These variables are NOT manually updated. They are streams that automatically 
+  // update whenever 'db' changes. This eliminates the "Entry not showing" bug forever.
   
-  // --- STATE DEFINITIONS ---
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [adjustments, setAdjustments] = useState<StockAdjustment[]>([]);
-  const [locationTransfers, setLocationTransfers] = useState<LocationTransfer[]>([]);
-  const [purchaseReturns, setPurchaseReturns] = useState<PurchaseReturn[]>([]);
-  const [saleReturns, setSaleReturns] = useState<SaleReturn[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [receipts, setReceipts] = useState<Receipt[]>([]);
-  const [ledger, setLedger] = useState<LedgerEntry[]>([]);
-  const [masterData, setMasterData] = useState<AppState['masterData']>({
-    Customer: [], Supplier: [], Agent: [], Transporter: [], Warehouse: [], Broker: [], Expense: [], Product: []
-  });
+  const allMasters = useLiveQuery(() => db.masters.toArray(), []);
+  const allPurchases = useLiveQuery(() => db.purchases.toArray(), []);
+  const allSales = useLiveQuery(() => db.sales.toArray(), []);
+  const allAdjustments = useLiveQuery(() => db.adjustments.toArray(), []);
+  const allTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
+  const allPurchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
+  const allSaleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
+  const allPayments = useLiveQuery(() => db.payments.toArray(), []);
+  const allReceipts = useLiveQuery(() => db.receipts.toArray(), []);
+  const allLedger = useLiveQuery(() => db.ledger.toArray(), []);
 
-  // --- DATA LOADING ---
-  useEffect(() => {
-    let mounted = true;
+  // Helper to handle sorting
+  const sortByDateDesc = (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime();
 
-    const loadData = async () => {
-      // If not authenticated, clear data
-      if (!isAuthenticated) {
-        if (isLoaded) {
-            setPurchases([]); setSales([]); setAdjustments([]);
-            setLocationTransfers([]); setPurchaseReturns([]); setSaleReturns([]);
-            setPayments([]); setReceipts([]); setLedger([]);
-            setMasterData({ Customer: [], Supplier: [], Agent: [], Transporter: [], Warehouse: [], Broker: [], Expense: [], Product: [] });
-            setIsLoaded(false);
-        }
-        return;
-      }
+  // Memoize sorted data to prevent unnecessary re-renders
+  const purchases = useMemo(() => allPurchases ? [...allPurchases].sort(sortByDateDesc) : [], [allPurchases]);
+  const sales = useMemo(() => allSales ? [...allSales].sort(sortByDateDesc) : [], [allSales]);
+  const payments = useMemo(() => allPayments ? [...allPayments].sort(sortByDateDesc) : [], [allPayments]);
+  const receipts = useMemo(() => allReceipts ? [...allReceipts].sort(sortByDateDesc) : [], [allReceipts]);
+  
+  const adjustments = allAdjustments || [];
+  const locationTransfers = allTransfers || [];
+  const purchaseReturns = allPurchaseReturns || [];
+  const saleReturns = allSaleReturns || [];
+  const ledger = allLedger || [];
+  
+  const masterData = useMemo(() => {
+    if (!allMasters) return { Customer: [], Supplier: [], Agent: [], Transporter: [], Warehouse: [], Broker: [], Expense: [], Product: [] };
+    return groupMasters(allMasters);
+  }, [allMasters]);
 
-      try {
-        // Fetch all data in parallel
-        const [
-          allMasters, allPurchases, allSales, allAdjustments, allTransfers,
-          allPurchaseReturns, allSaleReturns, allPayments, allReceipts, allLedger
-        ] = await Promise.all([
-          db.masters.toArray(),
-          db.purchases.toArray(),
-          db.sales.toArray(),
-          db.adjustments.toArray(),
-          db.locationTransfers.toArray(),
-          db.purchaseReturns.toArray(),
-          db.saleReturns.toArray(),
-          db.payments.toArray(),
-          db.receipts.toArray(),
-          db.ledger.toArray(),
-        ]);
-
-        if (!mounted) return;
-
-        // Sort Helper
-        const sortByDateDesc = (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime();
-
-        // Update State
-        setMasterData(groupMasters(allMasters));
-        setPurchases(allPurchases.sort(sortByDateDesc));
-        setSales(allSales.sort(sortByDateDesc));
-        setAdjustments(allAdjustments);
-        setLocationTransfers(allTransfers);
-        setPurchaseReturns(allPurchaseReturns);
-        setSaleReturns(allSaleReturns);
-        setPayments(allPayments.sort(sortByDateDesc));
-        setReceipts(allReceipts.sort(sortByDateDesc));
-        setLedger(allLedger);
-        
-        setIsLoaded(true);
-      } catch (error) {
-        console.error("Data load error:", error);
-      }
-    };
-
-    loadData();
-
-    return () => { mounted = false; };
-  }, [isAuthenticated, isLoaded]);
-
-  // --- INVENTORY LOGIC ---
+  // --- 2. CALCULATIONS ---
   const inventory = useMemo(() => {
-    if (!isLoaded) return [];
+    if (!purchases || !sales) return [];
     return calculateInventory(
       purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns
     );
-  }, [isLoaded, purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns]);
+  }, [purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns]);
+
+  // Determine loading state
+  const isLoaded = !!(allMasters && allPurchases && allSales); // Basic check
 
   const state: AppState = {
     purchases,
@@ -119,7 +80,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     inventory,
     isLoaded,
     isInitialized: isLoaded,
-    isCalculating: false,
+    isCalculating: false, // Live queries handle their own loading
     hasUnsavedChanges: false,
     getAllMasters: () => {
         const all: MasterItem[] = [];
@@ -129,108 +90,58 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     events: [],
   };
 
-  // --- DISPATCH ACTIONS ---
-  const dispatch: AppDispatch = useMemo(() => {
-    const sortByDateDesc = (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime();
+  // --- 3. DISPATCH ---
+  // NOTE: We NO LONGER manually update state (e.g., setPurchases).
+  // We ONLY write to the DB. The Live Queries (above) handle the UI update automatically.
+  const dispatch: AppDispatch = useMemo(() => ({
+    addPurchase: async (payload) => { 
+      await db.purchases.add(payload); 
+      // STATE UPDATE HAPPENS AUTOMATICALLY VIA LIVE QUERY
+    },
+    updatePurchase: async (payload) => { 
+      await db.purchases.put(payload); 
+    },
+    deletePurchase: async (id) => { 
+      await db.purchases.delete(id); 
+    },
+    
+    addSale: async (payload) => { await db.sales.add(payload); },
+    updateSale: async (payload) => { await db.sales.put(payload); },
+    deleteSale: async (id) => { await db.sales.delete(id); },
 
-    return {
-      // PURCHASES: Write to DB, then fetch fresh list to ensure UI updates
-      addPurchase: async (payload) => { 
-        await db.purchases.add(payload); 
-        // FIX: Re-fetch to guarantee state update
-        const updated = await db.purchases.toArray();
-        setPurchases(updated.sort(sortByDateDesc));
-      },
-      updatePurchase: async (payload) => { 
-        await db.purchases.put(payload); 
-        const updated = await db.purchases.toArray();
-        setPurchases(updated.sort(sortByDateDesc));
-      },
-      deletePurchase: async (id) => { 
-        await db.purchases.delete(id); 
-        setPurchases(p => p.filter(i => i.id !== id)); 
-      },
-      
-      // SALES
-      addSale: async (payload) => { 
-        await db.sales.add(payload); 
-        const updated = await db.sales.toArray();
-        setSales(updated.sort(sortByDateDesc));
-      },
-      updateSale: async (payload) => { 
-        await db.sales.put(payload); 
-        const updated = await db.sales.toArray();
-        setSales(updated.sort(sortByDateDesc));
-      },
-      deleteSale: async (id) => { 
-        await db.sales.delete(id); 
-        setSales(s => s.filter(i => i.id !== id)); 
-      },
+    addPayment: async (payload) => { await db.payments.add(payload); },
+    updatePayment: async (payload) => { await db.payments.put(payload); },
+    deletePayment: async (id) => { await db.payments.delete(id); },
 
-      // PAYMENTS
-      addPayment: async (payload) => { 
-        await db.payments.add(payload); 
-        const updated = await db.payments.toArray();
-        setPayments(updated.sort(sortByDateDesc));
-      },
-      updatePayment: async (payload) => { 
-        await db.payments.put(payload); 
-        const updated = await db.payments.toArray();
-        setPayments(updated.sort(sortByDateDesc));
-      },
-      deletePayment: async (id) => { 
-        await db.payments.delete(id); 
-        setPayments(p => p.filter(i => i.id !== id)); 
-      },
+    addReceipt: async (payload) => { await db.receipts.add(payload); },
+    updateReceipt: async (payload) => { await db.receipts.put(payload); },
+    deleteReceipt: async (id) => { await db.receipts.delete(id); },
 
-      // RECEIPTS
-      addReceipt: async (payload) => { 
-        await db.receipts.add(payload); 
-        const updated = await db.receipts.toArray();
-        setReceipts(updated.sort(sortByDateDesc));
-      },
-      updateReceipt: async (payload) => { 
-        await db.receipts.put(payload); 
-        const updated = await db.receipts.toArray();
-        setReceipts(updated.sort(sortByDateDesc));
-      },
-      deleteReceipt: async (id) => { 
-        await db.receipts.delete(id); 
-        setReceipts(r => r.filter(i => i.id !== id)); 
-      },
+    addTransfer: async (payload) => { await db.locationTransfers.add(payload); },
+    addAdjustment: async (payload) => { await db.adjustments.add(payload); },
+    
+    addReturn: async (payload) => {
+      if ('originalPurchaseId' in payload) {
+        await db.purchaseReturns.add(payload as PurchaseReturn);
+      } else {
+        await db.saleReturns.add(payload as SaleReturn);
+      }
+    },
+    
+    addOrUpdateMaster: async (payload) => { 
+      await db.masters.put(payload);
+      // UI updates automatically
+    },
 
-      // OTHERS
-      addTransfer: async (payload) => { 
-        await db.locationTransfers.add(payload); 
-        setLocationTransfers(t => [payload, ...t]); 
-      },
-      addAdjustment: async (payload) => { 
-        await db.adjustments.add(payload); 
-        setAdjustments(a => [payload, ...a]); 
-      },
-      addReturn: async (payload) => {
-        if ('originalPurchaseId' in payload) {
-          await db.purchaseReturns.add(payload);
-          setPurchaseReturns(pr => [payload, ...pr]);
-        } else {
-          await db.saleReturns.add(payload as SaleReturn);
-          setSaleReturns(sr => [...sr, payload as SaleReturn]);
-        }
-      },
-      addOrUpdateMaster: async (payload) => { 
-        await db.masters.put(payload);
-        const allMasters = await db.masters.toArray();
-        setMasterData(groupMasters(allMasters));
-      },
-      
-      loadEvents: () => {}, 
-      setHasUnsavedChanges: () => {},
-      setPurchases: () => {}, 
-      setSales: () => {},
-      setPurchaseReturns: () => {},
-      setSaleReturns: () => {},
-    };
-  }, [setPurchases, setSales, setPurchaseReturns, setSaleReturns]);
+    loadEvents: () => {}, 
+    setHasUnsavedChanges: () => {},
+    // We keep setters for backward compatibility if any old code uses them directly, 
+    // but they are effectively ignored by the Live Queries logic.
+    setPurchases: () => {}, 
+    setSales: () => {},
+    setPurchaseReturns: () => {},
+    setSaleReturns: () => {},
+  }), []);
   
   return (
     <AppDataContext.Provider value={{ state, dispatch }}>
@@ -246,5 +157,3 @@ export const useAppDataContext = () => {
   }
   return context;
 };
-
-    
