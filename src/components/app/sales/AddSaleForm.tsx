@@ -25,14 +25,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Info, Percent, PlusCircle, Trash2 } from 'lucide-react';
+import { Info, PlusCircle, Trash2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { saleSchema, type SaleFormValues } from '@/lib/schemas/saleSchema';
-import type { MasterItem, MasterItemType, Sale, ExpenseItem, CostBreakdown } from '@/lib/types';
+import type { MasterItem, MasterItemType, Sale, ExpenseItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import {
   Accordion,
@@ -45,7 +43,6 @@ import dynamic from 'next/dynamic';
 import { DatePicker } from "@/components/ui/date-picker";
 import { useMasters } from "@/hooks/useTransactions";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
@@ -69,8 +66,8 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   onMasterDataUpdate,
 }) => {
   const { toast } = useToast();
-  const { masterData } = useMasters();
-  const { Customer: customers, Transporter: transporters, Broker: brokers, Expense: expenses, Warehouse: warehouses } = masterData || {};
+  const { masterData, getAllMasters } = useMasters();
+  const { Customer: customers, Transporter: transporters, Broker: brokers, Expense: expenses } = masterData || {};
   const { availableStock } = useInventory(saleToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -124,7 +121,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
     defaultValues: getDefaultValues(),
     mode: 'onChange',
   });
-  const { control, watch, reset, setValue, handleSubmit, formState: { errors } } = methods;
+  const { control, watch, reset, setValue, handleSubmit } = methods;
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const { fields: expenseFields, append: appendExpense, remove: removeExpense } = useFieldArray({ control, name: "expenses" });
@@ -364,15 +361,15 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(openState) => { if (!openState) { onClose(); } }}>
-        <DialogContent className="sm:max-w-6xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-6xl p-0">
+          <DialogHeader className="p-6 pb-0">
             <DialogTitle>{saleToEdit ? 'Edit Sale' : 'Add New Sale'}</DialogTitle>
             <DialogDescription>Create a sale with one or more items.</DialogDescription>
           </DialogHeader>
-          <div className="max-h-[80vh] overflow-y-auto p-1 pr-3">
+          <div className="max-h-[80vh] overflow-y-auto">
           <TooltipProvider>
               <Form {...methods}>
-                <form onSubmit={handleSubmit(processSubmit)} className="space-y-4">
+                <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 px-6 pb-6">
                   <div className="p-4 border rounded-md shadow-sm">
                     <h3 className="text-lg font-medium mb-3 text-primary">Sale Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -417,7 +414,6 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
 
                   <div className="p-4 border rounded-md shadow-sm">
                     <h3 className="text-lg font-medium text-primary">Quantity &amp; Rate</h3>
-                    <ScrollArea className="h-48">
                     {fields.map((field, index) => (
                       <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start p-3 border-b last:border-b-0">
                         <FormField control={control} name={`items.${index}.lotNumber`} render={({ field: itemField }) => (
@@ -496,7 +492,6 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                         </div>
                       </div>
                     ))}
-                    </ScrollArea>
                     <div className="flex justify-between items-start mt-2">
                       <Button type="button" variant="outline" onClick={() => append({ lotNumber: "", quantity: undefined, netWeight: undefined, rate: undefined })}><PlusCircle className="mr-2 h-4 w-4" /> Add Item</Button>
                     </div>
@@ -645,7 +640,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
             initialData={masterItemToEdit}
             itemTypeFromButton={masterFormItemType!}
             fixedIds={[]}
-            allMasterItems={Object.values(masterData).flat()}
+            allMasterItems={getAllMasters()}
         />
       )}
     </>

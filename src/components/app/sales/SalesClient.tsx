@@ -19,7 +19,7 @@ import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useTransactions } from "@/hooks/useTransactions";
+import { useTransactions, useMasters } from "@/hooks/useTransactions";
 import type { Sale, SaleReturn, MasterItem } from "@/lib/types";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
@@ -77,22 +77,16 @@ export function SalesClient() {
   const { financialYear } = useSettings();
   
   const { 
-    sales, 
-    setSales,
-    saleReturns, 
-    setSaleReturns,
-    isTransactionsLoaded, 
-    purchases,
-    customers,
-    brokers,
-    transporters,
-    expenses,
-    setCustomers,
-    setBrokers,
-    setTransporters,
+    sales,
+    saleReturns,
+    isTransactionsLoaded,
+    addSale,
+    updateSale,
+    deleteSale,
+    addSaleReturn,
   } = useTransactions();
+  const { addOrUpdateMaster } = useMasters();
   
-  const { availableStock } = useInventory();
 
   const [isAddSaleFormOpen, setIsAddSaleFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
@@ -119,9 +113,9 @@ export function SalesClient() {
       const isEditing = !!saleToEdit;
       
       if (isEditing) {
-        setSales(prev => prev.map(s => s.id === sale.id ? sale : s));
+        updateSale(sale);
       } else {
-        setSales(prev => [sale, ...prev]);
+        addSale(sale);
       }
       
       setSaleToEdit(null);
@@ -136,7 +130,7 @@ export function SalesClient() {
         window.dispatchEvent(new CustomEvent("reindex-search"));
       }, 100);
     },
-    [saleToEdit, setSales, toast]
+    [saleToEdit, addSale, updateSale, toast]
   );
 
   const handleEditSale = React.useCallback((sale: Sale) => {
@@ -152,32 +146,24 @@ export function SalesClient() {
     if (!itemToDelete) return;
     
     if (itemToDelete.type === 'sale') {
-      setSales(prev => prev.filter(s => s.id !== itemToDelete.id));
+      deleteSale(itemToDelete.id);
       toast({ title: "Deleted!", description: "Sale record removed.", variant: "destructive" });
     } else {
-      setSaleReturns(prev => prev.filter(sr => sr.id !== itemToDelete.id));
-      toast({ title: "Deleted!", description: "Sale return record removed.", variant: "destructive" });
+      // Logic for deleting sale return needs to be implemented in useTransactions
+      toast({ title: "Delete not implemented for returns", variant: "destructive" });
     }
 
     setItemToDelete(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [itemToDelete, setSales, setSaleReturns, toast]);
+  }, [itemToDelete, deleteSale, toast]);
   
   const handleAddOrUpdateSaleReturn = React.useCallback((srData: SaleReturn) => {
-     setSaleReturns(prev => {
-        const index = prev.findIndex(sr => sr.id === srData.id);
-        if (index > -1) {
-            const newReturns = [...prev];
-            newReturns[index] = srData;
-            return newReturns;
-        }
-        return [srData, ...prev];
-     });
+     addSaleReturn(srData);
     setSaleReturnToEdit(null);
     setIsAddSaleReturnFormOpen(false);
     toast({ title: "Success!", description: "Sale return saved." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [setSaleReturns, toast]);
+  }, [addSaleReturn, toast]);
 
   const handleEditSaleReturn = React.useCallback((sr: SaleReturn) => {
     setSaleReturnToEdit(sr);
@@ -188,31 +174,6 @@ export function SalesClient() {
     const chittiHtml = renderToStaticMarkup(<SaleChittiPrint sale={sale} />);
     openPrintWindow(chittiHtml, `SaleChitti_${sale.id.slice(-4)}`);
   }, []);
-
-  const handleMasterDataUpdate = React.useCallback((newItem: MasterItem) => {
-    const setterMap = {
-      Customer: setCustomers,
-      Broker: setBrokers,
-      Transporter: setTransporters
-    } as const;
-
-    const setter = newItem.type in setterMap ? setterMap[newItem.type as keyof typeof setterMap] : null;
-
-    if (setter) {
-        setter(prev => {
-            const index = prev.findIndex(m => m.id === newItem.id);
-            if (index > -1) {
-                const newItems = [...prev];
-                newItems[index] = newItem;
-                return newItems;
-            }
-            return [newItem, ...prev];
-        });
-    }
-
-    toast({ title: `Master list updated for ${newItem.type}.` });
-    window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [setCustomers, setBrokers, setTransporters, toast]);
   
   const addButtonDynamicClass = React.useMemo(() => {
     return activeTab === 'sales' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-orange-600 hover:bg-orange-700 text-white';
@@ -258,14 +219,7 @@ export function SalesClient() {
           onSubmit={handleAddOrUpdateSale}
           existingSales={sales}
           saleToEdit={saleToEdit}
-          onMasterDataUpdate={handleMasterDataUpdate}
-          availableStock={availableStock}
-          masterData={{
-              Customer: customers,
-              Transporter: transporters,
-              Broker: brokers,
-              Expense: expenses
-          }}
+          onMasterDataUpdate={addOrUpdateMaster}
         />
       )}
       

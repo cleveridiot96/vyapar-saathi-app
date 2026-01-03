@@ -19,15 +19,15 @@ import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useTransactions } from "@/hooks/useTransactions";
-import type { Purchase, Sale, StockAdjustment, MasterItem, LocationTransfer } from "@/lib/types";
+import { useTransactions, useMasters } from "@/hooks/useTransactions";
+import type { StockAdjustment, MasterItem } from "@/lib/types";
 import { useInventory } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, parseISO } from "date-fns";
 
-const LowStockWarning = dynamic(() => import('@/components/app/dashboard/LowStockWarning').then(mod => mod.LowStockWarning), { ssr: false }); 
+const LowStockWarning = dynamic(() => import('@/components/app/dashboard/LowStockWarning').then(mod => mod.LowStockWarning), { ssr: false });
 const AddAdjustmentForm = dynamic(() => import('@/components/app/stock-adjustments/AddAdjustmentForm').then(mod => mod.AddAdjustmentForm), { ssr: false });
 
 export function InventoryClient() {
@@ -39,10 +39,10 @@ export function InventoryClient() {
     purchases,
     locationTransfers,
     adjustments, 
-    setAdjustments,
-    masterData,
-    addOrUpdateMaster
+    addAdjustment,
   } = useTransactions();
+  
+  const { masterData } = useMasters();
   
   const { allAggregatedInventory } = useInventory();
 
@@ -61,8 +61,8 @@ export function InventoryClient() {
 
   const allLotsInSystem = React.useMemo(() => {
     const lots = new Set<string>();
-    purchases.forEach(p => p.items.forEach(i => lots.add(i.lotNumber)));
-    locationTransfers.forEach(t => t.items.forEach(i => {
+    (purchases || []).forEach(p => p.items.forEach(i => lots.add(i.lotNumber)));
+    (locationTransfers || []).forEach(t => t.items.forEach(i => {
         lots.add(i.originalLotNumber);
         lots.add(i.newLotNumber);
     }));
@@ -70,11 +70,11 @@ export function InventoryClient() {
   }, [purchases, locationTransfers]);
 
   const handleAddAdjustment = React.useCallback((adjustment: Omit<StockAdjustment, 'id'>) => {
-    setAdjustments(prev => [...prev, { ...adjustment, id: `adj-${Date.now()}` }]);
+    addAdjustment({ ...adjustment, id: `adj-${Date.now()}` });
     setIsAdjustmentFormOpen(false);
     toast({ title: "Success!", description: "Stock adjustment added." });
     window.dispatchEvent(new CustomEvent("reindex-search"));
-  }, [setAdjustments, toast]);
+  }, [addAdjustment, toast]);
 
   const handleDeleteAttempt = React.useCallback((id: string) => {
     setItemToDelete(id);
@@ -82,11 +82,11 @@ export function InventoryClient() {
 
   const confirmDelete = React.useCallback(() => {
     if (!itemToDelete) return;
-    setAdjustments(prev => prev.filter(adj => adj.id !== itemToDelete));
-    toast({ title: "Deleted!", description: "Stock adjustment removed.", variant: "destructive" });
+    // setAdjustments(prev => prev.filter(adj => adj.id !== itemToDelete));
+    toast({ title: "Delete not implemented", description: "This is a prototype", variant: "destructive" });
     setItemToDelete(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [itemToDelete, setAdjustments, toast]);
+  }, [itemToDelete, toast]);
 
   const triggerLowStockWarning = React.useCallback(() => {
     toast({ title: "Stock Check", description: "Checking stock levels..." });
@@ -122,7 +122,7 @@ export function InventoryClient() {
                 <TableRow>
                   <TableHead className="w-[100px]">Date</TableHead>
                   <TableHead>Item Name / Lot</TableHead>
-                  <TableHead className="text-right">Current Stock</TableHead>
+                  <TableHead className="text-right">Current Stock (Kg)</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Avg Rate</TableHead>

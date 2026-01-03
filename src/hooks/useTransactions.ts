@@ -1,24 +1,12 @@
 "use client";
 
-/**
- * LIFETIME STABLE STATE MANAGEMENT
- * 
- * This hook replaces ALL previous state management strategies (useAppState, useLocalStorageState).
- * It provides a direct, reactive connection to the IndexedDB via Dexie's useLiveQuery.
- * 
- * Benefits:
- * 1. No Infinite Loops: Updates are pushed by DB, not by polling.
- * 2. No "Update Depth Exceeded": `useLiveQuery` manages side effects correctly.
- * 3. Single Source of Truth: If it's in the DB, it's in the UI.
- */
-
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import type { 
     Purchase, Sale, Payment, Receipt, LocationTransfer, PurchaseReturn, SaleReturn, 
     MasterItem, LedgerEntry, StockAdjustment, MasterItemType
 } from '@/lib/types';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 
 // --- Primary Hook for All Data ---
@@ -105,7 +93,7 @@ export const useMasters = () => {
 
     const getAllMasters = useCallback(() => masters || [], [masters]);
 
-    const masterData = React.useMemo(() => ({
+    const masterData = useMemo(() => ({
         Customer: customers || [],
         Supplier: suppliers || [],
         Agent: agents || [],
@@ -131,62 +119,3 @@ export const useMasters = () => {
         isMastersLoaded,
     }
 }
-
-
-export const useAppDispatch = () => {
-    const { addOrUpdateMaster } = useMasters();
-    const { 
-      addPurchase, updatePurchase, deletePurchase,
-      addSale, updateSale, deleteSale,
-      addPayment, updatePayment, deletePayment,
-      addReceipt, updateReceipt, deleteReceipt,
-      addLocationTransfer, addAdjustment, 
-      addPurchaseReturn, setPurchaseReturns,
-      addSaleReturn, setSaleReturns,
-      addLedgerEntry, removeLedgerEntries
-    } = useTransactions();
-    
-    // Legacy support for hasUnsavedChanges (can be refactored out later)
-    const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
-
-    // This is now a simplified dispatch-like object
-    return {
-        addOrUpdateMaster: (item: MasterItem) => {
-          addOrUpdateMaster(item);
-          setHasUnsavedChanges(true);
-        },
-        addPurchase: (p: Purchase) => { addPurchase(p); setHasUnsavedChanges(true); },
-        updatePurchase: (p: Purchase) => { updatePurchase(p); setHasUnsavedChanges(true); },
-        deletePurchase: (id: string) => { deletePurchase(id); setHasUnsavedChanges(true); },
-        addSale: (s: Sale) => { addSale(s); setHasUnsavedChanges(true); },
-        updateSale: (s: Sale) => { updateSale(s); setHasUnsavedChanges(true); },
-        deleteSale: (id: string) => { deleteSale(id); setHasUnsavedChanges(true); },
-        addPayment: (p: Payment) => { addPayment(p); setHasUnsavedChanges(true); },
-        updatePayment: (p: Payment) => { updatePayment(p); setHasUnsavedChanges(true); },
-        deletePayment: (id: string) => { deletePayment(id); setHasUnsavedChanges(true); },
-        addReceipt: (r: Receipt) => { addReceipt(r); setHasUnsavedChanges(true); },
-        updateReceipt: (r: Receipt) => { updateReceipt(r); setHasUnsavedChanges(true); },
-        deleteReceipt: (id: string) => { deleteReceipt(id); setHasUnsavedChanges(true); },
-        addAdjustment: (a: StockAdjustment) => { addAdjustment(a); setHasUnsavedChanges(true); },
-        addPurchaseReturn: (pr: PurchaseReturn) => { addPurchaseReturn(pr); setHasUnsavedChanges(true); },
-        addSaleReturn: (sr: SaleReturn) => { addSaleReturn(sr); setHasUnsavedChanges(true); },
-        // ... include other actions as needed
-        hasUnsavedChanges,
-        setHasUnsavedChanges,
-        // loadEvents is now a legacy no-op, data loads via useLiveQuery
-        loadEvents: (events: any[]) => console.log("Data loaded via Dexie hooks, loadEvents is a no-op.", events), 
-    };
-};
-
-export const useAppState = () => {
-    const { purchases, sales, payments, receipts, locationTransfers, purchaseReturns, saleReturns, ledger, adjustments, isTransactionsLoaded } = useTransactions();
-    const { masters, masterData, isMastersLoaded } = useMasters();
-    
-    return {
-        purchases, sales, payments, receipts, locationTransfers, purchaseReturns, saleReturns, ledger, adjustments,
-        masterData,
-        masters,
-        getAllMasters: () => masters,
-        isLoaded: isTransactionsLoaded && isMastersLoaded,
-    }
-};
