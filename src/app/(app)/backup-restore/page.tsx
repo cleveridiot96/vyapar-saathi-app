@@ -20,7 +20,7 @@ export default function BackupRestorePage() {
         const checkChanges = () => setHasUnsavedChanges(true);
         db.on('changes', checkChanges);
         return () => db.on('changes').unsubscribe(checkChanges);
-    });
+    }, []);
 
     const handleSaveData = async () => {
         try {
@@ -82,7 +82,9 @@ export default function BackupRestorePage() {
                         const table = db.table(tableName);
                         if (table) {
                           await table.clear();
-                          await table.bulkAdd(data[tableName]);
+                          if (data[tableName] && Array.isArray(data[tableName])) {
+                            await table.bulkAdd(data[tableName]);
+                          }
                         }
                       }
                     });
