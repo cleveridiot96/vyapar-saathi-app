@@ -20,57 +20,33 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const SALT_KEY = 'encryption_salt';
 
 export const PasswordProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Always authenticated
   const [isUnlocked, setIsUnlocked] = useState(false);
   const isHydrated = useHydrated();
 
   const hasPassword = useCallback(async (): Promise<boolean> => {
-    const salt = await db.keyval.get(SALT_KEY);
-    return !!salt;
+    // Bypassed
+    return Promise.resolve(false);
   }, []);
 
   const unlock = useCallback(async (password: string): Promise<boolean> => {
-    setIsUnlocked(true);
-    try {
-      const saltEntry = await db.keyval.get(SALT_KEY);
-      if (!saltEntry?.value) {
-        console.error("Salt not found. Cannot unlock.");
-        return false;
-      }
-      const key = await deriveKey(password, saltEntry.value);
-      setSessionKey(key);
-      
-      // Test decryption to verify the key.
-      await db.masters.limit(1).first(); 
-      
-      setIsAuthenticated(true);
-      return true;
-    } catch (error) {
-      console.error("Unlock failed, likely incorrect password:", error);
-      clearSessionKey();
-      setIsAuthenticated(false);
-      return false;
-    } finally {
-      setIsUnlocked(false);
-    }
+    // Bypassed
+    setIsAuthenticated(true);
+    return true;
   }, []);
 
   const setPassword = useCallback(async (password: string): Promise<void> => {
-    const salt = window.crypto.getRandomValues(new Uint8Array(16));
-    await db.keyval.put({ key: SALT_KEY, value: salt });
-    const key = await deriveKey(password, salt);
-    setSessionKey(key);
-    // After setting the password, we are authenticated.
+    // Bypassed
     setIsAuthenticated(true);
   }, []);
 
   const lock = useCallback(() => {
-    clearSessionKey();
-    setIsAuthenticated(false);
+    // Bypassed
+    setIsAuthenticated(true);
   }, []);
   
   const value = useMemo(() => ({
-    isAuthenticated,
+    isAuthenticated: true, // Always true
     isUnlocked,
     hasPassword,
     unlock,
