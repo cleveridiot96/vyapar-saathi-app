@@ -250,5 +250,3 @@ export function PurchasesClient() {
     </div>
   );
 }
-
-    
