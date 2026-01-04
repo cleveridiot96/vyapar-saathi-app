@@ -59,7 +59,7 @@ const CostRow: React.FC<{ label: string; value: number; isDeduction?: boolean; i
 
 export function ProfitAnalysisClient() {
   const { isAppHydrating } = useSettings();
-  const { sales } = useTransactions();
+  const { sales, isTransactionsLoaded } = useTransactions();
   const { financialYear: currentFinancialYearString } = useSettings();
   const [saleIdForCalc, setSaleIdForCalc] = React.useState<string | undefined>();
   const calculatorRef = useRef<HTMLDivElement>(null);
@@ -78,7 +78,7 @@ export function ProfitAnalysisClient() {
   const [selectedMonthKey, setSelectedMonthKey] = React.useState<string | undefined>();
 
   const allProfitTransactionsInFY = React.useMemo(() => {
-    if (isAppHydrating) return [];
+    if (isAppHydrating || !isTransactionsLoaded) return [];
     const fySales = (sales ?? []).filter(sale => sale && isDateInFinancialYear(sale.date, currentFinancialYearString));
     
     const flattenedTransactions: TransactionalProfitInfo[] = [];
@@ -119,7 +119,7 @@ export function ProfitAnalysisClient() {
         });
     });
     return flattenedTransactions.sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-}, [sales, isAppHydrating, currentFinancialYearString]);
+}, [sales, isAppHydrating, isTransactionsLoaded, currentFinancialYearString]);
 
 
   const monthlySummaryForFY = React.useMemo(() => {
@@ -237,7 +237,7 @@ export function ProfitAnalysisClient() {
   }, [selectedMonthKey, allProfitTransactionsInFY]);
 
 
-  if (isAppHydrating) {
+  if (isAppHydrating || !isTransactionsLoaded) {
     return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p>Loading profit analysis...</p></div>;
   }
 

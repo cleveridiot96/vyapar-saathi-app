@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCallback, useMemo } from 'react';
@@ -15,6 +16,16 @@ import { groupMasters } from '@/lib/utils';
  * Reading data is done via useLiveQuery directly in components.
  */
 export const useTransactions = () => {
+  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
+  const sales = useLiveQuery(() => db.sales.toArray(), []);
+  const payments = useLiveQuery(() => db.payments.toArray(), []);
+  const receipts = useLiveQuery(() => db.receipts.toArray(), []);
+  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
+  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []);
+  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
+  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
+  const ledger = useLiveQuery(() => db.ledger.toArray(), []);
+
   const addPurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const updatePurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const deletePurchase = useCallback(async (id: string) => db.purchases.delete(id), []);
@@ -53,7 +64,27 @@ export const useTransactions = () => {
     }
   }, []);
 
+  const isTransactionsLoaded = purchases !== undefined &&
+                              sales !== undefined &&
+                              payments !== undefined &&
+                              receipts !== undefined &&
+                              locationTransfers !== undefined &&
+                              adjustments !== undefined &&
+                              purchaseReturns !== undefined &&
+                              saleReturns !== undefined &&
+                              ledger !== undefined;
+
   return {
+    purchases: purchases ?? [],
+    sales: sales ?? [],
+    payments: payments ?? [],
+    receipts: receipts ?? [],
+    locationTransfers: locationTransfers ?? [],
+    adjustments: adjustments ?? [],
+    purchaseReturns: purchaseReturns ?? [],
+    saleReturns: saleReturns ?? [],
+    ledger: ledger ?? [],
+    isTransactionsLoaded,
     addPurchase, updatePurchase, deletePurchase,
     addSale, updateSale, deleteSale,
     addPayment, updatePayment, deletePayment,
@@ -93,7 +124,7 @@ export const useMasters = () => {
 
 
     return {
-        masters,
+        masters: masters ?? [],
         masterData,
         isMastersLoaded: masters !== undefined,
         addOrUpdateMaster,
