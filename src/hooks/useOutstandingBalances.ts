@@ -18,14 +18,11 @@ export function useOutstandingBalances() {
     
     const { masters, isMastersLoaded } = useMasters();
 
-    const isDataReady = ![purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger].some(data => data === undefined) && isMastersLoaded;
-
-    const allMasters = masters;
+    const isDataReady = ![purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger, masters].some(data => data === undefined);
 
     const balances = useMemo(() => {
-        if (!isDataReady) {
-            return new Map<string, number>();
-        }
+        const allMasters = masters ?? [];
+        if (allMasters.length === 0) return new Map<string, number>();
 
         const balancesMap = new Map<string, number>();
 
@@ -107,13 +104,14 @@ export function useOutstandingBalances() {
 
 
         return balancesMap;
-    }, [isDataReady, allMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger]);
+    }, [isDataReady, masters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger]);
 
     const { receivableParties, payableParties } = useMemo(() => {
         const receivableParties: MasterItem[] = [];
         const payableParties: MasterItem[] = [];
+        const allMasters = masters ?? [];
 
-        (allMasters ?? []).forEach(party => {
+        allMasters.forEach(party => {
             const balance = balances.get(party.id);
             if (balance === undefined) return;
             
@@ -133,11 +131,11 @@ export function useOutstandingBalances() {
         payableParties.sort((a,b) => Math.abs(b.balance || 0) - Math.abs(a.balance || 0));
         
         return { receivableParties, payableParties };
-    }, [allMasters, balances]);
+    }, [masters, balances]);
 
 
     const getPartyName = (partyId: string) => {
-        const party = (allMasters ?? []).find(p => p.id === partyId);
+        const party = (masters ?? []).find(p => p.id === partyId);
         return party?.name || partyId;
     }
 
