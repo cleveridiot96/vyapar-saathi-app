@@ -1,9 +1,10 @@
+
 "use client";
 
 import * as React from "react";
 import type { LocationTransfer, LedgerEntry, MasterItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, ArrowRightLeft, ListChecks, Boxes, Printer, Trash2, Edit, Download, MoreVertical } from "lucide-react";
+import { PlusCircle, ArrowRightLeft, ListChecks, Boxes, Printer, Trash2, Edit, Download, MoreVertical, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
@@ -122,7 +123,7 @@ export function LocationTransferClient() {
   
   const { availableStock, isLoading: isInventoryLoading } = useInventory(transferToEdit?.id);
 
-  const ready = isStudio || (locationTransfers !== undefined && isMastersLoaded && !isInventoryLoading);
+  const ready = locationTransfers !== undefined && isMastersLoaded && !isInventoryLoading;
 
 
   React.useEffect(() => {
@@ -178,9 +179,9 @@ export function LocationTransferClient() {
   }, []);
 
   const expandedTransfers = React.useMemo(() => {
-    if (isAppHydrating || !dateRange?. from) return [];
+    if (!ready || !dateRange?.from) return [];
     
-    const filtered = (locationTransfers || []).filter(lt => lt && lt.date && isDateInFinancialYear(lt.date, financialYear) && new Date(lt.date) >= dateRange.from!  && new Date(lt.date) <= (dateRange. to || new Date()));
+    const filtered = (locationTransfers ?? []).filter(lt => lt && lt.date && isDateInFinancialYear(lt.date, financialYear) && new Date(lt.date) >= dateRange.from!  && new Date(lt.date) <= (dateRange. to || new Date()));
     
     const flatList:  ExpandedTransferHistoryItem[] = [];
     filtered.forEach(transfer => {
@@ -192,7 +193,7 @@ export function LocationTransferClient() {
     });
 
     return flatList. sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [locationTransfers, financialYear, isAppHydrating, dateRange]);
+  }, [locationTransfers, financialYear, ready, dateRange]);
   
   const transferHistoryTotals = React.useMemo(() => {
     if (! expandedTransfers || expandedTransfers.length === 0) {
@@ -220,7 +221,7 @@ export function LocationTransferClient() {
   }, [activeTab]);
 
   if (!ready) {
-    return <div className="min-h-screen w-full p-4 space-y-4">
+    return <div className="space-y-4 p-4">
         <div className="flex justify-between items-center">
             <Skeleton className="h-10 w-1/3" />
             <Skeleton className="h-10 w-48" />
@@ -270,7 +271,7 @@ export function LocationTransferClient() {
                         <TableHead className="text-right">LANDED RATE (₹/KG)</TableHead>
                     </TableRow></TableHeader>
                         <TableBody>
-                            {(availableStock || []).length === 0 && <TableRow><TableCell colSpan={5} className="text-center h-24">No stock for FY {financialYear}.</TableCell></TableRow>}
+                            {(availableStock ?? []).length === 0 && <TableRow><TableCell colSpan={5} className="text-center h-24">No stock for FY {financialYear}.</TableCell></TableRow>}
                             {(availableStock ?? []). map(item => (
                                 <TableRow key={`${item.locationId}${KEY_SEPARATOR}${item.lotNumber}`} className="uppercase">
                                     <TableCell><Tooltip><TooltipTrigger asChild><span className="truncate max-w-[150px] inline-block">{item.locationName || item.locationId}</span></TooltipTrigger><TooltipContent><p>{item.locationName || item.locationId}</p></TooltipContent></Tooltip></TableCell>
@@ -395,7 +396,7 @@ export function LocationTransferClient() {
           masterData={masterData}
           addOrUpdateMaster={addOrUpdateMaster}
           getAllMasters={getAllMasters}
-          availableStock={availableStock}
+          availableStock={availableStock ?? []}
         />
       )}
 

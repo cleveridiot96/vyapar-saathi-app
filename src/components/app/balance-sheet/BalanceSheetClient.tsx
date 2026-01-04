@@ -1,3 +1,4 @@
+
 "use client";
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,9 +11,9 @@ export function BalanceSheetClient() {
     const { receivableParties, payableParties, isBalancesLoading } = useOutstandingBalances();
     const { allAggregatedInventory, isLoading: isInventoryLoading } = useInventory();
     
-    const totalReceivables = receivableParties.reduce((sum, party) => sum + party.balance, 0);
-    const totalPayables = payableParties.reduce((sum, party) => sum + party.balance, 0);
-    const totalStockValue = (allAggregatedInventory || []).reduce((sum, item) => sum + item.cogs, 0);
+    const totalReceivables = (receivableParties ?? []).reduce((sum, party) => sum + party.balance, 0);
+    const totalPayables = (payableParties ?? []).reduce((sum, party) => sum + party.balance, 0);
+    const totalStockValue = (allAggregatedInventory ?? []).reduce((sum, item) => sum + item.cogs, 0);
 
     const netPosition = totalStockValue + totalReceivables + totalPayables;
     const isLoading = isBalancesLoading || isInventoryLoading;

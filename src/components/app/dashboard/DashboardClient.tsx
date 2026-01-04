@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -67,10 +68,10 @@ export function DashboardClient() {
                     </>
                 ) : (
                     <>
-                        <WarehouseSummary inventory={allAggregatedInventory || []} />
+                        <WarehouseSummary inventory={allAggregatedInventory ?? []} />
                         <OutstandingSummary 
-                            receivableParties={receivableParties || []} 
-                            payableParties={payableParties || []} 
+                            receivableParties={receivableParties ?? []} 
+                            payableParties={payableParties ?? []} 
                         />
                     </>
                 )}

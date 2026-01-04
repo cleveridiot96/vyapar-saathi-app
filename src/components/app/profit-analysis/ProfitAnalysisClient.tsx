@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -5,7 +6,7 @@ import type { Sale, TransactionalProfitInfo, CostBreakdown } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { TrendingUp, DollarSign, BarChart3, CalendarDays, Rocket, Trophy, Calculator, ArrowDown, Zap, Plus, Minus, ChevronsRight } from "lucide-react";
+import { TrendingUp, DollarSign, BarChart3, CalendarDays, Rocket, Trophy, Calculator, ArrowDown, Zap, Plus, Minus, ChevronsRight, Loader2 } from "lucide-react";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subDays, getDay } from "date-fns";
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
@@ -16,8 +17,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { cn } from "@/lib/utils";
-import { useTransactions } from '@/hooks/useTransactions';
 import Link from 'next/link';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 interface MonthlySummaryInfo {
@@ -57,9 +60,8 @@ const CostRow: React.FC<{ label: string; value: number; isDeduction?: boolean; i
 
 
 export function ProfitAnalysisClient() {
-  const { isAppHydrating, financialYear: currentFinancialYearString } = useSettings();
-  const transactions = useTransactions();
-  const { isTransactionsLoaded } = useTransactions();
+  const { financialYear: currentFinancialYearString } = useSettings();
+  const sales = useLiveQuery(() => db.sales.toArray());
   
   const [saleIdForCalc, setSaleIdForCalc] = React.useState<string | undefined>();
   const calculatorRef = useRef<HTMLDivElement>(null);
@@ -68,10 +70,6 @@ export function ProfitAnalysisClient() {
     const today = new Date();
     return { from: startOfMonth(today), to: endOfDay(today) };
   });
-
-  const sales = transactions?.sales ?? [];
-
-  if (!Array.isArray(sales)) return null;
 
   useEffect(() => {
     if (saleIdForCalc && calculatorRef.current) {
@@ -82,8 +80,8 @@ export function ProfitAnalysisClient() {
   const [selectedMonthKey, setSelectedMonthKey] = React.useState<string | undefined>();
     
   const allProfitTransactionsInFY = React.useMemo(() => {
-    if (isAppHydrating || !isTransactionsLoaded) return [];
-    const fySales = (sales ?? []).filter(sale => sale && isDateInFinancialYear(sale.date, currentFinancialYearString));
+    if (!sales) return [];
+    const fySales = sales.filter(sale => sale && isDateInFinancialYear(sale.date, currentFinancialYearString));
     
     const flattenedTransactions: TransactionalProfitInfo[] = [];
     fySales.forEach(sale => {
@@ -123,7 +121,7 @@ export function ProfitAnalysisClient() {
         });
     });
     return flattenedTransactions.sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-}, [sales, isAppHydrating, isTransactionsLoaded, currentFinancialYearString]);
+}, [sales, currentFinancialYearString]);
 
 
   const monthlySummaryForFY = React.useMemo(() => {
@@ -241,8 +239,17 @@ export function ProfitAnalysisClient() {
   }, [selectedMonthKey, allProfitTransactionsInFY]);
 
 
-  if (isAppHydrating || !isTransactionsLoaded) {
-    return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p>Loading profit analysis...</p></div>;
+  if (sales === undefined) {
+    return <div className="space-y-4 p-4">
+        <Skeleton className="h-12 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+        <Skeleton className="h-[60vh] w-full" />
+      </div>;
   }
 
   return (

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -27,6 +28,9 @@ import {
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
 import { useTransactions } from '@/hooks/useTransactions';
 import dynamic from 'next/dynamic';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
@@ -166,23 +170,24 @@ const AgingReport = ({ data }: { data: OutstandingParty[] }) => {
 export function OutstandingClient() {
   const [selectedPartyId, setSelectedPartyId] = useState<string | undefined>();
   const router = useRouter();
-  const { sales, receipts } = useTransactions();
+  const sales = useLiveQuery(() => db.sales.toArray(), []);
+  const receipts = useLiveQuery(() => db.receipts.toArray(), []);
   
   const { receivableParties, payableParties, isBalancesLoading } = useOutstandingBalances();
 
   const outstandingData = useMemo(() => {
     const billPaidAmounts = new Map<string, number>();
 
-    (receipts || []).forEach(tx => {
+    (receipts ?? []).forEach(tx => {
         (tx.againstBills || []).forEach(ab => {
             billPaidAmounts.set(ab.billId, (billPaidAmounts.get(ab.billId) || 0) + ab.amount);
         });
     });
 
-    const allParties = [...receivableParties, ...payableParties];
+    const allParties = [...(receivableParties ?? []), ...(payableParties ?? [])];
 
     return allParties.map(party => {
-      const partySales = (sales || []).filter(s => s.brokerId === party.id || s.customerId === party.id);
+      const partySales = (sales ?? []).filter(s => s.brokerId === party.id || s.customerId === party.id);
 
       const bills: OutstandingBill[] = partySales.map(s => {
         const paid = billPaidAmounts.get(s.id) || 0;
@@ -207,21 +212,30 @@ export function OutstandingClient() {
 
   
   const partyOptions = useMemo(() => {
-    return outstandingData
+    return (outstandingData ?? [])
         .map(p => ({ value: p.partyId, label: `${p.partyName} (${p.partyType})` }))
         .sort((a,b) => a.label.localeCompare(b.label));
   }, [outstandingData]);
 
   const filteredData = useMemo(() => {
     if (!selectedPartyId) return outstandingData;
-    return outstandingData.filter(item => item.partyId === selectedPartyId);
+    return (outstandingData ?? []).filter(item => item.partyId === selectedPartyId);
   }, [outstandingData, selectedPartyId]);
   
-  const totalReceivable = useMemo(() => filteredData.filter(p => p.balance > 0).reduce((sum, p) => sum + p.balance, 0), [filteredData]);
-  const totalPayable = useMemo(() => filteredData.filter(p => p.balance < 0).reduce((sum, p) => sum + p.balance, 0), [filteredData]);
+  const totalReceivable = useMemo(() => (filteredData ?? []).filter(p => p.balance > 0).reduce((sum, p) => sum + p.balance, 0), [filteredData]);
+  const totalPayable = useMemo(() => (filteredData ?? []).filter(p => p.balance < 0).reduce((sum, p) => sum + p.balance, 0), [filteredData]);
 
-
-  if(isBalancesLoading) return <div className="flex justify-center items-center h-full"><Card><CardHeader><CardTitle>Loading Outstanding Balances...</CardTitle></CardHeader><CardContent><div className="space-y-2"><div className="h-4 bg-muted rounded w-3/4"></div><div className="h-4 bg-muted rounded w-1/2"></div></div></CardContent></Card></div>;
+  if(isBalancesLoading || sales === undefined || receipts === undefined) {
+      return <div className="space-y-4 p-4">
+        <Skeleton className="h-10 w-1/3" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+        </div>
+        <Skeleton className="h-[60vh] w-full" />
+      </div>;
+  }
 
   return (
     <div className="space-y-4 print-area p-4 flex flex-col h-full">

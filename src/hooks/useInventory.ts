@@ -1,26 +1,34 @@
 
 "use client";
 
-import { useTransactions } from '@/hooks/useTransactions';
-import type { AggregatedInventoryItem, Sale } from '@/lib/types';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
+import type { AggregatedInventoryItem } from '@/lib/types';
 import { useMemo } from 'react';
 import { calculateInventory } from '@/lib/inventoryEngine';
 
 export function useInventory(saleToEditId?: string | null) {
-  const { sales, purchases, locationTransfers, adjustments, purchaseReturns, saleReturns, isTransactionsLoaded } = useTransactions();
+  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
+  const sales = useLiveQuery(() => db.sales.toArray(), []);
+  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []);
+  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
+  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
+  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
+  
+  const isDataReady = ![purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns].some(data => data === undefined);
 
   const allAggregatedInventory = useMemo(() => {
-    if (!isTransactionsLoaded) return [];
-    return calculateInventory(purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns);
-  }, [purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns, isTransactionsLoaded]);
+    if (!isDataReady) return [];
+    return calculateInventory(purchases!, sales!, adjustments!, locationTransfers!, purchaseReturns!, saleReturns!);
+  }, [purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns, isDataReady]);
 
 
   const adjustedInventory = useMemo(() => {
-    if (!saleToEditId || !isTransactionsLoaded) {
+    if (!saleToEditId || !isDataReady) {
       return allAggregatedInventory;
     }
 
-    const saleToExclude = sales.find(s => s.id === saleToEditId);
+    const saleToExclude = (sales ?? []).find(s => s.id === saleToEditId);
     if (!saleToExclude) {
       return allAggregatedInventory;
     }
@@ -43,12 +51,12 @@ export function useInventory(saleToEditId?: string | null) {
         return invItem;
     }).filter(Boolean) as AggregatedInventoryItem[];
 
-  }, [allAggregatedInventory, sales, saleToEditId, isTransactionsLoaded]);
+  }, [allAggregatedInventory, sales, saleToEditId, isDataReady]);
 
   return {
     allAggregatedInventory: adjustedInventory,
     availableStock: (adjustedInventory || []).filter(item => item && item.currentBags > 0.01),
-    isLoading: !isTransactionsLoaded,
+    isLoading: !isDataReady,
   };
 }
 
