@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -15,30 +14,28 @@ import { isDateInFinancialYear } from '@/lib/utils';
 import { useTransactions, useMasters } from '@/hooks/useTransactions';
 import { useToast } from "@/hooks/use-toast";
 import type { StockAdjustment } from '@/lib/types';
-
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function StockAdjustmentsClient() {
   const { toast } = useToast();
-  const { financialYear } = useSettings();
-  const [hydrated, setHydrated] = useState(false);
-
+  const { financialYear, isAppHydrating } = useSettings();
+  
   const {
       adjustments,
       purchases,
       locationTransfers,
       addAdjustment,
+      isTransactionsLoaded,
   } = useTransactions();
-  const { masterData } = useMasters();
+  const { masterData, isMastersLoaded } = useMasters();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [itemToReverse, setItemToReverse] = useState<StockAdjustment | null>(null);
 
-  React.useEffect(() => { setHydrated(true); }, []);
-
   const allLotsInSystem = useMemo(() => {
     const lots = new Set<string>();
-    purchases.forEach(p => p.items.forEach(i => lots.add(i.lotNumber)));
-    locationTransfers.forEach(t => t.items.forEach(i => {
+    (purchases || []).forEach(p => p.items.forEach(i => lots.add(i.lotNumber)));
+    (locationTransfers || []).forEach(t => t.items.forEach(i => {
         lots.add(i.originalLotNumber);
         lots.add(i.newLotNumber);
     }));
@@ -46,11 +43,11 @@ export function StockAdjustmentsClient() {
   }, [purchases, locationTransfers]);
 
   const filteredAdjustments = useMemo(() => {
-    if (!hydrated) return [];
+    if (!isTransactionsLoaded) return [];
     return (adjustments || [])
       .filter(adj => isDateInFinancialYear(adj.date, financialYear))
       .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [adjustments, financialYear, hydrated]);
+  }, [adjustments, financialYear, isTransactionsLoaded]);
 
   const handleAddAdjustment = useCallback((newAdjustment: Omit<StockAdjustment, 'id'>) => {
     addAdjustment({ ...newAdjustment, id: `adj-${Date.now()}` });
@@ -95,6 +92,18 @@ export function StockAdjustmentsClient() {
         return 'default';
     }
   };
+  
+  if (!isTransactionsLoaded || !isMastersLoaded || isAppHydrating) {
+      return (
+          <div className="space-y-4 p-4">
+              <div className="flex justify-between items-center">
+                  <Skeleton className="h-10 w-64" />
+                  <Skeleton className="h-10 w-32" />
+              </div>
+              <Skeleton className="h-[calc(100vh-15rem)] w-full" />
+          </div>
+      )
+  }
 
   return (
     <div className="space-y-4">

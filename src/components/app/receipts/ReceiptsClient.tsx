@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -22,6 +21,7 @@ import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
 import { useTransactions, useMasters } from "@/hooks/useTransactions";
 import dynamic from 'next/dynamic';
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ReceiptTable = dynamic(() => import('./ReceiptTable').then(mod => mod.ReceiptTable), { ssr: false });
 const AddReceiptForm = dynamic(() => import('./AddReceiptForm').then(mod => mod.AddReceiptForm), { ssr: false });
@@ -29,9 +29,9 @@ const AddReceiptForm = dynamic(() => import('./AddReceiptForm').then(mod => mod.
 
 export function ReceiptsClient() {
   const { toast } = useToast();
-  const { financialYear } = useSettings();
+  const { financialYear, isAppHydrating } = useSettings();
   const { receipts, sales, isTransactionsLoaded, updateReceipt, addReceipt, deleteReceipt } = useTransactions();
-  const { addOrUpdateMaster } = useMasters();
+  const { addOrUpdateMaster, isMastersLoaded } = useMasters();
   
   const { receivableParties } = useOutstandingBalances();
 
@@ -43,7 +43,7 @@ export function ReceiptsClient() {
 
   const filteredReceipts = React.useMemo(() => {
     if (!isTransactionsLoaded) return [];
-    return receipts.filter(receipt => receipt && receipt.date && isDateInFinancialYear(receipt.date, financialYear));
+    return (receipts || []).filter(receipt => receipt && receipt.date && isDateInFinancialYear(receipt.date, financialYear));
   }, [receipts, financialYear, isTransactionsLoaded]);
 
   const handleAddOrUpdateReceipt = React.useCallback((receipt: Receipt) => {
@@ -96,6 +96,18 @@ export function ReceiptsClient() {
     setReceiptToEdit(null);
   }, []);
 
+  if (!isTransactionsLoaded || !isMastersLoaded || isAppHydrating) {
+        return (
+            <div className="space-y-4 p-4">
+                <div className="flex justify-between items-center">
+                    <Skeleton className="h-10 w-64" />
+                    <Skeleton className="h-10 w-32" />
+                </div>
+                <Skeleton className="h-[calc(100vh-15rem)] w-full" />
+            </div>
+        )
+    }
+
   return (
     <div className="space-y-6 print-area">
       <PrintHeaderSymbol className="hidden print:block text-center text-lg font-semibold mb-4" />
@@ -123,8 +135,8 @@ export function ReceiptsClient() {
           parties={receivableParties}
           onMasterDataUpdate={handleMasterDataUpdate}
           receiptToEdit={receiptToEdit}
-          allSales={sales}
-          allReceipts={receipts}
+          allSales={sales || []}
+          allReceipts={receipts || []}
         />
       )}
 

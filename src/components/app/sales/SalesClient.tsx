@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -13,9 +12,9 @@ import { useTransactions, useMasters } from "@/hooks/useTransactions";
 import type { Sale, SaleReturn } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import dynamic from 'next/dynamic';
+import { Skeleton } from "@/components/ui/skeleton";
 import { DatabaseDiagnostic } from "@/components/DatabaseDiagnostic";
 import { TestDataSeeder } from "@/components/TestDataSeeder";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { ssr: false });
 const AddSaleForm = dynamic(() => import('./AddSaleForm').then(mod => mod.AddSaleForm), { ssr: false });
