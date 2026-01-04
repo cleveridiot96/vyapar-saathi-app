@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -25,6 +26,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
 import { useInventory } from "@/hooks/useInventory";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
 const PurchaseTable = dynamic(() => import('./PurchaseTable').then(mod => mod.PurchaseTable), { ssr: false });
 const AddPurchaseForm = dynamic(() => import('./AddPurchaseForm').then(mod => mod.AddPurchaseForm), { ssr: false });
@@ -181,14 +183,12 @@ export function PurchasesClient() {
   
   if (!isTransactionsLoaded || !isMastersLoaded || isAppHydrating) {
     return (
-        <div className="space-y-4 p-4">
-            <div className="flex justify-between items-center">
-                <Skeleton className="h-10 w-64" />
-                <Skeleton className="h-10 w-32" />
-            </div>
-            <Skeleton className="h-[calc(100vh-15rem)] w-full" />
-        </div>
-    )
+      <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-20rem)] p-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+        <p className="text-lg font-semibold text-muted-foreground">Loading Purchases Data...</p>
+        <p className="text-sm text-muted-foreground">This may take a moment.</p>
+      </div>
+    );
   }
 
   return (

@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -14,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import dynamic from 'next/dynamic';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInventory } from "@/hooks/useInventory";
+import { Loader2 } from "lucide-react";
 
 const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { ssr: false });
 const AddSaleForm = dynamic(() => import('./AddSaleForm').then(mod => mod.AddSaleForm), { ssr: false });
@@ -102,15 +104,13 @@ export function SalesClient() {
     : 'bg-orange-600 hover:bg-orange-700 text-white';
 
   if (!isTransactionsLoaded || !isMastersLoaded || isAppHydrating) {
-      return (
-        <div className="space-y-4 p-4">
-            <div className="flex justify-between items-center">
-                <Skeleton className="h-10 w-64" />
-                <Skeleton className="h-10 w-32" />
-            </div>
-            <Skeleton className="h-[calc(100vh-15rem)] w-full" />
-        </div>
-    )
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-20rem)] p-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+        <p className="text-lg font-semibold text-muted-foreground">Loading Sales Data...</p>
+        <p className="text-sm text-muted-foreground">This may take a moment.</p>
+      </div>
+    );
   }
 
   return (
