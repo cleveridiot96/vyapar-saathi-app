@@ -64,7 +64,10 @@ export const useTransactions = () => {
   const removeLedgerEntries = useCallback(async (voucherId: string) => {
     const entriesToDelete = await db.ledger.where('relatedVoucher').equals(voucherId).toArray();
     if(entriesToDelete.length > 0) {
-      await db.ledger.bulkDelete(entriesToDelete.map(e => e.id as any));
+      const idsToDelete = entriesToDelete.map(e => e.id).filter(id => id !== undefined) as string[];
+      if (idsToDelete.length > 0) {
+          await db.ledger.bulkDelete(idsToDelete);
+      }
     }
   }, []);
 

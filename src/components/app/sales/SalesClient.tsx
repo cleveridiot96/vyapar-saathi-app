@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import dynamic from 'next/dynamic';
 import { DatabaseDiagnostic } from "@/components/DatabaseDiagnostic";
 import { TestDataSeeder } from "@/components/TestDataSeeder";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { ssr: false });
 const AddSaleForm = dynamic(() => import('./AddSaleForm').then(mod => mod.AddSaleForm), { ssr: false });
@@ -22,7 +23,7 @@ const SaleReturnTable = dynamic(() => import('./SaleReturnTable').then(mod => mo
 
 export function SalesClient() {
   const { toast } = useToast();
-  const { financialYear } = useSettings();
+  const { financialYear, isAppHydrating } = useSettings();
   
   const { 
       sales, 
@@ -33,6 +34,8 @@ export function SalesClient() {
       isTransactionsLoaded 
   } = useTransactions();
   
+  const { isMastersLoaded } = useMasters();
+
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
   const [itemToDelete, setItemToDelete] = React.useState<{id: string, type: 'sale' | 'return'} | null>(null);
@@ -81,8 +84,16 @@ export function SalesClient() {
     ? 'bg-green-600 hover:bg-green-700 text-white' 
     : 'bg-orange-600 hover:bg-orange-700 text-white';
 
-  if (!isTransactionsLoaded) {
-      return <div>Loading Sales...</div>
+  if (!isTransactionsLoaded || !isMastersLoaded || isAppHydrating) {
+      return (
+        <div className="space-y-4 p-4">
+            <div className="flex justify-between items-center">
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-10 w-32" />
+            </div>
+            <Skeleton className="h-[calc(100vh-15rem)] w-full" />
+        </div>
+    )
   }
 
   return (

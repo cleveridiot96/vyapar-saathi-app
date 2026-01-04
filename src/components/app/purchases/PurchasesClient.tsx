@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
 import { useInventory } from "@/hooks/useInventory";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const PurchaseTable = dynamic(() => import('./PurchaseTable').then(mod => mod.PurchaseTable), { ssr: false });
 const AddPurchaseForm = dynamic(() => import('./AddPurchaseForm').then(mod => mod.AddPurchaseForm), { ssr: false });
@@ -78,7 +79,7 @@ export function PurchasesClient() {
       addPurchaseReturn, 
       addLedgerEntry, removeLedgerEntries
   } = useTransactions();
-  const { masterData, addOrUpdateMaster, getAllMasters } = useMasters();
+  const { masterData, addOrUpdateMaster, getAllMasters, isMastersLoaded } = useMasters();
   
   const { availableStock } = useInventory();
 
@@ -151,6 +152,7 @@ export function PurchasesClient() {
       await removeLedgerEntries(itemToDelete.id);
       toast({ title: "Deleted!", description: "Purchase record removed.", variant: "destructive" });
     } else {
+      // Logic for deleting returns would go here
       toast({ title: "Delete not implemented for returns", variant: "destructive" });
     }
     setItemToDelete(null);
@@ -178,8 +180,16 @@ export function PurchasesClient() {
     return activeTab === 'purchases' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white';
   }, [activeTab]);
   
-  if (!isTransactionsLoaded || isAppHydrating) {
-    return <div>Loading purchases...</div>
+  if (!isTransactionsLoaded || !isMastersLoaded || isAppHydrating) {
+    return (
+        <div className="space-y-4 p-4">
+            <div className="flex justify-between items-center">
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-10 w-32" />
+            </div>
+            <Skeleton className="h-[calc(100vh-15rem)] w-full" />
+        </div>
+    )
   }
 
   return (
