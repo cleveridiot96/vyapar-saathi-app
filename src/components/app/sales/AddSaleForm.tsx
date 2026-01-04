@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -651,5 +650,3 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
 };
 
 export const AddSaleForm = React.memo(AddSaleFormComponent);
-
-    
