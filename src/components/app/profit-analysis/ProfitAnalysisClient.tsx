@@ -18,8 +18,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { cn } from "@/lib/utils";
 import Link from 'next/link';
-import { useTransactions } from '@/hooks/useTransactions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
 
 
 interface MonthlySummaryInfo {
@@ -60,7 +61,7 @@ const CostRow: React.FC<{ label: string; value: number; isDeduction?: boolean; i
 
 export function ProfitAnalysisClient() {
   const { financialYear: currentFinancialYearString } = useSettings();
-  const { sales = [] } = useTransactions() ?? {};
+  const sales = useLiveQuery(() => db.sales.toArray(), []);
   
   const [saleIdForCalc, setSaleIdForCalc] = React.useState<string | undefined>();
   const calculatorRef = React.useRef<HTMLDivElement>(null);
@@ -79,7 +80,8 @@ export function ProfitAnalysisClient() {
   const [selectedMonthKey, setSelectedMonthKey] = React.useState<string | undefined>();
     
   const allProfitTransactionsInFY = React.useMemo(() => {
-    const fySales = (sales ?? []).filter(sale => sale && isDateInFinancialYear(sale.date, currentFinancialYearString));
+    if (!sales) return [];
+    const fySales = sales.filter(sale => sale && isDateInFinancialYear(sale.date, currentFinancialYearString));
     
     const flattenedTransactions: TransactionalProfitInfo[] = [];
     fySales.forEach(sale => {
@@ -124,7 +126,7 @@ export function ProfitAnalysisClient() {
 
   const monthlySummaryForFY = React.useMemo(() => {
     const monthlyAgg: Record<string, { transactionCount: number; netProfit: number; }> = {};
-    allProfitTransactionsInFY.forEach(tx => {
+    (allProfitTransactionsInFY ?? []).forEach(tx => {
         const monthKey = format(startOfMonth(parseISO(tx.date)), "yyyy-MM");
         if (!monthlyAgg[monthKey]) {
             monthlyAgg[monthKey] = { transactionCount: 0, netProfit: 0 };
@@ -138,21 +140,24 @@ export function ProfitAnalysisClient() {
   }, [allProfitTransactionsInFY]);
 
   const filteredTransactionsForPeriod = React.useMemo(() => {
-    if (!dateRange?.from) return [];
+    if (!dateRange?.from || !allProfitTransactionsInFY) return [];
     const toDate = dateRange.to || dateRange.from;
     return allProfitTransactionsInFY.filter(tx => isWithinInterval(parseISO(tx.date), { start: startOfDay(dateRange.from!), end: endOfDay(toDate) }));
   }, [allProfitTransactionsInFY, dateRange]);
 
   const kpiData = React.useMemo<ProfitKPIs>(() => {
-    const totalNetProfitForPeriod = filteredTransactionsForPeriod.reduce((sum, tx) => sum + (tx.netProfit || 0), 0);
-    const totalNetProfitForFY = allProfitTransactionsInFY.reduce((sum, tx) => sum + (tx.netProfit || 0), 0);
+    const safeFilteredTransactions = filteredTransactionsForPeriod ?? [];
+    const safeAllProfitTransactions = allProfitTransactionsInFY ?? [];
 
-    const uniqueSalesInPeriod = [...new Set(filteredTransactionsForPeriod.map(tx => tx.saleId))];
+    const totalNetProfitForPeriod = safeFilteredTransactions.reduce((sum, tx) => sum + (tx.netProfit || 0), 0);
+    const totalNetProfitForFY = safeAllProfitTransactions.reduce((sum, tx) => sum + (tx.netProfit || 0), 0);
+
+    const uniqueSalesInPeriod = [...new Set(safeFilteredTransactions.map(tx => tx.saleId))];
     let highestProfitSale: ProfitKPIs['highestProfitSale'] = { id: 'N/A', profit: 0, billNumber: 'N/A', customerName: 'N/A', brokerName: undefined };
     
-    if (filteredTransactionsForPeriod.length > 0) {
+    if (safeFilteredTransactions.length > 0) {
       const profitBySale: Record<string, { profit: number; billNumber?: string; customerName?: string; brokerName?: string; }> = {};
-      filteredTransactionsForPeriod.forEach(tx => {
+      safeFilteredTransactions.forEach(tx => {
           if (!profitBySale[tx.saleId]) {
               profitBySale[tx.saleId] = { profit: 0, billNumber: tx.billNumber, customerName: tx.customerName, brokerName: tx.brokerName };
           }
@@ -214,6 +219,7 @@ export function ProfitAnalysisClient() {
   const dayBeforeYesterdayButtonText = getDay(dayBeforeYesterday) === 0 ? 'Saturday' : format(dayBeforeYesterday, 'EEEE');
   
   const saleOptionsForCalc = React.useMemo(() => {
+    if (!allProfitTransactionsInFY) return [];
     const uniqueSalesMap = new Map<string, { label: string; value: string }>();
     allProfitTransactionsInFY.forEach(tx => {
         if (!uniqueSalesMap.has(tx.saleId)) {
@@ -227,16 +233,29 @@ export function ProfitAnalysisClient() {
   }, [allProfitTransactionsInFY]);
 
   const itemsForSelectedSaleCalc = React.useMemo(() => {
-    if (!saleIdForCalc) return [];
+    if (!saleIdForCalc || !allProfitTransactionsInFY) return [];
     return allProfitTransactionsInFY.filter(tx => tx.saleId === saleIdForCalc);
   }, [saleIdForCalc, allProfitTransactionsInFY]);
 
   const detailedMonthlyTransactions = React.useMemo(() => {
-    if (!selectedMonthKey) return [];
+    if (!selectedMonthKey || !allProfitTransactionsInFY) return [];
     return allProfitTransactionsInFY.filter(tx => format(startOfMonth(parseISO(tx.date)), "yyyy-MM") === selectedMonthKey);
   }, [selectedMonthKey, allProfitTransactionsInFY]);
 
-  if (!sales) return null;
+  if (sales === undefined) {
+    return (
+        <div className="space-y-4">
+            <Skeleton className="h-24 w-full" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+            </div>
+            <Skeleton className="h-96 w-full" />
+        </div>
+    );
+  }
 
   return (
     <TooltipProvider>

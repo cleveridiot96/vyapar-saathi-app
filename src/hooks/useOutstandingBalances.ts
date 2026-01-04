@@ -2,30 +2,46 @@
 "use client";
 
 import { useMemo } from 'react';
-import { useMasters, useTransactions } from './useTransactions';
 import type { MasterItem } from '@/lib/types';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 
 export function useOutstandingBalances() {
-    const { sales, purchases, payments, receipts } = useTransactions();
-    const { masters = [] } = useMasters();
-    const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []) ?? [];
-    const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []) ?? [];
-    const ledger = useLiveQuery(() => db.ledger.toArray(), []) ?? [];
+    const purchases = useLiveQuery(() => db.purchases.toArray(), []);
+    const sales = useLiveQuery(() => db.sales.toArray(), []);
+    const payments = useLiveQuery(() => db.payments.toArray(), []);
+    const receipts = useLiveQuery(() => db.receipts.toArray(), []);
+    const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
+    const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
+    const ledger = useLiveQuery(() => db.ledger.toArray(), []);
+    const masters = useLiveQuery(() => db.masters.toArray(), []);
+
+    const isDataReady = ![purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger, masters].some(data => data === undefined);
 
     const balances = useMemo(() => {
+        if (!isDataReady) {
+            return new Map<string, number>();
+        }
+
         const balancesMap = new Map<string, number>();
+        const safeMasters = masters ?? [];
+        const safePurchases = purchases ?? [];
+        const safeSales = sales ?? [];
+        const safeReceipts = receipts ?? [];
+        const safePayments = payments ?? [];
+        const safePurchaseReturns = purchaseReturns ?? [];
+        const safeSaleReturns = saleReturns ?? [];
+        const safeLedger = ledger ?? [];
 
         // 1. Set opening balances from master data
-        masters.forEach(m => {
+        safeMasters.forEach(m => {
             if (m.type !== 'Warehouse' && m.type !== 'Expense' && m.type !== 'Product') {
                 balancesMap.set(m.id, m.details?.openingBalanceType === 'Cr' ? -(m.details?.openingBalance || 0) : (m.details?.openingBalance || 0));
             }
         });
         
         const allTxs = [
-            ...purchases, ...sales, ...receipts, ...payments, ...purchaseReturns, ...saleReturns, ...ledger
+            ...safePurchases, ...safeSales, ...safeReceipts, ...safePayments, ...safePurchaseReturns, ...safeSaleReturns, ...safeLedger
         ].filter(tx => tx && tx.date);
         
         // 2. Process all transactions to establish final balances
@@ -68,7 +84,7 @@ export function useOutstandingBalances() {
             // Purchase Returns decrease payables
             else if ('originalPurchaseId' in tx && 'returnAmount' in tx) { // Purchase Return
                  const pr = tx as typeof purchaseReturns[0];
-                 const p = (purchases ?? []).find(p => p.id === pr.originalPurchaseId);
+                 const p = safePurchases.find(p => p.id === pr.originalPurchaseId);
                  if (p) {
                     const primaryCreditorId = p.agentId || p.supplierId;
                     if(primaryCreditorId) {
@@ -79,7 +95,7 @@ export function useOutstandingBalances() {
             // Sale Returns decrease receivables
             else if ('originalSaleId' in tx && 'returnAmount' in tx) { // Sale Return
                 const sr = tx as typeof saleReturns[0];
-                const s = (sales ?? []).find(s => s.id === sr.originalSaleId);
+                const s = safeSales.find(s => s.id === sr.originalSaleId);
                 if (s) {
                     const primaryDebtorId = s.brokerId || s.customerId;
                     if(primaryDebtorId) {
@@ -95,13 +111,14 @@ export function useOutstandingBalances() {
 
 
         return balancesMap;
-    }, [masters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger]);
+    }, [isDataReady, masters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger]);
 
     const { receivableParties, payableParties } = useMemo(() => {
         const receivableParties: MasterItem[] = [];
         const payableParties: MasterItem[] = [];
+        const safeMasters = masters ?? [];
 
-        masters.forEach(party => {
+        safeMasters.forEach(party => {
             const balance = balances.get(party.id);
             if (balance === undefined) return;
             
@@ -125,7 +142,8 @@ export function useOutstandingBalances() {
 
 
     const getPartyName = (partyId: string) => {
-        const party = masters.find(p => p.id === partyId);
+        const safeMasters = masters ?? [];
+        const party = safeMasters.find(p => p.id === partyId);
         return party?.name || partyId;
     }
 
@@ -134,6 +152,8 @@ export function useOutstandingBalances() {
         payableParties,
         getPartyName,
         balances,
-        isBalancesLoading: false // Data is always an array, so it's never "loading"
+        isBalancesLoading: !isDataReady
     };
 }
+
+    

@@ -16,15 +16,6 @@ import { groupMasters } from '@/lib/utils';
  * Reading data is done via useLiveQuery directly in components.
  */
 export const useTransactions = () => {
-  const sales = useLiveQuery(() => db.sales.toArray(), []) ?? [];
-  const purchases = useLiveQuery(() => db.purchases.toArray(), []) ?? [];
-  const payments = useLiveQuery(() => db.payments.toArray(), []) ?? [];
-  const receipts = useLiveQuery(() => db.receipts.toArray(), []) ?? [];
-  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []) ?? [];
-  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []) ?? [];
-  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []) ?? [];
-  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []) ?? [];
-  const ledger = useLiveQuery(() => db.ledger.toArray(), []) ?? [];
 
   const addPurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const updatePurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
@@ -65,16 +56,6 @@ export const useTransactions = () => {
   }, []);
 
   return {
-    isTransactionsLoaded: true, // Data is always an array, so it's always "loaded"
-    sales,
-    purchases,
-    payments,
-    receipts,
-    locationTransfers,
-    adjustments,
-    purchaseReturns,
-    saleReturns,
-    ledger,
     addPurchase, updatePurchase, deletePurchase,
     addSale, updateSale, deleteSale,
     addPayment, updatePayment, deletePayment,
@@ -116,7 +97,6 @@ export const useMasters = () => {
     return {
         masters,
         masterData,
-        isMastersLoaded: true, // Data is always an array, so it's always "loaded"
         addOrUpdateMaster,
         getAllMasters,
         customers: masterData.Customer,
@@ -128,3 +108,5 @@ export const useMasters = () => {
         expenses: masterData.Expense,
     };
 };
+
+    
