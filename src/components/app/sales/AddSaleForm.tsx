@@ -33,9 +33,16 @@ import { DatePicker } from "@/components/ui/date-picker";
 import dynamic from 'next/dynamic';
 import { useMasters } from "@/hooks/useTransactions";
 import { useInventory } from "@/hooks/useInventory";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
-const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { 
+    ssr: false,
+    loading: () => <Skeleton className="h-10 w-full" />
+});
+const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { 
+    ssr: false,
+    loading: () => <p>Loading form...</p>
+});
 
 
 interface AddSaleFormProps {
@@ -192,7 +199,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                             <MasterDataCombobox 
                               value={field.value} 
                               onChange={field.onChange} 
-                              options={(customers || []).map(c => ({ value: c.id, label: c.name }))} 
+                              options={(customers ?? []).map(c => ({ value: c.id, label: c.name }))} 
                               placeholder="Select Customer" 
                             /> <FormMessage />
                           </FormItem>)} />
@@ -201,7 +208,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                             <MasterDataCombobox 
                               value={field.value} 
                               onChange={field.onChange} 
-                              options={(brokers || []).map(b => ({ value: b.id, label: b.name }))} 
+                              options={(brokers ?? []).map(b => ({ value: b.id, label: b.name }))} 
                               placeholder="Select Broker" 
                             />
                             <FormMessage />
@@ -256,5 +263,3 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
 };
 
 export const AddSaleForm = React.memo(AddSaleFormComponent);
-
-    

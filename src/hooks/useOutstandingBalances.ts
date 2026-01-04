@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import type { MasterItem } from '@/lib/types';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
+import { useMasters } from './useTransactions';
 
 export function useOutstandingBalances() {
     const purchases = useLiveQuery(() => db.purchases.toArray(), []);
@@ -14,12 +15,14 @@ export function useOutstandingBalances() {
     const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
     const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
     const ledger = useLiveQuery(() => db.ledger.toArray(), []);
-    const masters = useLiveQuery(() => db.masters.toArray(), []);
+    
+    const { masters, isMastersLoaded } = useMasters();
 
-    const isDataReady = ![purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger, masters].some(data => data === undefined);
+    const isLoading = [purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger].some(data => data === undefined) || !isMastersLoaded;
+    const allMasters = masters ?? [];
 
     const balances = useMemo(() => {
-        if (!isDataReady) {
+        if (isLoading) {
             return new Map<string, number>();
         }
 
@@ -111,14 +114,15 @@ export function useOutstandingBalances() {
 
 
         return balancesMap;
-    }, [isDataReady, masters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger]);
+    }, [isLoading, allMasters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger]);
 
     const { receivableParties, payableParties } = useMemo(() => {
+        if (isLoading) return { receivableParties: [], payableParties: [] };
+
         const receivableParties: MasterItem[] = [];
         const payableParties: MasterItem[] = [];
-        const safeMasters = masters ?? [];
 
-        safeMasters.forEach(party => {
+        (allMasters ?? []).forEach(party => {
             const balance = balances.get(party.id);
             if (balance === undefined) return;
             
@@ -138,12 +142,11 @@ export function useOutstandingBalances() {
         payableParties.sort((a,b) => Math.abs(b.balance || 0) - Math.abs(a.balance || 0));
         
         return { receivableParties, payableParties };
-    }, [masters, balances]);
+    }, [allMasters, balances, isLoading]);
 
 
     const getPartyName = (partyId: string) => {
-        const safeMasters = masters ?? [];
-        const party = safeMasters.find(p => p.id === partyId);
+        const party = (allMasters ?? []).find(p => p.id === partyId);
         return party?.name || partyId;
     }
 
@@ -152,8 +155,6 @@ export function useOutstandingBalances() {
         payableParties,
         getPartyName,
         balances,
-        isBalancesLoading: !isDataReady
+        isBalancesLoading: isLoading,
     };
 }
-
-    

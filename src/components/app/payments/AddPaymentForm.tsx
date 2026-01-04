@@ -39,9 +39,16 @@ import { useInventory } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
 import { DatePicker } from "@/components/ui/date-picker";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
-const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { 
+    ssr: false,
+    loading: () => <Skeleton className="h-10 w-full" />
+});
+const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { 
+    ssr: false,
+    loading: () => <p>Loading form...</p>
+});
 
 
 interface AddPaymentFormProps {
@@ -514,5 +521,3 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
     </>
   );
 };
-
-    

@@ -15,12 +15,16 @@ export function useInventory(saleToEditId?: string | null) {
   const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []) ?? [];
   const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []) ?? [];
   
+  const isLoading = [purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns].some(data => data === undefined);
+
   const allAggregatedInventory = useMemo(() => {
+    if (isLoading) return [];
     return calculateInventory(purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns);
-  }, [purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns]);
+  }, [purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns, isLoading]);
 
 
   const adjustedInventory = useMemo(() => {
+    if (isLoading) return [];
     if (!saleToEditId) {
       return allAggregatedInventory;
     }
@@ -48,13 +52,12 @@ export function useInventory(saleToEditId?: string | null) {
         return invItem;
     }).filter(Boolean) as AggregatedInventoryItem[];
 
-  }, [allAggregatedInventory, sales, saleToEditId]);
+  }, [allAggregatedInventory, sales, saleToEditId, isLoading]);
 
   return {
     allAggregatedInventory: adjustedInventory,
-    availableStock: (adjustedInventory || []).filter(item => item && item.currentBags > 0.01),
-    isLoading: false, // Data is always an array, never "loading"
-    isReady: true,
+    availableStock: (adjustedInventory ?? []).filter(item => item && item.currentBags > 0.01),
+    isLoading,
   };
 }
 

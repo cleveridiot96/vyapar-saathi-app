@@ -38,9 +38,16 @@ import dynamic from 'next/dynamic';
 import { DatePicker } from "@/components/ui/date-picker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMasters } from "@/hooks/useTransactions";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
-const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { 
+    ssr: false,
+    loading: () => <Skeleton className="h-10 w-full" />
+});
+const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { 
+    ssr: false,
+    loading: () => <p>Loading form...</p>
+});
 
 
 interface AddReceiptFormProps {
@@ -413,5 +420,3 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
 };
 
 export const AddReceiptForm = React.memo(AddReceiptFormComponent);
-
-    

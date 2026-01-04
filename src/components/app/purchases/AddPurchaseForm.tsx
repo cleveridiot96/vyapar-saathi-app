@@ -27,13 +27,23 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { purchaseSchema, type PurchaseFormValues } from "@/lib/schemas/purchaseSchema";
 import type { MasterItem, Purchase, MasterItemType, Agent, ExpenseItem, AggregatedInventoryItem } from "@/lib/types";
-import { MasterDataCombobox } from "@/components/shared/MasterDataCombobox";
 import { useToast } from "@/hooks/use-toast";
-import { MasterForm } from "@/components/app/masters/MasterForm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DatePicker } from "@/components/ui/date-picker";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { 
+    ssr: false,
+    loading: () => <Skeleton className="h-10 w-full" />
+});
+const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { 
+    ssr: false,
+    loading: () => <p>Loading form...</p>
+});
+
 
 interface AddPurchaseFormProps {
   isOpen: boolean;
@@ -251,13 +261,13 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
         id: purchaseToEdit?.id || `purchase-${Date.now()}`,
         date: format(values.date, "yyyy-MM-dd"),
         locationId: values.locationId as string,
-        locationName: warehouses.find(w => w.id === values.locationId)?.name || 'Unknown Location',
+        locationName: (warehouses ?? []).find(w => w.id === values.locationId)?.name || 'Unknown Location',
         supplierId: values.supplierId as string,
-        supplierName: suppliers.find(s => s.id === values.supplierId)?.name || 'Unknown Supplier',
+        supplierName: (suppliers ?? []).find(s => s.id === values.supplierId)?.name || 'Unknown Supplier',
         agentId: values.agentId,
-        agentName: agents.find(a => a.id === values.agentId)?.name,
+        agentName: (agents ?? []).find(a => a.id === values.agentId)?.name,
         transporterId: values.transporterId,
-        transporterName: transporters.find(t => t.id === values.transporterId)?.name,
+        transporterName: (transporters ?? []).find(t => t.id === values.transporterId)?.name,
         items: summary.itemsWithLandedCost.map(item => ({
           id: `pitem-${Date.now()}-${Math.random()}`,
           lotNumber: item.lotNumber,

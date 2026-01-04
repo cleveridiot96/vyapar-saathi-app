@@ -12,10 +12,20 @@ import { groupMasters } from '@/lib/utils';
 
 
 /**
- * Primary Hook for all transactional data mutations.
- * Reading data is done via useLiveQuery directly in components.
+ * Primary Hook for all transactional data mutations and reads.
  */
 export const useTransactions = () => {
+  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
+  const sales = useLiveQuery(() => db.sales.toArray(), []);
+  const payments = useLiveQuery(() => db.payments.toArray(), []);
+  const receipts = useLiveQuery(() => db.receipts.toArray(), []);
+  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
+  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []);
+  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
+  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
+  const ledger = useLiveQuery(() => db.ledger.toArray(), []);
+  
+  const isTransactionsLoaded = ![purchases, sales, payments, receipts, locationTransfers, adjustments, purchaseReturns, saleReturns, ledger].some(data => data === undefined);
 
   const addPurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const updatePurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
@@ -56,6 +66,8 @@ export const useTransactions = () => {
   }, []);
 
   return {
+    purchases, sales, payments, receipts, locationTransfers, adjustments, purchaseReturns, saleReturns, ledger,
+    isTransactionsLoaded,
     addPurchase, updatePurchase, deletePurchase,
     addSale, updateSale, deleteSale,
     addPayment, updatePayment, deletePayment,
@@ -69,33 +81,35 @@ export const useTransactions = () => {
  * Hook for reading and mutating Master data.
  */
 export const useMasters = () => {
-    const masters = useLiveQuery(() => db.masters.toArray(), []) ?? [];
+    const masters = useLiveQuery(() => db.masters.toArray(), []);
+    const isMastersLoaded = masters !== undefined;
 
     const addOrUpdateMaster = useCallback(async (item: MasterItem) => {
         await db.masters.put(item);
     }, []);
 
     const getAllMasters = useCallback(() => {
-        return masters;
+        return masters ?? [];
     }, [masters]);
     
     const masterData = useMemo(() => {
-        const grouped = groupMasters(masters);
+        const grouped = groupMasters(masters ?? []);
         return {
-            Customer: grouped.Customer,
-            Supplier: grouped.Supplier,
-            Agent: grouped.Agent,
-            Broker: grouped.Broker,
-            Transporter: grouped.Transporter,
-            Warehouse: grouped.Warehouse,
-            Expense: grouped.Expense,
-            Product: grouped.Product,
+            Customer: grouped.Customer ?? [],
+            Supplier: grouped.Supplier ?? [],
+            Agent: grouped.Agent ?? [],
+            Broker: grouped.Broker ?? [],
+            Transporter: grouped.Transporter ?? [],
+            Warehouse: grouped.Warehouse ?? [],
+            Expense: grouped.Expense ?? [],
+            Product: grouped.Product ?? [],
         }
     }, [masters]);
 
 
     return {
-        masters,
+        masters: masters ?? [],
+        isMastersLoaded,
         masterData,
         addOrUpdateMaster,
         getAllMasters,
@@ -108,5 +122,3 @@ export const useMasters = () => {
         expenses: masterData.Expense,
     };
 };
-
-    

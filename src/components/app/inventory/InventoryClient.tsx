@@ -26,25 +26,31 @@ import dynamic from 'next/dynamic';
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, parseISO } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const LowStockWarning = dynamic(() => import('@/components/app/dashboard/LowStockWarning').then(mod => mod.LowStockWarning), { ssr: false });
-const AddAdjustmentForm = dynamic(() => import('@/components/app/stock-adjustments/AddAdjustmentForm').then(mod => mod.AddAdjustmentForm), { ssr: false });
+const LowStockWarning = dynamic(() => import('@/components/app/dashboard/LowStockWarning').then(mod => mod.LowStockWarning), { 
+    ssr: false,
+    loading: () => <Skeleton className="h-48 w-full" />
+});
+const AddAdjustmentForm = dynamic(() => import('@/components/app/stock-adjustments/AddAdjustmentForm').then(mod => mod.AddAdjustmentForm), { 
+    ssr: false,
+    loading: () => <p>Loading form...</p>
+});
 
 export function InventoryClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
   
   const { 
-    isTransactionsLoaded,
-    purchases,
-    locationTransfers,
     adjustments, 
     addAdjustment,
+    purchases,
+    locationTransfers
   } = useTransactions();
   
   const { masterData } = useMasters();
   
-  const { allAggregatedInventory } = useInventory();
+  const { allAggregatedInventory, isLoading: isInventoryLoading } = useInventory();
 
   const [isAdjustmentFormOpen, setIsAdjustmentFormOpen] = React.useState(false);
   const [adjustmentToEdit, setAdjustmentToEdit] = React.useState<StockAdjustment | null>(null);
@@ -52,17 +58,17 @@ export function InventoryClient() {
   const [activeTab, setActiveTab] = React.useState('stock');
 
   const filteredInventory = React.useMemo(() => {
-    if (!isTransactionsLoaded) return [];
-    return allAggregatedInventory.filter(item => {
+    if (isInventoryLoading) return [];
+    return (allAggregatedInventory ?? []).filter(item => {
         if (!item.purchaseDate) return true;
         return isDateInFinancialYear(item.purchaseDate, financialYear);
     });
-  }, [allAggregatedInventory, financialYear, isTransactionsLoaded]);
+  }, [allAggregatedInventory, financialYear, isInventoryLoading]);
 
   const allLotsInSystem = React.useMemo(() => {
     const lots = new Set<string>();
-    (purchases || []).forEach(p => p.items.forEach(i => lots.add(i.lotNumber)));
-    (locationTransfers || []).forEach(t => t.items.forEach(i => {
+    (purchases ?? []).forEach(p => p.items.forEach(i => lots.add(i.lotNumber)));
+    (locationTransfers ?? []).forEach(t => t.items.forEach(i => {
         lots.add(i.originalLotNumber);
         lots.add(i.newLotNumber);
     }));
@@ -95,6 +101,18 @@ export function InventoryClient() {
   const addButtonDynamicClass = React.useMemo(() => {
     return 'bg-blue-600 hover:bg-blue-700 text-white';
   }, []);
+
+  if (isInventoryLoading) {
+      return (
+          <div className="space-y-4 p-4">
+              <div className="flex justify-between items-center">
+                  <Skeleton className="h-10 w-64" />
+                  <Skeleton className="h-10 w-32" />
+              </div>
+              <Skeleton className="h-[calc(100vh-15rem)] w-full" />
+          </div>
+      )
+  }
 
   return (
     <div className="space-y-2 print-area">
@@ -181,7 +199,7 @@ export function InventoryClient() {
           isOpen={isAdjustmentFormOpen}
           onClose={() => setIsAdjustmentFormOpen(false)}
           onSubmit={handleAddAdjustment}
-          warehouses={masterData.Warehouse}
+          warehouses={(masterData.Warehouse ?? [])}
           availableLots={allLotsInSystem}
         />
       )}

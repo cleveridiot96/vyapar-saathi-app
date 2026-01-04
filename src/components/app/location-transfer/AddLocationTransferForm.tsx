@@ -33,9 +33,16 @@ import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import dynamic from 'next/dynamic';
+import { Skeleton } from "@/components/ui/skeleton";
 
-const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
-const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { 
+    ssr: false,
+    loading: () => <Skeleton className="h-10 w-full" />
+});
+const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { 
+    ssr: false,
+    loading: () => <p>Loading form...</p>
+});
 
 interface AddLocationTransferFormProps {
   isOpen: boolean;
@@ -391,5 +398,3 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
 };
 
 export const AddLocationTransferForm = React.memo(AddLocationTransferFormComponent);
-
-    
