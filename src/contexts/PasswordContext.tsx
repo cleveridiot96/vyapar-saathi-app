@@ -2,6 +2,7 @@
 "use client";
 
 import React, { createContext, useState, useCallback, useEffect, useMemo, useContext } from 'react';
+import { useHydrated } from '@/hooks/useHydrated';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -36,13 +37,13 @@ export const PasswordProvider = ({ children }: { children: React.ReactNode }) =>
   }, []);
   
   const value = useMemo(() => ({
-    isAuthenticated: true, 
+    isAuthenticated, 
     isUnlocked: true,
     hasPassword,
     unlock,
     setPassword,
     lock,
-  }), [hasPassword, unlock, setPassword, lock]);
+  }), [isAuthenticated, hasPassword, unlock, setPassword, lock]);
 
   return (
     <AuthContext.Provider value={value}>
