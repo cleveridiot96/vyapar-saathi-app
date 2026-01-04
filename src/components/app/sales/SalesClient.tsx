@@ -13,13 +13,18 @@ import { useTransactions, useMasters } from "@/hooks/useTransactions";
 import type { Sale, SaleReturn } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import dynamic from 'next/dynamic';
-import { Skeleton } from "@/components/ui/skeleton";
-import { useInventory } from "@/hooks/useInventory";
 import { Loader2 } from "lucide-react";
+import { isStudio } from "@/lib/isStudio";
 
-const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { ssr: false });
+const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { 
+  ssr: false,
+  loading: () => <div className="p-6 text-muted-foreground">Loading table…</div>
+});
 const AddSaleForm = dynamic(() => import('./AddSaleForm').then(mod => mod.AddSaleForm), { ssr: false });
-const SaleReturnTable = dynamic(() => import('./SaleReturnTable').then(mod => mod.SaleReturnTable), { ssr: false });
+const SaleReturnTable = dynamic(() => import('./SaleReturnTable').then(mod => mod.SaleReturnTable), { 
+  ssr: false,
+  loading: () => <div className="p-6 text-muted-foreground">Loading table…</div>
+});
 
 export function SalesClient() {
   const { toast } = useToast();
@@ -36,7 +41,6 @@ export function SalesClient() {
   } = useTransactions();
   
   const { isMastersLoaded } = useMasters();
-  const { availableStock } = useInventory();
 
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
@@ -103,7 +107,9 @@ export function SalesClient() {
     ? 'bg-green-600 hover:bg-green-700 text-white' 
     : 'bg-orange-600 hover:bg-orange-700 text-white';
 
-  if (!isTransactionsLoaded || !isMastersLoaded || isAppHydrating) {
+  const ready = isStudio || (isTransactionsLoaded && isMastersLoaded && !isAppHydrating);
+
+  if (!ready) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-20rem)] p-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
@@ -114,7 +120,7 @@ export function SalesClient() {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 min-h-screen w-full">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
         <h1 className="text-2xl font-bold uppercase">Sales & Returns (FY {financialYear})</h1>
       </div>
@@ -137,7 +143,7 @@ export function SalesClient() {
            </div>
           
           <SaleTable 
-            data={filteredSales} 
+            data={filteredSales ?? []} 
             onEdit={(s) => { setSaleToEdit(s); setIsAddFormOpen(true); }}
             onDelete={(id) => setItemToDelete({ id, type: 'sale' })} 
           />
@@ -145,7 +151,7 @@ export function SalesClient() {
         
         <TabsContent value="returns">
           <SaleReturnTable 
-            data={filteredSaleReturns} 
+            data={filteredSaleReturns ?? []} 
             onEdit={() => {}}
             onDelete={() => {}} 
           />
@@ -173,6 +179,8 @@ export function SalesClient() {
           </AlertDialogContent>
         </AlertDialog>
       )}
+
+      {isStudio && <div className="fixed bottom-2 right-2 text-xs bg-black text-white p-1 rounded">STUDIO MODE</div>}
     </div>
   );
 }
