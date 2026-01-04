@@ -5,7 +5,6 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import AppExitHandler from '@/components/layout/AppExitHandler';
-import { PasswordProvider } from "@/contexts/PasswordContext";
 
 export const metadata: Metadata = {
   title: "Vyapar Saathi",
@@ -21,11 +20,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning={true}>
       <body className={cn("bg-background font-sans antialiased")}>
         <SettingsProvider>
-          <PasswordProvider>
             {children}
             <Toaster />
             <AppExitHandler />
-          </PasswordProvider>
         </SettingsProvider>
       </body>
     </html>

@@ -1,7 +1,11 @@
+"use client";
+import { AuthScreen } from "@/components/auth/AuthScreen";
+import { PasswordProvider } from "@/contexts/PasswordContext";
 
-import { redirect } from 'next/navigation';
-
-export default function Home() {
-  redirect('/dashboard');
-  return null;
+export default function LoginPage() {
+  return (
+    <PasswordProvider>
+      <AuthScreen />
+    </PasswordProvider>
+  );
 }

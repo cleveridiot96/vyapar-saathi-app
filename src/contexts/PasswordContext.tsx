@@ -32,7 +32,7 @@ export const PasswordProvider = ({ children }: { children: React.ReactNode }) =>
   }, []);
 
   const lock = useCallback(() => {
-    setIsAuthenticated(true); 
+    setIsAuthenticated(false); 
   }, []);
   
   const value = useMemo(() => ({
