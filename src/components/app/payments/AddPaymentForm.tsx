@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -273,7 +274,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
               Record a payment made to a supplier, agent, or other party.
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2">
             <div className="px-6 pb-6">
               <FormProvider {...methods}>
                 <Form {...methods}>
@@ -490,7 +491,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
                 </Form>
               </FormProvider>
             </div>
-          </ScrollArea>
+          </div>
           <DialogFooter className="pt-4 p-6 border-t">
             <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
             <Button type="button" onClick={handleSubmit(processSubmit)} disabled={isSubmitting}>
@@ -513,4 +514,3 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
     </>
   );
 };
-    

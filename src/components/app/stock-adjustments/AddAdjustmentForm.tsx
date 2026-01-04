@@ -1,3 +1,4 @@
+
 "use client";
 import React from 'react';
 import { useForm } from 'react-hook-form';
@@ -97,7 +98,7 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
             Record a manual change to stock levels. Use positive numbers for additions and negative numbers for reductions in 'Correction' mode.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-1 -mx-6 px-6">
+        <div className="flex-1 min-h-0 overflow-y-auto pr-2">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(processSubmit)} className="space-y-4 pt-4">
             <FormField
@@ -159,7 +160,7 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
               </FormItem>)} />
           </form>
         </Form>
-        </ScrollArea>
+        </div>
         <DialogFooter className="border-t pt-4 mt-4">
           <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
           <Button type="button" onClick={form.handleSubmit(processSubmit)}>Save Adjustment</Button>

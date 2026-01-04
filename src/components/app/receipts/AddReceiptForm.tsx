@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -249,7 +250,7 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
               Enter the details for the receipt. Click save when you&apos;re done.
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2">
             <div className="px-6 pb-6">
               <FormProvider {...methods}>
                 <Form {...methods}> 
@@ -387,10 +388,10 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
                 </Form>
               </FormProvider>
             </div>
-          </ScrollArea>
+          </div>
           <DialogFooter className="p-6 pt-4 border-t">
             <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="button" onClick={handleSubmit(processSubmit)} disabled={isSubmitting}>
               {isSubmitting ? (receiptToEdit ? "Saving..." : "Adding...") : (receiptToEdit ? "Save Changes" : "Add Receipt")}
             </Button>
           </DialogFooter>
@@ -412,4 +413,3 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
 };
 
 export const AddReceiptForm = React.memo(AddReceiptFormComponent);
-    

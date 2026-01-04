@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -190,9 +191,9 @@ export function MasterForm({
           </Button>
         </DialogHeader>
         
+        <div className="flex-1 min-h-0 overflow-y-auto pr-2">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
-            <ScrollArea className="-mx-6 flex-1 px-6 max-h-[60vh]">
               <div className="space-y-4 pt-4 pb-6 px-1">
                 <FormField
                     control={form.control}
@@ -314,23 +315,21 @@ export function MasterForm({
                   </div>
                 )}
               </div>
-            </ScrollArea>
-            <DialogFooter className="border-t pt-4 mt-4">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              {isLocked && !isEditingFixed && (
-                <Button type="button" variant="secondary" onClick={handleUnlock}>
-                    <Unlock className="mr-2 h-4 w-4"/> Unlock
-                </Button>
-              )}
-              <Button type="submit" disabled={isLocked}>Save</Button>
-            </DialogFooter>
           </form>
         </Form>
+        </div>
+        <DialogFooter className="border-t pt-4 mt-4">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          {isLocked && !isEditingFixed && (
+            <Button type="button" variant="secondary" onClick={handleUnlock}>
+                <Unlock className="mr-2 h-4 w-4"/> Unlock
+            </Button>
+          )}
+          <Button type="submit" disabled={isLocked}>Save</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
-    

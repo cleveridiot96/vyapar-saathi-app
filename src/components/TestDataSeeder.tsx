@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -11,7 +12,7 @@ export function TestDataSeeder() {
   const [isSeeding, setIsSeeding] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
 
-  const masters = useLiveQuery(() => db.masters.toArray(), []) as MasterItem[] | undefined;
+  const masters = useLiveQuery(() => db.masters.toArray(), []) ?? [];
 
   const seedTestData = async () => {
     setIsSeeding(true);
@@ -42,7 +43,7 @@ export function TestDataSeeder() {
           items: [{
             id: 'sitem-1', lotNumber: 'TEST-LOT-A', quantity: 10, netWeight: 500, rate: 100, goodsValue: 50000, purchaseRate: 0, costOfGoodsSold: 0, itemGrossProfit: 0, itemNetProfit: 0,
           }],
-          totalGoodsValue: 50000, billedAmount: 50000, totalQuantity: 10, totalNetWeight: 500, totalCostOfGoodsSold: 0, totalGrossProfit: 0, totalCalculatedProfit: 0, isStockPaymentSale: false
+          totalGoodsValue: 50000, billedAmount: 50000, totalQuantity: 10, totalNetWeight: 500, totalCostOfGoodsSold: 0, totalGrossProfit: 0, totalCalculatedProfit: 0, notes: '', isStockPaymentSale: false
         },
       ]);
       

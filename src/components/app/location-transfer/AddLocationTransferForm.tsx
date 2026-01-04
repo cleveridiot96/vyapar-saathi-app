@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -192,8 +193,8 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
             <DialogDescription>Move stock between warehouses and account for costs.</DialogDescription>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 min-h-0 px-6">
-              <div className="pb-6">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+              <div className="px-6 pb-6">
                 <FormProvider {...methods}>
                   <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 pt-4">
                     
@@ -366,7 +367,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                   </form>
                 </FormProvider>
               </div>
-          </ScrollArea>
+          </div>
           <DialogFooter className="p-6 pt-4 border-t flex-shrink-0">
             <DialogClose asChild><Button variant="outline" type="button">Cancel</Button></DialogClose>
             <Button type="button" onClick={handleSubmit(processSubmit)} disabled={isSubmitting}>

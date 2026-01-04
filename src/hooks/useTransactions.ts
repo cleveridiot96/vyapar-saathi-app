@@ -16,15 +16,7 @@ import { groupMasters } from '@/lib/utils';
  * Reading data is done via useLiveQuery directly in components.
  */
 export const useTransactions = () => {
-  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
-  const sales = useLiveQuery(() => db.sales.toArray(), []);
-  const payments = useLiveQuery(() => db.payments.toArray(), []);
-  const receipts = useLiveQuery(() => db.receipts.toArray(), []);
-  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
-  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []);
-  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
-  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
-  const ledger = useLiveQuery(() => db.ledger.toArray(), []);
+  const isDBPopulated = useLiveQuery(() => db.masters.count().then(c => c > 0));
 
   const addPurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const updatePurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
@@ -64,27 +56,8 @@ export const useTransactions = () => {
     }
   }, []);
 
-  const isTransactionsLoaded = purchases !== undefined &&
-                              sales !== undefined &&
-                              payments !== undefined &&
-                              receipts !== undefined &&
-                              locationTransfers !== undefined &&
-                              adjustments !== undefined &&
-                              purchaseReturns !== undefined &&
-                              saleReturns !== undefined &&
-                              ledger !== undefined;
-
   return {
-    purchases: purchases ?? [],
-    sales: sales ?? [],
-    payments: payments ?? [],
-    receipts: receipts ?? [],
-    locationTransfers: locationTransfers ?? [],
-    adjustments: adjustments ?? [],
-    purchaseReturns: purchaseReturns ?? [],
-    saleReturns: saleReturns ?? [],
-    ledger: ledger ?? [],
-    isTransactionsLoaded,
+    isTransactionsLoaded: isDBPopulated, // Simplified check
     addPurchase, updatePurchase, deletePurchase,
     addSale, updateSale, deleteSale,
     addPayment, updatePayment, deletePayment,
@@ -114,9 +87,9 @@ export const useMasters = () => {
             Customer: grouped.Customer || [],
             Supplier: grouped.Supplier || [],
             Agent: grouped.Agent || [],
+            Broker: grouped.Broker || [],
             Transporter: grouped.Transporter || [],
             Warehouse: grouped.Warehouse || [],
-            Broker: grouped.Broker || [],
             Expense: grouped.Expense || [],
             Product: grouped.Product || [],
         }

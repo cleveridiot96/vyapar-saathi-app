@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -18,6 +19,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { DatabaseDiagnostic } from "@/components/DatabaseDiagnostic";
 import { TestDataSeeder } from "@/components/TestDataSeeder";
+import { useAppReady } from "@/lib/useAppReady";
 
 const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { 
   ssr: false,
@@ -32,11 +34,11 @@ const SaleReturnTable = dynamic(() => import('./SaleReturnTable').then(mod => mo
 export function SalesClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
+  const isAppReady = useAppReady();
   
-  const sales = useLiveQuery(() => db.sales.toArray());
-  const saleReturns = useLiveQuery(() => db.saleReturns.toArray());
-  const receipts = useLiveQuery(() => db.receipts.toArray());
-  const { isMastersLoaded } = useMasters();
+  const sales = useLiveQuery(() => db.sales.toArray(), []) ?? [];
+  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []) ?? [];
+  const receipts = useLiveQuery(() => db.receipts.toArray(), []) ?? [];
   
   const { addSale, updateSale, deleteSale } = useTransactions();
   
@@ -72,7 +74,7 @@ export function SalesClient() {
 
 
   const handleAddOrUpdateSale = React.useCallback(async (sale: Sale) => {
-    const isEditing = (sales || []).some(s => s.id === sale.id);
+    const isEditing = sales.some(s => s.id === sale.id);
     
     if (isEditing) {
       await updateSale(sale);
@@ -103,9 +105,7 @@ export function SalesClient() {
     ? 'bg-green-600 hover:bg-green-700 text-white' 
     : 'bg-orange-600 hover:bg-orange-700 text-white';
 
-  const ready = isStudio || (sales !== undefined && isMastersLoaded);
-
-  if (!ready) {
+  if (!isAppReady) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-20rem)] p-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
@@ -139,7 +139,7 @@ export function SalesClient() {
            </div>
           
           <SaleTable 
-            data={filteredSales ?? []} 
+            data={filteredSales} 
             onEdit={(s) => { setSaleToEdit(s); setIsAddFormOpen(true); }}
             onDelete={(id) => setItemToDelete({ id, type: 'sale' })} 
           />
@@ -147,7 +147,7 @@ export function SalesClient() {
         
         <TabsContent value="returns">
           <SaleReturnTable 
-            data={filteredSaleReturns ?? []} 
+            data={filteredSaleReturns} 
             onEdit={() => {}}
             onDelete={() => {}} 
           />
@@ -159,7 +159,7 @@ export function SalesClient() {
           isOpen={isAddFormOpen}
           onClose={() => {setIsAddFormOpen(false); setSaleToEdit(null);}}
           onSubmit={handleAddOrUpdateSale}
-          existingSales={sales || []}
+          existingSales={sales}
           saleToEdit={saleToEdit}
         />
       )}
@@ -176,7 +176,7 @@ export function SalesClient() {
         </AlertDialog>
       )}
 
-      {isStudio && (
+      {isStudio() && (
           <div className="fixed bottom-4 right-4 grid grid-cols-1 gap-4">
               <DatabaseDiagnostic />
               <TestDataSeeder />
