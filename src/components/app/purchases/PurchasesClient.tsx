@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -27,6 +26,10 @@ import dynamic from 'next/dynamic';
 import { useInventory } from "@/hooks/useInventory";
 import { Loader2 } from "lucide-react";
 import { isStudio } from "@/lib/isStudio";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
+import { DatabaseDiagnostic } from "@/components/DatabaseDiagnostic";
+import { TestDataSeeder } from "@/components/TestDataSeeder";
 
 const PurchaseTable = dynamic(() => import('./PurchaseTable').then(mod => mod.PurchaseTable), { 
   ssr: false,
@@ -78,14 +81,17 @@ export function PurchasesClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
   
+  // Direct DB Queries
+  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
+  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
+  
+  // MUTATION hooks
   const { 
-      purchases,
-      purchaseReturns,
       addPurchase, updatePurchase, deletePurchase,
       addPurchaseReturn, 
       addLedgerEntry, removeLedgerEntries
   } = useTransactions();
-  const { masterData, addOrUpdateMaster, getAllMasters, masters } = useMasters();
+  const { masterData, addOrUpdateMaster, getAllMasters } = useMasters();
   
   const { availableStock } = useInventory();
 
@@ -114,6 +120,7 @@ export function PurchasesClient() {
       await addPurchase(purchase);
     }
     
+    // Manage Ledger Entries
     await removeLedgerEntries(purchase.id);
     const newLedgerEntries: LedgerEntry[] = [];
     (purchase.expenses || []).forEach(exp => {
@@ -184,13 +191,13 @@ export function PurchasesClient() {
     return activeTab === 'purchases' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white';
   }, [activeTab]);
   
-  if (purchases === undefined || masters === undefined) {
+  if (purchases === undefined) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-20rem)] p-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-        <p className="text-lg font-semibold text-muted-foreground">Loading Purchases Data...</p>
-        <p className="text-sm text-muted-foreground">This may take a moment.</p>
-      </div>
+        <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-20rem)] p-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+            <p className="text-lg font-semibold text-muted-foreground">Loading Purchases Data...</p>
+            <p className="text-sm text-muted-foreground">This may take a moment.</p>
+        </div>
     );
   }
 
@@ -200,7 +207,7 @@ export function PurchasesClient() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 no-print">
         <h1 className="text-2xl font-bold text-foreground uppercase">Purchases & Returns (FY ${financialYear})</h1>
       </div>
-
+      
       <Tabs defaultValue="purchases" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2 h-10 mb-2 no-print">
           <TabsTrigger value="purchases" className="py-2.5 text-base rounded-md"><ListChecks className="mr-2 h-5 w-5" />Purchases</TabsTrigger>
@@ -264,7 +271,12 @@ export function PurchasesClient() {
         </AlertDialogContent>
       </AlertDialog>
       
-      {isStudio && <div className="fixed bottom-2 right-2 text-xs bg-black text-white p-1 rounded">STUDIO MODE</div>}
+      {isStudio && (
+          <div className="fixed bottom-4 right-4 grid grid-cols-1 gap-4">
+              <DatabaseDiagnostic />
+              <TestDataSeeder />
+          </div>
+      )}
 
     </div>
   );

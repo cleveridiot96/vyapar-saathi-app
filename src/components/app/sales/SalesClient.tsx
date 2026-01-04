@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -176,7 +175,7 @@ export function SalesClient() {
         </AlertDialog>
       )}
 
-      {isStudio() && (
+      {isStudio && (
           <div className="fixed bottom-4 right-4 grid grid-cols-1 gap-4">
               <DatabaseDiagnostic />
               <TestDataSeeder />
