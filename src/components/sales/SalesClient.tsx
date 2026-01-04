@@ -1,19 +1,9 @@
-
 "use client";
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, ListChecks, RotateCcw } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,7 +32,6 @@ export function SalesClient() {
   
   // MUTATION hooks
   const { addSale, updateSale, deleteSale } = useTransactions();
-  const { addOrUpdateMaster, getAllMasters } = useMasters();
   
   // State for UI
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);

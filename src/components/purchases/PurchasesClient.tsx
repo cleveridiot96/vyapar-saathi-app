@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -77,7 +76,7 @@ export function PurchasesClient() {
   const purchases = useLiveQuery(() => db.purchases.toArray(), []);
   const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
   
-  // Mutation hooks
+  // MUTATION hooks
   const { 
       addPurchase, updatePurchase, deletePurchase,
       addPurchaseReturn, 
@@ -97,11 +96,11 @@ export function PurchasesClient() {
   const [activeTab, setActiveTab] = React.useState('purchases');
   
   const filteredPurchases = React.useMemo(() => {
-    return (purchases || []).filter(p => isDateInFinancialYear(p.date, financialYear));
+    return (purchases || []).filter(p => p && p.date && isDateInFinancialYear(p.date, financialYear));
   }, [purchases, financialYear]);
 
   const filteredPurchaseReturns = React.useMemo(() => {
-    return (purchaseReturns || []).filter(pr => isDateInFinancialYear(pr.date, financialYear));
+    return (purchaseReturns || []).filter(pr => pr && pr.date && isDateInFinancialYear(pr.date, financialYear));
   }, [purchaseReturns, financialYear]);
 
   const handleAddOrUpdatePurchase = React.useCallback(async (purchase: Purchase) => {
@@ -182,6 +181,10 @@ export function PurchasesClient() {
   const addButtonDynamicClass = React.useMemo(() => {
     return activeTab === 'purchases' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white';
   }, [activeTab]);
+  
+  if (purchases === undefined) {
+    return <div>Loading purchases...</div>
+  }
 
   return (
     <div className="space-y-2 print-area">

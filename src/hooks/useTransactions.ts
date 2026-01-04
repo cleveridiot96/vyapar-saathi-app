@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useCallback } from 'react';
@@ -42,7 +41,12 @@ export const useTransactions = () => {
     if (entries.length === 0) return;
     await db.ledger.bulkPut(entries);
   }, []);
-  const removeLedgerEntries = useCallback(async (voucherId: string) => db.ledger.where('relatedVoucher').equals(voucherId).delete(), []);
+  const removeLedgerEntries = useCallback(async (voucherId: string) => {
+    const entriesToDelete = await db.ledger.where('relatedVoucher').equals(voucherId).toArray();
+    if(entriesToDelete.length > 0) {
+      await db.ledger.bulkDelete(entriesToDelete.map(e => e.id as any));
+    }
+  }, []);
 
   return {
     addPurchase, updatePurchase, deletePurchase,
@@ -60,15 +64,17 @@ export const useTransactions = () => {
  * It is defensive and returns empty arrays during initialization to prevent crashes.
  */
 export const useMasters = () => {
-    // 1. Direct DB Query: Fetch all masters, defaulting to an empty array.
+    // 1. Direct DB Query: Fetch all masters. Fallback to empty array.
     const masters = useLiveQuery(() => db.masters.toArray(), []);
 
     // 2. Memoization: Group masters by type only when the masters array changes.
     const masterData = useMemo(() => {
-        const grouped: { [key in MasterItemType]?: MasterItem[] } = {};
-        // Use `(masters || [])` as a safety net in case useLiveQuery is briefly not ready.
+        const grouped: { [key in MasterItemType]?: MasterItem[] } = {
+          Customer: [], Supplier: [], Agent: [], Transporter: [], Warehouse: [], Broker: [], Expense: [], Product: []
+        };
+        
         (masters || []).forEach(m => {
-            if (!m || !m.type) return; // Defensive check for malformed data
+            if (!m || !m.type) return; 
             if (!grouped[m.type]) {
                 grouped[m.type] = [];
             }
@@ -79,14 +85,13 @@ export const useMasters = () => {
 
     // 3. Stable Callbacks: Ensure functions don't change on every render.
     const addOrUpdateMaster = useCallback(async (item: MasterItem) => {
-        // Add validation or transformation logic here if needed
         await db.masters.put(item);
     }, []);
 
     const getAllMasters = useCallback(() => masters || [], [masters]);
 
     return {
-        // Raw list
+        // Raw list, with fallback
         masters: masters || [],
         
         // Grouped data, with fallbacks to empty arrays to prevent crashes
@@ -102,6 +107,7 @@ export const useMasters = () => {
         // Actions and metadata
         addOrUpdateMaster,
         getAllMasters,
-        isMastersLoaded: Array.isArray(masters), // True once the query has run (even if it's empty)
+        // isMastersLoaded is true once the query runs (result is not undefined)
+        isMastersLoaded: masters !== undefined, 
     };
 };

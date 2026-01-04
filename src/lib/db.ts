@@ -1,5 +1,5 @@
 
-import Dexie, { type Table } from 'dexie';
+import Dexie, { type EntityTable, type Table } from 'dexie';
 import type { 
   Purchase, 
   Sale, 
@@ -24,11 +24,11 @@ class MyDatabase extends Dexie {
   public saleReturns!: Table<SaleReturn, string>;
   public payments!: Table<Payment, string>;
   public receipts!: Table<Receipt, string>;
-  public ledger!: Table<LedgerEntry, number>;
+  public ledger!: Table<LedgerEntry, string>;
 
   constructor() {
     super('vyapar-saathi-db');
-    this.version(4).stores({
+    this.version(5).stores({
       masters: 'id, type, name',
       purchases: 'id, date, supplierId, agentId',
       sales: 'id, date, customerId, brokerId',
@@ -38,15 +38,13 @@ class MyDatabase extends Dexie {
       saleReturns: 'id, date, originalSaleId, originalCustomerId',
       payments: 'id, date, partyId',
       receipts: 'id, date, partyId',
-      ledger: '++id, date, partyId, relatedVoucher',
+      ledger: 'id, date, partyId, relatedVoucher',
     });
 
-    this.on('populate', () => {
-        this.populate();
-    });
+    this.on('populate', this.populate);
   }
   
-  async populate() {
+  populate = async () => {
     try {
         console.log("Database is being created. Populating with initial master data...");
         const fixedMasters = [...FIXED_WAREHOUSES, ...FIXED_EXPENSES];
