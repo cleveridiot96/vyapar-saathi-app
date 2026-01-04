@@ -236,6 +236,8 @@ export function ProfitAnalysisClient() {
     return allProfitTransactionsInFY.filter(tx => format(startOfMonth(parseISO(tx.date)), "yyyy-MM") === selectedMonthKey);
   }, [selectedMonthKey, allProfitTransactionsInFY]);
 
+  if (!sales) return null;
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
