@@ -24,6 +24,9 @@ import { useToast } from "@/hooks/use-toast";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
 import { useInventory } from "@/hooks/useInventory";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
+
 
 const PurchaseTable = dynamic(() => import('./PurchaseTable').then(mod => mod.PurchaseTable), { ssr: false });
 const AddPurchaseForm = dynamic(() => import('./AddPurchaseForm').then(mod => mod.AddPurchaseForm), { ssr: false });
@@ -69,10 +72,15 @@ export function PurchasesClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
   
+  // Direct DB Queries
+  const purchases = useLiveQuery(() => db.purchases.toArray(), []) || [];
+  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []) || [];
+  
+  // Mutation hooks
   const { 
-      purchases, addPurchase, updatePurchase, deletePurchase,
-      purchaseReturns, addPurchaseReturn, 
-      addLedgerEntry, removeLedgerEntries, isTransactionsLoaded
+      addPurchase, updatePurchase, deletePurchase,
+      addPurchaseReturn, 
+      addLedgerEntry, removeLedgerEntries
   } = useTransactions();
   const { masterData, addOrUpdateMaster, getAllMasters } = useMasters();
   
@@ -88,25 +96,23 @@ export function PurchasesClient() {
   const [activeTab, setActiveTab] = React.useState('purchases');
   
   const filteredPurchases = React.useMemo(() => {
-    if (!isTransactionsLoaded) return [];
     return (purchases || []).filter(p => isDateInFinancialYear(p.date, financialYear));
-  }, [purchases, financialYear, isTransactionsLoaded]);
+  }, [purchases, financialYear]);
 
   const filteredPurchaseReturns = React.useMemo(() => {
-    if (!isTransactionsLoaded) return [];
     return (purchaseReturns || []).filter(pr => isDateInFinancialYear(pr.date, financialYear));
-  }, [purchaseReturns, financialYear, isTransactionsLoaded]);
+  }, [purchaseReturns, financialYear]);
 
-  const handleAddOrUpdatePurchase = React.useCallback((purchase: Purchase) => {
+  const handleAddOrUpdatePurchase = React.useCallback(async (purchase: Purchase) => {
     const isEditing = (purchases || []).some(p => p.id === purchase.id);
     if (isEditing) {
-      updatePurchase(purchase);
+      await updatePurchase(purchase);
     } else {
-      addPurchase(purchase);
+      await addPurchase(purchase);
     }
     
     // Manage Ledger Entries
-    removeLedgerEntries(purchase.id);
+    await removeLedgerEntries(purchase.id);
     const newLedgerEntries: LedgerEntry[] = [];
     (purchase.expenses || []).forEach(exp => {
       newLedgerEntries.push({
@@ -124,7 +130,7 @@ export function PurchasesClient() {
         remarks: `Expense for purchase ${purchase.id}`
       });
     });
-    if(newLedgerEntries.length > 0) addLedgerEntry(newLedgerEntries);
+    if(newLedgerEntries.length > 0) await addLedgerEntry(newLedgerEntries);
 
     setPurchaseToEdit(null);
     setIsAddFormOpen(false);
@@ -141,22 +147,22 @@ export function PurchasesClient() {
     setItemToDelete({ id, type });
   }, []);
 
-  const confirmDelete = React.useCallback(() => {
+  const confirmDelete = React.useCallback(async () => {
     if (!itemToDelete) return;
     if(itemToDelete.type === 'purchase') {
-      deletePurchase(itemToDelete.id);
-      removeLedgerEntries(itemToDelete.id);
+      await deletePurchase(itemToDelete.id);
+      await removeLedgerEntries(itemToDelete.id);
       toast({ title: "Deleted!", description: "Purchase record removed.", variant: "destructive" });
     } else {
-      // setPurchaseReturns(prev => prev.filter(pr => pr.id !== itemToDelete.id));
+      // Logic for deleting returns would go here
       toast({ title: "Delete not implemented for returns", variant: "destructive" });
     }
     setItemToDelete(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
   }, [itemToDelete, deletePurchase, removeLedgerEntries, toast]);
 
-  const handleAddOrUpdatePurchaseReturn = React.useCallback((returnData: PurchaseReturn) => {
-     addPurchaseReturn(returnData);
+  const handleAddOrUpdatePurchaseReturn = React.useCallback(async (returnData: PurchaseReturn) => {
+     await addPurchaseReturn(returnData);
     setIsAddReturnFormOpen(false);
     toast({ title: "Success!", description: "Purchase return recorded." });
     window.dispatchEvent(new CustomEvent('reindex-search'));
@@ -249,5 +255,3 @@ export function PurchasesClient() {
     </div>
   );
 }
-
-    

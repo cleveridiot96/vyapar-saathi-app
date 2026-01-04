@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, ListChecks, RotateCcw } from "lucide-react";
+import { PlusCircle, ListChecks, RotateCcw } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,62 +17,26 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useTransactions, useMasters } from "@/hooks/useTransactions";
+import { useTransactions } from "@/hooks/useTransactions";
 import type { Sale, SaleReturn } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { useInventory } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
-import { renderToStaticMarkup } from "react-dom/server";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
 
 const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { ssr: false });
 const AddSaleForm = dynamic(() => import('./AddSaleForm').then(mod => mod.AddSaleForm), { ssr: false });
 const SaleReturnTable = dynamic(() => import('./SaleReturnTable').then(mod => mod.SaleReturnTable), { ssr: false });
 const SaleChittiPrint = dynamic(() => import('./SaleChittiPrint').then(mod => mod.SaleChittiPrint), { ssr: false });
 
-function openPrintWindow(htmlContent: string, title = "Document") {
-    const printWindow = window.open("", "_blank", "noopener,noreferrer");
-    if (!printWindow) {
-      alert("Please allow pop-ups to print this document.");
-      return;
-    }
-    printWindow.document.write(`
-      <html><head><title>${title}</title>
-      <style>
-        @media print {
-          @page { size: A5 portrait; margin: 10mm; }
-          body { background: white !important; color: black !important; font-size: 10pt !important; }
-          .print-chitti-styles { font-family: sans-serif; line-height: 1.4; }
-          .print-chitti-styles h1, .print-chitti-styles h2 { margin-top: 0.5em; margin-bottom: 0.25em; }
-          .print-chitti-styles table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 10px; }
-          .print-chitti-styles th, .print-chitti-styles td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; }
-          .print-chitti-styles th { background-color: #f0f0f0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;}
-          .print-chitti-styles .text-right { text-align: right; }
-          .print-chitti-styles .font-bold { font-weight: bold; }
-          .flex-between { display: flex; justify-content: space-between; }
-          .mb-1 { margin-bottom: 4px; } .mb-2 { margin-bottom: 8px; }
-          .mt-2 { margin-top: 8px; } .mt-4 { margin-top: 16px; }
-          .text-lg { font-size: 1.125rem; } .text-sm { font-size: 0.875rem; }
-          .text-xs { font-size: 0.75rem; }
-        }
-      </style>
-      </head><body>${htmlContent}
-      <script>setTimeout(function() { window.print(); window.close(); }, 250);</script>
-      </body></html>`);
-    printWindow.document.close();
-}
-
-
 export function SalesClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
   
-  const { 
-      sales, addSale, updateSale, deleteSale,
-      saleReturns, isTransactionsLoaded
-  } = useTransactions();
-  const { addOrUpdateMaster } = useMasters();
-  
-  const { availableStock } = useInventory();
+  const sales = useLiveQuery(() => db.sales.toArray(), []) || [];
+  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []) || [];
+
+  const { addSale, updateSale, deleteSale } = useTransactions();
 
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
@@ -80,18 +44,17 @@ export function SalesClient() {
   const [activeTab, setActiveTab] = React.useState('sales');
   
   const filteredSales = React.useMemo(() => {
-    if (!isTransactionsLoaded) return [];
     return (sales || []).filter(s => s && s.date && isDateInFinancialYear(s.date, financialYear));
-  }, [sales, financialYear, isTransactionsLoaded]);
+  }, [sales, financialYear]);
 
-  const handleAddOrUpdateSale = React.useCallback((sale: Sale) => {
+  const handleAddOrUpdateSale = React.useCallback(async (sale: Sale) => {
     const isEditing = (sales || []).some(s => s.id === sale.id);
     
     if (isEditing) {
-      updateSale(sale);
+      await updateSale(sale);
       toast({ title: "Sale updated!" });
     } else {
-      addSale(sale);
+      await addSale(sale);
       toast({ title: "Sale added!" });
     }
     
@@ -100,11 +63,11 @@ export function SalesClient() {
     window.dispatchEvent(new CustomEvent('reindex-search'));
   }, [sales, addSale, updateSale, toast]);
 
-  const confirmDelete = React.useCallback(() => {
+  const confirmDelete = React.useCallback(async () => {
     if (!itemToDelete) return;
     
     if(itemToDelete.type === 'sale') {
-      deleteSale(itemToDelete.id);
+      await deleteSale(itemToDelete.id);
       toast({ title: "Sale deleted!", variant: "destructive" });
     }
     
@@ -112,11 +75,6 @@ export function SalesClient() {
     window.dispatchEvent(new CustomEvent('reindex-search'));
   }, [itemToDelete, deleteSale, toast]);
   
-  const triggerDownloadPdf = React.useCallback((sale: Sale) => {
-    const chittiHtml = renderToStaticMarkup(<SaleChittiPrint sale={sale} />);
-    openPrintWindow(chittiHtml, `SaleChitti_${sale.id.slice(-4)}`);
-  }, []);
-
   const addButtonClass = activeTab === 'sales' 
     ? 'bg-green-600 hover:bg-green-700 text-white' 
     : 'bg-orange-600 hover:bg-orange-700 text-white';
@@ -148,7 +106,6 @@ export function SalesClient() {
             data={filteredSales} 
             onEdit={(s) => { setSaleToEdit(s); setIsAddFormOpen(true); }}
             onDelete={(id) => setItemToDelete({ id, type: 'sale' })} 
-            onDownloadPdf={triggerDownloadPdf}
           />
         </TabsContent>
         
@@ -185,5 +142,3 @@ export function SalesClient() {
     </div>
   );
 }
-
-    

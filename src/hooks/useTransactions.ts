@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCallback, useMemo } from 'react';
@@ -11,21 +10,10 @@ import type {
 
 
 /**
- * Primary Hook for all transactional data.
+ * Primary Hook for all transactional data mutations.
+ * Reading data is done via useLiveQuery directly in components.
  */
 export const useTransactions = () => {
-  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
-  const sales = useLiveQuery(() => db.sales.toArray(), []);
-  const payments = useLiveQuery(() => db.payments.toArray(), []);
-  const receipts = useLiveQuery(() => db.receipts.toArray(), []);
-  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
-  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []);
-  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
-  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
-  const ledger = useLiveQuery(() => db.ledger.toArray(), []);
-  
-  const isTransactionsLoaded = purchases !== undefined && sales !== undefined;
-
   const addPurchase = useCallback(async (data: Purchase) => db.purchases.add(data), []);
   const updatePurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const deletePurchase = useCallback(async (id: string) => db.purchases.delete(id), []);
@@ -52,30 +40,18 @@ export const useTransactions = () => {
   const removeLedgerEntries = useCallback(async (voucherId: string) => db.ledger.where('relatedVoucher').equals(voucherId).delete(), []);
 
   return {
-    purchases: purchases || [],
-    sales: sales || [],
-    payments: payments || [],
-    receipts: receipts || [],
-    locationTransfers: locationTransfers || [],
-    purchaseReturns: purchaseReturns || [],
-    saleReturns: saleReturns || [],
-    ledger: ledger || [],
-    adjustments: adjustments || [],
-    
     addPurchase, updatePurchase, deletePurchase,
     addSale, updateSale, deleteSale,
     addPayment, updatePayment, deletePayment,
     addReceipt, updateReceipt, deleteReceipt,
     addLocationTransfer, addAdjustment, addPurchaseReturn, addSaleReturn,
     addLedgerEntry, removeLedgerEntries,
-
-    isTransactionsLoaded,
   };
 };
 
 
 export const useMasters = () => {
-    const masters = useLiveQuery(() => db.masters.toArray(), []) as MasterItem[] | undefined;
+    const masters = useLiveQuery(() => db.masters.toArray()) as MasterItem[] | undefined;
 
     const masterData = useMemo(() => {
       const grouped: { [key in MasterItemType]?: MasterItem[] } = {};
@@ -108,5 +84,3 @@ export const useMasters = () => {
         isMastersLoaded,
     };
 };
-
-    
