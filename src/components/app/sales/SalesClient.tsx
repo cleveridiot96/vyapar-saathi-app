@@ -3,35 +3,24 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, RotateCcw, ListChecks } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { PlusCircle, Printer, ListChecks, RotateCcw } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
-import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useTransactions, useMasters } from "@/hooks/useTransactions";
 import type { Sale, SaleReturn, MasterItem } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { renderToStaticMarkup } from 'react-dom/server';
+import { useInventory } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
+import { renderToStaticMarkup } from 'react-dom/server';
 
-// Dynamic Imports
-const SaleTable = dynamic(() => import('@/components/app/sales/SaleTable').then(mod => mod.SaleTable), { ssr: false });
-const AddSaleForm = dynamic(() => import('@/components/app/sales/AddSaleForm').then(mod => mod.AddSaleForm), { ssr: false });
+const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { ssr: false });
+const AddSaleForm = dynamic(() => import('./AddSaleForm').then(mod => mod.AddSaleForm), { ssr: false });
+const SaleReturnTable = dynamic(() => import('./SaleReturnTable').then(mod => mod.SaleReturnTable), { ssr: false });
+const AddSaleReturnForm = dynamic(() => import('./AddSaleReturnForm').then(mod => mod.AddSaleReturnForm), { ssr: false });
 const SaleChittiPrint = dynamic(() => import('@/components/app/sales/SaleChittiPrint').then(mod => mod.SaleChittiPrint), { ssr: false });
-const AddSaleReturnForm = dynamic(() => import('@/components/app/sales/AddSaleReturnForm').then(mod => mod.AddSaleReturnForm), { ssr: false });
-const SaleReturnTable = dynamic(() => import('@/components/app/sales/SaleReturnTable').then(mod => mod.SaleReturnTable), { ssr: false });
-
 
 function openPrintWindow(htmlContent: string, title = "Document") {
   const printWindow = window.open("", "_blank", "noopener,noreferrer");
@@ -77,13 +66,13 @@ export function SalesClient() {
   const { financialYear } = useSettings();
   
   const { 
-    sales,
-    saleReturns,
-    isTransactionsLoaded,
-    addSale,
-    updateSale,
-    deleteSale,
-    addSaleReturn,
+      sales,
+      saleReturns,
+      isTransactionsLoaded,
+      addSale,
+      updateSale,
+      deleteSale,
+      addSaleReturn,
   } = useTransactions();
   const { addOrUpdateMaster } = useMasters();
   
@@ -181,7 +170,6 @@ export function SalesClient() {
 
   return (
     <div className="space-y-2 print-area">
-      <PrintHeaderSymbol className="hidden print:block text-center text-lg font-semibold mb-2" />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 no-print">
         <h1 className="text-2xl font-bold text-foreground uppercase">Sales & Returns (FY ${financialYear})</h1>
       </div>
@@ -247,3 +235,5 @@ export function SalesClient() {
     </div>
   );
 }
+
+    
