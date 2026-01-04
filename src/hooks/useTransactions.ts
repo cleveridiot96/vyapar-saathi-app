@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import type { 
@@ -14,6 +15,25 @@ import type {
  * Reading data is done via useLiveQuery directly in components.
  */
 export const useTransactions = () => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
+  const sales = useLiveQuery(() => db.sales.toArray(), []);
+  const payments = useLiveQuery(() => db.payments.toArray(), []);
+  const receipts = useLiveQuery(() => db.receipts.toArray(), []);
+  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
+  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []);
+  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
+  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
+  const ledger = useLiveQuery(() => db.ledger.toArray(), []);
+
+  useEffect(() => {
+    if (purchases && sales && payments && receipts && locationTransfers && adjustments && purchaseReturns && saleReturns && ledger) {
+      setIsLoaded(true);
+    }
+  }, [purchases, sales, payments, receipts, locationTransfers, adjustments, purchaseReturns, saleReturns, ledger]);
+
+
   const addPurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const updatePurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const deletePurchase = useCallback(async (id: string) => db.purchases.delete(id), []);
@@ -49,6 +69,16 @@ export const useTransactions = () => {
   }, []);
 
   return {
+    isTransactionsLoaded: isLoaded,
+    purchases: purchases || [],
+    sales: sales || [],
+    payments: payments || [],
+    receipts: receipts || [],
+    locationTransfers: locationTransfers || [],
+    adjustments: adjustments || [],
+    purchaseReturns: purchaseReturns || [],
+    saleReturns: saleReturns || [],
+    ledger: ledger || [],
     addPurchase, updatePurchase, deletePurchase,
     addSale, updateSale, deleteSale,
     addPayment, updatePayment, deletePayment,
@@ -74,7 +104,7 @@ export const useMasters = () => {
         };
         
         (masters || []).forEach(m => {
-            if (!m || !m.type) return; 
+            if (!m || !m.type || !m.name || m.name.startsWith('_DELETED_')) return; 
             if (!grouped[m.type]) {
                 grouped[m.type] = [];
             }

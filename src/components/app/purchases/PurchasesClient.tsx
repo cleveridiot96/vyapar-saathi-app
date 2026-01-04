@@ -25,9 +25,6 @@ import { useToast } from "@/hooks/use-toast";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
 import { useInventory } from "@/hooks/useInventory";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
-
 
 const PurchaseTable = dynamic(() => import('./PurchaseTable').then(mod => mod.PurchaseTable), { ssr: false });
 const AddPurchaseForm = dynamic(() => import('./AddPurchaseForm').then(mod => mod.AddPurchaseForm), { ssr: false });
@@ -71,14 +68,12 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 
 export function PurchasesClient() {
   const { toast } = useToast();
-  const { financialYear } = useSettings();
+  const { financialYear, isAppHydrating } = useSettings();
   
-  // Direct DB Queries
-  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
-  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
-  
-  // Mutation hooks
   const { 
+      purchases,
+      purchaseReturns,
+      isTransactionsLoaded,
       addPurchase, updatePurchase, deletePurchase,
       addPurchaseReturn, 
       addLedgerEntry, removeLedgerEntries
@@ -97,12 +92,14 @@ export function PurchasesClient() {
   const [activeTab, setActiveTab] = React.useState('purchases');
   
   const filteredPurchases = React.useMemo(() => {
-    return (purchases || []).filter(p => isDateInFinancialYear(p.date, financialYear));
-  }, [purchases, financialYear]);
+    if (!isTransactionsLoaded) return [];
+    return (purchases || []).filter(p => p && p.date && isDateInFinancialYear(p.date, financialYear));
+  }, [purchases, financialYear, isTransactionsLoaded]);
 
   const filteredPurchaseReturns = React.useMemo(() => {
-    return (purchaseReturns || []).filter(pr => isDateInFinancialYear(pr.date, financialYear));
-  }, [purchaseReturns, financialYear]);
+    if (!isTransactionsLoaded) return [];
+    return (purchaseReturns || []).filter(pr => pr && pr.date && isDateInFinancialYear(pr.date, financialYear));
+  }, [purchaseReturns, financialYear, isTransactionsLoaded]);
 
   const handleAddOrUpdatePurchase = React.useCallback(async (purchase: Purchase) => {
     const isEditing = (purchases || []).some(p => p.id === purchase.id);
@@ -112,7 +109,6 @@ export function PurchasesClient() {
       await addPurchase(purchase);
     }
     
-    // Manage Ledger Entries
     await removeLedgerEntries(purchase.id);
     const newLedgerEntries: LedgerEntry[] = [];
     (purchase.expenses || []).forEach(exp => {
@@ -155,7 +151,6 @@ export function PurchasesClient() {
       await removeLedgerEntries(itemToDelete.id);
       toast({ title: "Deleted!", description: "Purchase record removed.", variant: "destructive" });
     } else {
-      // Logic for deleting returns would go here
       toast({ title: "Delete not implemented for returns", variant: "destructive" });
     }
     setItemToDelete(null);
@@ -182,6 +177,10 @@ export function PurchasesClient() {
   const addButtonDynamicClass = React.useMemo(() => {
     return activeTab === 'purchases' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white';
   }, [activeTab]);
+  
+  if (!isTransactionsLoaded || isAppHydrating) {
+    return <div>Loading purchases...</div>
+  }
 
   return (
     <div className="space-y-2 print-area">

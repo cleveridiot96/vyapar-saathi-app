@@ -45,46 +45,47 @@ const SearchBar = () => {
   const commandRef = useRef<HTMLDivElement>(null);
   const fuseRef = useRef<Fuse<SearchableItem> | null>(null);
   
-  // DIRECT DATABASE QUERIES using useLiveQuery
-  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
-  const sales = useLiveQuery(() => db.sales.toArray(), []);
-  const payments = useLiveQuery(() => db.payments.toArray(), []);
-  const receipts = useLiveQuery(() => db.receipts.toArray(), []);
-  const masters = useLiveQuery(() => db.masters.toArray(), []);
-  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
-  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []);
-  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
-  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
+  const purchases = useLiveQuery(() => db.purchases.toArray());
+  const sales = useLiveQuery(() => db.sales.toArray());
+  const payments = useLiveQuery(() => db.payments.toArray());
+  const receipts = useLiveQuery(() => db.receipts.toArray());
+  const masters = useLiveQuery(() => db.masters.toArray());
+  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray());
+  const adjustments = useLiveQuery(() => db.adjustments.toArray());
+  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray());
+  const saleReturns = useLiveQuery(() => db.saleReturns.toArray());
   
   const initializeIndex = useCallback(() => {
-    // This function will run whenever any of the data dependencies change.
-    const searchDataPayload = buildSearchData({
-      sales,
-      purchases,
-      payments,
-      receipts,
-      masters,
-      locationTransfers,
-      adjustments,
-      purchaseReturns,
-      saleReturns,
-    });
+    try {
+        const searchDataPayload = buildSearchData({
+            sales: sales || [],
+            purchases: purchases || [],
+            payments: payments || [],
+            receipts: receipts || [],
+            masters: masters || [],
+            locationTransfers: locationTransfers || [],
+            adjustments: adjustments || [],
+            purchaseReturns: purchaseReturns || [],
+            saleReturns: saleReturns || [],
+        });
 
-    fuseRef.current = new Fuse(searchDataPayload, {
-        keys: [
-          { name: 'title', weight: 0.6 },
-          { name: 'description', weight: 0.4 },
-        ],
-        includeScore: true,
-        includeMatches: true,
-        threshold: 0.4,
-        minMatchCharLength: 1,
-        ignoreLocation: true,
-    });
+        fuseRef.current = new Fuse(searchDataPayload, {
+            keys: [
+              { name: 'title', weight: 0.6 },
+              { name: 'description', weight: 0.4 },
+            ],
+            includeScore: true,
+            includeMatches: true,
+            threshold: 0.4,
+            minMatchCharLength: 1,
+            ignoreLocation: true,
+        });
+    } catch(error) {
+        console.error("Search initialization failed:", error);
+    }
   }, [sales, purchases, payments, receipts, masters, locationTransfers, adjustments, purchaseReturns, saleReturns]);
 
   useEffect(() => {
-    // Initialize the Fuse index whenever the underlying data changes.
     initializeIndex();
   }, [initializeIndex]);
 

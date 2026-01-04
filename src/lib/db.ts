@@ -1,5 +1,5 @@
 
-import Dexie, { type EntityTable, type Table } from 'dexie';
+import Dexie, { type Table } from 'dexie';
 import type { 
   Purchase, 
   Sale, 
@@ -32,7 +32,7 @@ class MyDatabase extends Dexie {
       masters: 'id, type, name',
       purchases: 'id, date, supplierId, agentId',
       sales: 'id, date, customerId, brokerId',
-      adjustments: 'id, date',
+      adjustments: 'id, date, lotNumber',
       locationTransfers: 'id, date, fromLocationId, toLocationId',
       purchaseReturns: 'id, date, originalPurchaseId, originalSupplierId',
       saleReturns: 'id, date, originalSaleId, originalCustomerId',
@@ -48,7 +48,8 @@ class MyDatabase extends Dexie {
     try {
         console.log("Database is being created. Populating with initial master data...");
         const fixedMasters = [...FIXED_WAREHOUSES, ...FIXED_EXPENSES];
-        await this.masters.bulkAdd(fixedMasters as MasterItem[]);
+        // Use bulkPut to avoid errors if data already exists
+        await this.masters.bulkPut(fixedMasters as MasterItem[]);
         console.log("Initial master data populated successfully.");
     } catch(err) {
         console.error("Failed to populate initial master data", err);

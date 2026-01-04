@@ -4,27 +4,15 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, ListChecks, RotateCcw } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useTransactions, useMasters } from "@/hooks/useTransactions";
-import type { Sale, SaleReturn, MasterItem } from "@/lib/types";
+import type { Sale, SaleReturn } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { useInventory } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
 import { DatabaseDiagnostic } from "@/components/DatabaseDiagnostic";
 import { TestDataSeeder } from "@/components/TestDataSeeder";
 
@@ -36,39 +24,39 @@ export function SalesClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
   
-  // DIRECT DB QUERIES using useLiveQuery
-  const sales = useLiveQuery(() => db.sales.toArray(), []);
-  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
+  const { 
+      sales, 
+      addSale, 
+      updateSale, 
+      deleteSale, 
+      saleReturns, 
+      isTransactionsLoaded 
+  } = useTransactions();
   
-  // MUTATION hooks
-  const { addSale, updateSale, deleteSale } = useTransactions();
-  const { addOrUpdateMaster, getAllMasters } = useMasters();
-  
-  // State for UI
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
   const [itemToDelete, setItemToDelete] = React.useState<{id: string, type: 'sale' | 'return'} | null>(null);
   const [activeTab, setActiveTab] = React.useState('sales');
   
-  // Memoized filtering
   const filteredSales = React.useMemo(() => {
-    if (!sales) return []; // Return empty array if sales is undefined
-    return sales.filter(s => s && s.date && isDateInFinancialYear(s.date, financialYear));
-  }, [sales, financialYear]);
+    if (!isTransactionsLoaded) return [];
+    return (sales || []).filter(s => s && s.date && isDateInFinancialYear(s.date, financialYear));
+  }, [sales, financialYear, isTransactionsLoaded]);
 
   const filteredSaleReturns = React.useMemo(() => {
-    if (!saleReturns) return [];
-    return saleReturns.filter(sr => sr && sr.date && isDateInFinancialYear(sr.date, financialYear));
-  }, [saleReturns, financialYear]);
+    if (!isTransactionsLoaded) return [];
+    return (saleReturns || []).filter(sr => sr && sr.date && isDateInFinancialYear(sr.date, financialYear));
+  }, [saleReturns, financialYear, isTransactionsLoaded]);
 
-  const handleAddOrUpdateSale = React.useCallback(async (sale: Sale) => {
+
+  const handleAddOrUpdateSale = React.useCallback((sale: Sale) => {
     const isEditing = (sales || []).some(s => s.id === sale.id);
     
     if (isEditing) {
-      await updateSale(sale);
+      updateSale(sale);
       toast({ title: "Sale updated!" });
     } else {
-      await addSale(sale);
+      addSale(sale);
       toast({ title: "Sale added!" });
     }
     
@@ -93,7 +81,7 @@ export function SalesClient() {
     ? 'bg-green-600 hover:bg-green-700 text-white' 
     : 'bg-orange-600 hover:bg-orange-700 text-white';
 
-  if (sales === undefined) {
+  if (!isTransactionsLoaded) {
       return <div>Loading Sales...</div>
   }
 
@@ -146,7 +134,7 @@ export function SalesClient() {
           isOpen={isAddFormOpen}
           onClose={() => {setIsAddFormOpen(false); setSaleToEdit(null);}}
           onSubmit={handleAddOrUpdateSale}
-          existingSales={sales}
+          existingSales={sales || []}
           saleToEdit={saleToEdit}
         />
       )}
