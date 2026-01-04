@@ -179,7 +179,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   };
 
   const stockOptions = React.useMemo(() => 
-    availableStock
+    (availableStock || [])
       .filter(s => s.locationId === fromLocationId && s.currentBags > 0.01)
       .map(s => ({ value: s.lotNumber, label: `${s.lotNumber} (${s.currentBags} bags)`}))
   , [availableStock, fromLocationId]);
@@ -187,14 +187,12 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={onClose}>
-        {/* FIX 1: Added h-full flex-col to make ScrollArea work */}
         <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-6 pb-4 flex-shrink-0">
             <DialogTitle>{transferToEdit ? 'Edit Location Transfer' : 'New Location Transfer'}</DialogTitle>
             <DialogDescription>Move stock between warehouses and account for costs.</DialogDescription>
           </DialogHeader>
           
-          {/* FIX 2: Added flex-1 min-h-0 to enable scrolling */}
           <ScrollArea className="flex-1 min-h-0">
               <div className="px-6 pb-6">
                 <FormProvider {...methods}>
@@ -394,3 +392,5 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
 };
 
 export const AddLocationTransferForm = React.memo(AddLocationTransferFormComponent);
+
+    
