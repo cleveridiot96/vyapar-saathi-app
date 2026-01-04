@@ -22,6 +22,7 @@ import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
 import { useTransactions, useMasters } from "@/hooks/useTransactions";
 import dynamic from 'next/dynamic';
+import { Skeleton } from "@/components/ui/skeleton";
 
 const PaymentTable = dynamic(() => import('./PaymentTable').then(mod => mod.PaymentTable), { ssr: false });
 const AddPaymentForm = dynamic(() => import('./AddPaymentForm').then(mod => mod.AddPaymentForm), { ssr: false });
@@ -30,8 +31,8 @@ const AddPaymentForm = dynamic(() => import('./AddPaymentForm').then(mod => mod.
 export function PaymentsClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
-  const { payments, purchases, sales, isTransactionsLoaded, updatePayment, addPayment, deletePayment, addSale, updateSale, deleteSale } = useTransactions();
-  const { addOrUpdateMaster } = useMasters();
+  const { payments, purchases, sales, updatePayment, addPayment, deletePayment, addSale, updateSale, deleteSale } = useTransactions();
+  const { addOrUpdateMaster, masters } = useMasters();
   
   const { payableParties } = useOutstandingBalances();
 
@@ -42,11 +43,10 @@ export function PaymentsClient() {
   const [paymentToDeleteId, setPaymentToDeleteId] = React.useState<string | null>(null);
 
   const filteredPayments = React.useMemo(() => {
-    if (!isTransactionsLoaded) return [];
     return payments.filter(payment => payment && payment.date && isDateInFinancialYear(payment.date, financialYear));
-  }, [payments, financialYear, isTransactionsLoaded]);
+  }, [payments, financialYear]);
 
-  const handleAddOrUpdatePayment = React.useCallback((payment: Payment) => {
+  const handleAddOrUpdatePayment = React.useCallback(async (payment: Payment) => {
     const isEditing = payments.some(p => p.id === payment.id);
     
     if (payment.paymentType === 'Stock' && payment.stockItems && payment.stockItems.length > 0) {
@@ -72,16 +72,16 @@ export function PaymentsClient() {
       
       const existingSaleIndex = sales.findIndex(s => s.id === internalSale.id);
       if(existingSaleIndex > -1) {
-        updateSale(internalSale);
+        await updateSale(internalSale);
       } else {
-        addSale(internalSale);
+        await addSale(internalSale);
       }
     }
 
     if(isEditing) {
-        updatePayment(payment);
+        await updatePayment(payment);
     } else {
-        addPayment(payment);
+        await addPayment(payment);
     }
 
     setPaymentToEdit(null);
@@ -100,15 +100,15 @@ export function PaymentsClient() {
     setShowDeleteConfirm(true);
   }, []);
 
-  const confirmDeletePayment = React.useCallback(() => {
+  const confirmDeletePayment = React.useCallback(async () => {
     if (paymentToDeleteId) {
       const paymentToDelete = payments.find(p => p.id === paymentToDeleteId);
       if (paymentToDelete?.paymentType === 'Stock') {
         const internalSaleId = `sale-for-payment-${paymentToDelete.id}`;
-        deleteSale(internalSaleId);
+        await deleteSale(internalSaleId);
       }
 
-      deletePayment(paymentToDeleteId);
+      await deletePayment(paymentToDeleteId);
       toast({ title: "Success!", description: "Payment deleted successfully.", variant: "destructive" });
       setPaymentToDeleteId(null);
       setShowDeleteConfirm(false);
@@ -130,6 +130,18 @@ export function PaymentsClient() {
     setIsAddPaymentFormOpen(false);
     setPaymentToEdit(null);
   }, []);
+  
+  if (payments === undefined || masters === undefined) {
+      return (
+            <div className="space-y-4 p-4">
+                <div className="flex justify-between items-center">
+                    <Skeleton className="h-10 w-64" />
+                    <Skeleton className="h-10 w-32" />
+                </div>
+                <Skeleton className="h-[calc(100vh-15rem)] w-full" />
+            </div>
+      );
+  }
 
   return (
     <div className="space-y-6 print-area">

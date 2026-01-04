@@ -28,7 +28,7 @@ const SaleReturnTable = dynamic(() => import('./SaleReturnTable').then(mod => mo
 
 export function SalesClient() {
   const { toast } = useToast();
-  const { financialYear, isAppHydrating } = useSettings();
+  const { financialYear } = useSettings();
   
   const { 
       sales, 
@@ -37,10 +37,9 @@ export function SalesClient() {
       deleteSale, 
       saleReturns,
       receipts,
-      isTransactionsLoaded 
   } = useTransactions();
   
-  const { isMastersLoaded } = useMasters();
+  const { masters } = useMasters();
 
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
@@ -65,24 +64,22 @@ export function SalesClient() {
   }, [sales, receipts]);
 
   const filteredSales = React.useMemo(() => {
-    if (!isTransactionsLoaded) return [];
     return (salesWithBalances || []).filter(s => s && s.date && isDateInFinancialYear(s.date, financialYear));
-  }, [salesWithBalances, financialYear, isTransactionsLoaded]);
+  }, [salesWithBalances, financialYear]);
 
   const filteredSaleReturns = React.useMemo(() => {
-    if (!isTransactionsLoaded) return [];
     return (saleReturns || []).filter(sr => sr && sr.date && isDateInFinancialYear(sr.date, financialYear));
-  }, [saleReturns, financialYear, isTransactionsLoaded]);
+  }, [saleReturns, financialYear]);
 
 
-  const handleAddOrUpdateSale = React.useCallback((sale: Sale) => {
+  const handleAddOrUpdateSale = React.useCallback(async (sale: Sale) => {
     const isEditing = (sales || []).some(s => s.id === sale.id);
     
     if (isEditing) {
-      updateSale(sale);
+      await updateSale(sale);
       toast({ title: "Sale updated!" });
     } else {
-      addSale(sale);
+      await addSale(sale);
       toast({ title: "Sale added!" });
     }
     
@@ -107,9 +104,7 @@ export function SalesClient() {
     ? 'bg-green-600 hover:bg-green-700 text-white' 
     : 'bg-orange-600 hover:bg-orange-700 text-white';
 
-  const ready = isStudio || (isTransactionsLoaded && isMastersLoaded && !isAppHydrating);
-
-  if (!ready) {
+  if (sales === undefined || masters === undefined) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-20rem)] p-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />

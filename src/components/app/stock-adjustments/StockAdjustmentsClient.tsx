@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -18,16 +19,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export function StockAdjustmentsClient() {
   const { toast } = useToast();
-  const { financialYear, isAppHydrating } = useSettings();
+  const { financialYear } = useSettings();
   
   const {
       adjustments,
       purchases,
       locationTransfers,
       addAdjustment,
-      isTransactionsLoaded,
   } = useTransactions();
-  const { masterData, isMastersLoaded } = useMasters();
+  const { masterData, masters } = useMasters();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [itemToReverse, setItemToReverse] = useState<StockAdjustment | null>(null);
@@ -43,14 +43,13 @@ export function StockAdjustmentsClient() {
   }, [purchases, locationTransfers]);
 
   const filteredAdjustments = useMemo(() => {
-    if (!isTransactionsLoaded) return [];
     return (adjustments || [])
       .filter(adj => isDateInFinancialYear(adj.date, financialYear))
       .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [adjustments, financialYear, isTransactionsLoaded]);
+  }, [adjustments, financialYear]);
 
-  const handleAddAdjustment = useCallback((newAdjustment: Omit<StockAdjustment, 'id'>) => {
-    addAdjustment({ ...newAdjustment, id: `adj-${Date.now()}` });
+  const handleAddAdjustment = useCallback(async (newAdjustment: Omit<StockAdjustment, 'id'>) => {
+    await addAdjustment({ ...newAdjustment, id: `adj-${Date.now()}` });
     toast({ title: 'Adjustment Recorded', description: 'The stock adjustment has been successfully saved.' });
   }, [addAdjustment, toast]);
 
@@ -93,7 +92,7 @@ export function StockAdjustmentsClient() {
     }
   };
   
-  if (!isTransactionsLoaded || !isMastersLoaded || isAppHydrating) {
+  if (adjustments === undefined || masters === undefined) {
       return (
           <div className="space-y-4 p-4">
               <div className="flex justify-between items-center">

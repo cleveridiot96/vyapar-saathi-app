@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -29,9 +30,9 @@ const AddReceiptForm = dynamic(() => import('./AddReceiptForm').then(mod => mod.
 
 export function ReceiptsClient() {
   const { toast } = useToast();
-  const { financialYear, isAppHydrating } = useSettings();
-  const { receipts, sales, isTransactionsLoaded, updateReceipt, addReceipt, deleteReceipt } = useTransactions();
-  const { addOrUpdateMaster, isMastersLoaded } = useMasters();
+  const { financialYear } = useSettings();
+  const { receipts, sales, updateReceipt, addReceipt, deleteReceipt } = useTransactions();
+  const { addOrUpdateMaster, masters } = useMasters();
   
   const { receivableParties } = useOutstandingBalances();
 
@@ -42,16 +43,15 @@ export function ReceiptsClient() {
   const [receiptToDeleteId, setReceiptToDeleteId] = React.useState<string | null>(null);
 
   const filteredReceipts = React.useMemo(() => {
-    if (!isTransactionsLoaded) return [];
     return (receipts || []).filter(receipt => receipt && receipt.date && isDateInFinancialYear(receipt.date, financialYear));
-  }, [receipts, financialYear, isTransactionsLoaded]);
+  }, [receipts, financialYear]);
 
-  const handleAddOrUpdateReceipt = React.useCallback((receipt: Receipt) => {
+  const handleAddOrUpdateReceipt = React.useCallback(async (receipt: Receipt) => {
     const isEditing = receipts.some(r => r.id === receipt.id);
     if(isEditing) {
-        updateReceipt(receipt);
+        await updateReceipt(receipt);
     } else {
-        addReceipt(receipt);
+        await addReceipt(receipt);
     }
 
     setReceiptToEdit(null);
@@ -70,9 +70,9 @@ export function ReceiptsClient() {
     setShowDeleteConfirm(true);
   }, []);
 
-  const confirmDeleteReceipt = React.useCallback(() => {
+  const confirmDeleteReceipt = React.useCallback(async () => {
     if (receiptToDeleteId) {
-      deleteReceipt(receiptToDeleteId);
+      await deleteReceipt(receiptToDeleteId);
       toast({ title: "Success!", description: "Receipt deleted successfully.", variant: "destructive" });
       setReceiptToDeleteId(null);
       setShowDeleteConfirm(false);
@@ -96,7 +96,7 @@ export function ReceiptsClient() {
     setReceiptToEdit(null);
   }, []);
 
-  if (!isTransactionsLoaded || !isMastersLoaded || isAppHydrating) {
+  if (receipts === undefined || masters === undefined) {
         return (
             <div className="space-y-4 p-4">
                 <div className="flex justify-between items-center">

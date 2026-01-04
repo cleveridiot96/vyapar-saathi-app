@@ -76,17 +76,16 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 
 export function PurchasesClient() {
   const { toast } = useToast();
-  const { financialYear, isAppHydrating } = useSettings();
+  const { financialYear } = useSettings();
   
   const { 
       purchases,
       purchaseReturns,
-      isTransactionsLoaded,
       addPurchase, updatePurchase, deletePurchase,
       addPurchaseReturn, 
       addLedgerEntry, removeLedgerEntries
   } = useTransactions();
-  const { masterData, addOrUpdateMaster, getAllMasters, isMastersLoaded } = useMasters();
+  const { masterData, addOrUpdateMaster, getAllMasters, masters } = useMasters();
   
   const { availableStock } = useInventory();
 
@@ -100,14 +99,12 @@ export function PurchasesClient() {
   const [activeTab, setActiveTab] = React.useState('purchases');
   
   const filteredPurchases = React.useMemo(() => {
-    if (!isTransactionsLoaded) return [];
     return (purchases || []).filter(p => p && p.date && isDateInFinancialYear(p.date, financialYear));
-  }, [purchases, financialYear, isTransactionsLoaded]);
+  }, [purchases, financialYear]);
 
   const filteredPurchaseReturns = React.useMemo(() => {
-    if (!isTransactionsLoaded) return [];
     return (purchaseReturns || []).filter(pr => pr && pr.date && isDateInFinancialYear(pr.date, financialYear));
-  }, [purchaseReturns, financialYear, isTransactionsLoaded]);
+  }, [purchaseReturns, financialYear]);
 
   const handleAddOrUpdatePurchase = React.useCallback(async (purchase: Purchase) => {
     const isEditing = (purchases || []).some(p => p.id === purchase.id);
@@ -187,9 +184,7 @@ export function PurchasesClient() {
     return activeTab === 'purchases' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white';
   }, [activeTab]);
   
-  const ready = isStudio || (isTransactionsLoaded && isMastersLoaded && !isAppHydrating);
-
-  if (!ready) {
+  if (purchases === undefined || masters === undefined) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-20rem)] p-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
