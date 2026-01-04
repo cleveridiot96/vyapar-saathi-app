@@ -39,9 +39,6 @@ import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
-import { isStudio } from "@/lib/isStudio";
 import { Skeleton } from "@/components/ui/skeleton";
 
 
@@ -108,10 +105,9 @@ function openPrintWindow(htmlContent: string, title = "Document") {
 
 export function LocationTransferClient() {
   const { toast } = useToast();
-  const { financialYear, isAppHydrating } = useSettings();
+  const { financialYear } = useSettings();
   
-  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
-  const { addLocationTransfer, addLedgerEntry, removeLedgerEntries } = useTransactions();
+  const { locationTransfers = [], addLocationTransfer, addLedgerEntry, removeLedgerEntries } = useTransactions();
   const { masterData, addOrUpdateMaster, getAllMasters, isMastersLoaded } = useMasters();
   
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
@@ -123,7 +119,7 @@ export function LocationTransferClient() {
   
   const { availableStock, isLoading: isInventoryLoading } = useInventory(transferToEdit?.id);
 
-  const ready = locationTransfers !== undefined && isMastersLoaded && !isInventoryLoading;
+  const ready = !isInventoryLoading && isMastersLoaded;
 
 
   React.useEffect(() => {
@@ -181,7 +177,7 @@ export function LocationTransferClient() {
   const expandedTransfers = React.useMemo(() => {
     if (!ready || !dateRange?.from) return [];
     
-    const filtered = (locationTransfers ?? []).filter(lt => lt && lt.date && isDateInFinancialYear(lt.date, financialYear) && new Date(lt.date) >= dateRange.from!  && new Date(lt.date) <= (dateRange. to || new Date()));
+    const filtered = locationTransfers.filter(lt => lt && lt.date && isDateInFinancialYear(lt.date, financialYear) && new Date(lt.date) >= dateRange.from!  && new Date(lt.date) <= (dateRange. to || new Date()));
     
     const flatList:  ExpandedTransferHistoryItem[] = [];
     filtered.forEach(transfer => {
@@ -271,8 +267,8 @@ export function LocationTransferClient() {
                         <TableHead className="text-right">LANDED RATE (₹/KG)</TableHead>
                     </TableRow></TableHeader>
                         <TableBody>
-                            {(availableStock ?? []).length === 0 && <TableRow><TableCell colSpan={5} className="text-center h-24">No stock for FY {financialYear}.</TableCell></TableRow>}
-                            {(availableStock ?? []). map(item => (
+                            {availableStock.length === 0 && <TableRow><TableCell colSpan={5} className="text-center h-24">No stock for FY {financialYear}.</TableCell></TableRow>}
+                            {availableStock.map(item => (
                                 <TableRow key={`${item.locationId}${KEY_SEPARATOR}${item.lotNumber}`} className="uppercase">
                                     <TableCell><Tooltip><TooltipTrigger asChild><span className="truncate max-w-[150px] inline-block">{item.locationName || item.locationId}</span></TooltipTrigger><TooltipContent><p>{item.locationName || item.locationId}</p></TooltipContent></Tooltip></TableCell>
                                     <TableCell><Tooltip><TooltipTrigger asChild><span className="truncate max-w-[150px] inline-block">{item. lotNumber}</span></TooltipTrigger><TooltipContent><p>{item.lotNumber}</p></TooltipContent></Tooltip></TableCell>

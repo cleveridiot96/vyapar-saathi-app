@@ -5,7 +5,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,6 @@ import { Input } from "@/components/ui/input";
 import type { MasterItem, MasterItemType } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MASTER_TYPES_CONFIG } from "@/lib/constants";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Lock, Unlock, RefreshCw, Lightbulb } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -169,7 +168,7 @@ export function MasterForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-lg max-h-[90vh] flex flex-col">
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-lg max-h-[90vh] flex flex-col overflow-y-auto">
         <DialogHeader className="flex flex-row items-start justify-between pr-8">
           <div className="flex flex-col gap-1">
             <DialogTitle>
@@ -322,12 +321,12 @@ export function MasterForm({
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          {isLocked && !isEditingFixed && (
+          {isLocked && !isEditingFixed && onToggleLock && (
             <Button type="button" variant="secondary" onClick={handleUnlock}>
                 <Unlock className="mr-2 h-4 w-4"/> Unlock
             </Button>
           )}
-          <Button type="submit" disabled={isLocked}>Save</Button>
+          <Button type="submit" disabled={isLocked} onClick={form.handleSubmit(handleSubmit)}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

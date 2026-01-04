@@ -39,7 +39,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMasters } from "@/hooks/useTransactions";
 
-const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
+const MasterDataCombobox = dynamic(() => import('../shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 const MasterForm = dynamic(() => import('../masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
 
 
@@ -243,7 +243,7 @@ const AddReceiptFormComponent: React.FC<AddReceiptFormProps> = ({
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-xl max-h-[90vh] flex flex-col p-0">
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-y-auto">
           <DialogHeader className="p-6 pb-4">
             <DialogTitle>{receiptToEdit ? 'Edit Receipt' : 'Add New Receipt'}</DialogTitle>
             <DialogDescription>

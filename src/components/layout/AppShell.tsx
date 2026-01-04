@@ -2,7 +2,6 @@ import React from "react";
 import { Sidebar, SidebarHeader, SidebarContent, SidebarProvider } from "@/components/ui/sidebar";
 import { navItems } from "@/lib/features";
 import { ClientSidebarMenu } from "@/components/layout/ClientSidebarMenu";
-import ErrorBoundary from "../ErrorBoundary";
 import { cn } from "@/lib/utils";
 import { RotatingHeaderText } from "./RotatingHeaderText";
 
@@ -41,7 +40,7 @@ export function AppShell({
                     <div className="flex flex-col flex-1 min-h-0 relative">
                         {header}
                         <main className="flex-1 overflow-y-auto p-2 sm:p-4 w-full print:p-0 print:m-0 print:overflow-visible">
-                        <ErrorBoundary>{children}</ErrorBoundary>
+                            {children}
                         </main>
                     </div>
                 </div>

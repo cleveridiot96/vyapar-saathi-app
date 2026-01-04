@@ -40,7 +40,7 @@ import dynamic from 'next/dynamic';
 import { DatePicker } from "@/components/ui/date-picker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
+const MasterDataCombobox = dynamic(() => import('../shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 const MasterForm = dynamic(() => import('../masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
 
 
@@ -267,7 +267,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-y-auto">
           <DialogHeader className="p-6 pb-4">
             <DialogTitle>{paymentToEdit ? 'Edit Payment' : 'Add New Payment'}</DialogTitle>
             <DialogDescription>

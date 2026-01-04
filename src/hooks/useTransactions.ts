@@ -16,7 +16,15 @@ import { groupMasters } from '@/lib/utils';
  * Reading data is done via useLiveQuery directly in components.
  */
 export const useTransactions = () => {
-  const isDBPopulated = useLiveQuery(() => db.masters.count().then(c => c > 0));
+  const sales = useLiveQuery(() => db.sales.toArray(), []) ?? [];
+  const purchases = useLiveQuery(() => db.purchases.toArray(), []) ?? [];
+  const payments = useLiveQuery(() => db.payments.toArray(), []) ?? [];
+  const receipts = useLiveQuery(() => db.receipts.toArray(), []) ?? [];
+  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []) ?? [];
+  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []) ?? [];
+  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []) ?? [];
+  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []) ?? [];
+  const ledger = useLiveQuery(() => db.ledger.toArray(), []) ?? [];
 
   const addPurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const updatePurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
@@ -57,7 +65,16 @@ export const useTransactions = () => {
   }, []);
 
   return {
-    isTransactionsLoaded: isDBPopulated, // Simplified check
+    isTransactionsLoaded: true, // Data is always an array, so it's always "loaded"
+    sales,
+    purchases,
+    payments,
+    receipts,
+    locationTransfers,
+    adjustments,
+    purchaseReturns,
+    saleReturns,
+    ledger,
     addPurchase, updatePurchase, deletePurchase,
     addSale, updateSale, deleteSale,
     addPayment, updatePayment, deletePayment,
@@ -71,35 +88,35 @@ export const useTransactions = () => {
  * Hook for reading and mutating Master data.
  */
 export const useMasters = () => {
-    const masters = useLiveQuery(() => db.masters.toArray(), []);
+    const masters = useLiveQuery(() => db.masters.toArray(), []) ?? [];
 
     const addOrUpdateMaster = useCallback(async (item: MasterItem) => {
         await db.masters.put(item);
     }, []);
 
     const getAllMasters = useCallback(() => {
-        return masters || [];
+        return masters;
     }, [masters]);
     
     const masterData = useMemo(() => {
-        const grouped = groupMasters(masters || []);
+        const grouped = groupMasters(masters);
         return {
-            Customer: grouped.Customer || [],
-            Supplier: grouped.Supplier || [],
-            Agent: grouped.Agent || [],
-            Broker: grouped.Broker || [],
-            Transporter: grouped.Transporter || [],
-            Warehouse: grouped.Warehouse || [],
-            Expense: grouped.Expense || [],
-            Product: grouped.Product || [],
+            Customer: grouped.Customer,
+            Supplier: grouped.Supplier,
+            Agent: grouped.Agent,
+            Broker: grouped.Broker,
+            Transporter: grouped.Transporter,
+            Warehouse: grouped.Warehouse,
+            Expense: grouped.Expense,
+            Product: grouped.Product,
         }
     }, [masters]);
 
 
     return {
-        masters: masters ?? [],
+        masters,
         masterData,
-        isMastersLoaded: masters !== undefined,
+        isMastersLoaded: true, // Data is always an array, so it's always "loaded"
         addOrUpdateMaster,
         getAllMasters,
         customers: masterData.Customer,

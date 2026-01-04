@@ -2,39 +2,30 @@
 "use client";
 
 import { useMemo } from 'react';
-import { useMasters } from './useTransactions';
+import { useMasters, useTransactions } from './useTransactions';
 import type { MasterItem } from '@/lib/types';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 
 export function useOutstandingBalances() {
-    const purchases = useLiveQuery(() => db.purchases.toArray(), []);
-    const sales = useLiveQuery(() => db.sales.toArray(), []);
-    const payments = useLiveQuery(() => db.payments.toArray(), []);
-    const receipts = useLiveQuery(() => db.receipts.toArray(), []);
-    const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
-    const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
-    const ledger = useLiveQuery(() => db.ledger.toArray(), []);
-    
-    const { masters, isMastersLoaded } = useMasters();
-
-    const isDataReady = ![purchases, sales, payments, receipts, purchaseReturns, saleReturns, ledger, masters].some(data => data === undefined);
+    const { sales, purchases, payments, receipts } = useTransactions();
+    const { masters = [] } = useMasters();
+    const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []) ?? [];
+    const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []) ?? [];
+    const ledger = useLiveQuery(() => db.ledger.toArray(), []) ?? [];
 
     const balances = useMemo(() => {
-        const allMasters = masters ?? [];
-        if (allMasters.length === 0) return new Map<string, number>();
-
         const balancesMap = new Map<string, number>();
 
         // 1. Set opening balances from master data
-        allMasters.forEach(m => {
+        masters.forEach(m => {
             if (m.type !== 'Warehouse' && m.type !== 'Expense' && m.type !== 'Product') {
                 balancesMap.set(m.id, m.details?.openingBalanceType === 'Cr' ? -(m.details?.openingBalance || 0) : (m.details?.openingBalance || 0));
             }
         });
         
         const allTxs = [
-            ...(purchases ?? []), ...(sales ?? []), ...(receipts ?? []), ...(payments ?? []), ...(purchaseReturns ?? []), ...(saleReturns ?? []), ...(ledger ?? [])
+            ...purchases, ...sales, ...receipts, ...payments, ...purchaseReturns, ...saleReturns, ...ledger
         ].filter(tx => tx && tx.date);
         
         // 2. Process all transactions to establish final balances
@@ -104,14 +95,13 @@ export function useOutstandingBalances() {
 
 
         return balancesMap;
-    }, [isDataReady, masters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger]);
+    }, [masters, purchases, sales, receipts, payments, purchaseReturns, saleReturns, ledger]);
 
     const { receivableParties, payableParties } = useMemo(() => {
         const receivableParties: MasterItem[] = [];
         const payableParties: MasterItem[] = [];
-        const allMasters = masters ?? [];
 
-        allMasters.forEach(party => {
+        masters.forEach(party => {
             const balance = balances.get(party.id);
             if (balance === undefined) return;
             
@@ -135,7 +125,7 @@ export function useOutstandingBalances() {
 
 
     const getPartyName = (partyId: string) => {
-        const party = (masters ?? []).find(p => p.id === partyId);
+        const party = masters.find(p => p.id === partyId);
         return party?.name || partyId;
     }
 
@@ -144,6 +134,6 @@ export function useOutstandingBalances() {
         payableParties,
         getPartyName,
         balances,
-        isBalancesLoading: !isDataReady
+        isBalancesLoading: false // Data is always an array, so it's never "loading"
     };
 }

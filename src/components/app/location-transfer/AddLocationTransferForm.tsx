@@ -31,7 +31,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { DatePicker } from "@/components/ui/date-picker";
 import dynamic from 'next/dynamic';
 
@@ -187,7 +186,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={onClose}>
-        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-y-auto">
           <DialogHeader className="p-6 pb-4 flex-shrink-0">
             <DialogTitle>{transferToEdit ? 'Edit Location Transfer' : 'New Location Transfer'}</DialogTitle>
             <DialogDescription>Move stock between warehouses and account for costs.</DialogDescription>
@@ -215,13 +214,13 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
                       <FormField control={control} name="fromLocationId" render={({ field }) => (
                         <FormItem><FormLabel>From Warehouse</FormLabel>
-                          <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" onAddNew={() => handleOpenMasterForm("Warehouse")} onEdit={(id) => handleEditMasterItem(id)} {...field} />
+                          <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select source" onAddNew={(e) => handleOpenMasterForm("Warehouse")} onEdit={(id) => handleEditMasterItem(id)} {...field} />
                           <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={control} name="toLocationId" render={({ field }) => (
                         <FormItem><FormLabel>To Warehouse</FormLabel>
-                          <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" onAddNew={() => handleOpenMasterForm("Warehouse")} onEdit={(id) => handleEditMasterItem(id)} {...field} />
+                          <MasterDataCombobox options={(warehouses || []).map(w => ({ value: w.id, label: w.name }))} placeholder="Select destination" onAddNew={(e) => handleOpenMasterForm("Warehouse")} onEdit={(id) => handleEditMasterItem(id)} {...field} />
                           <FormMessage />
                         </FormItem>
                       )} />

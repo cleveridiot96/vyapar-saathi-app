@@ -31,7 +31,6 @@ import type { MasterItem, Sale, ExpenseItem, AggregatedInventoryItem, MasterItem
 import { useToast } from "@/hooks/use-toast";
 import { DatePicker } from "@/components/ui/date-picker";
 import dynamic from 'next/dynamic';
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMasters } from "@/hooks/useTransactions";
 import { useInventory } from "@/hooks/useInventory";
 
@@ -164,7 +163,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(openState) => { if (!openState) onClose(); }}>
-        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-y-auto">
           <DialogHeader className="p-6 pb-0">
             <DialogTitle>{saleToEdit ? 'Edit Sale' : 'Add New Sale'}</DialogTitle>
             <DialogDescription>Create a sale with one or more items.</DialogDescription>

@@ -8,27 +8,24 @@ import { useMemo } from 'react';
 import { calculateInventory } from '@/lib/inventoryEngine';
 
 export function useInventory(saleToEditId?: string | null) {
-  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
-  const sales = useLiveQuery(() => db.sales.toArray(), []);
-  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []);
-  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
-  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
-  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
+  const purchases = useLiveQuery(() => db.purchases.toArray(), []) ?? [];
+  const sales = useLiveQuery(() => db.sales.toArray(), []) ?? [];
+  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []) ?? [];
+  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []) ?? [];
+  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []) ?? [];
+  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []) ?? [];
   
-  const isDataReady = ![purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns].some(data => data === undefined);
-
   const allAggregatedInventory = useMemo(() => {
-    if (!isDataReady) return [];
-    return calculateInventory(purchases!, sales!, adjustments!, locationTransfers!, purchaseReturns!, saleReturns!);
-  }, [purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns, isDataReady]);
+    return calculateInventory(purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns);
+  }, [purchases, sales, adjustments, locationTransfers, purchaseReturns, saleReturns]);
 
 
   const adjustedInventory = useMemo(() => {
-    if (!saleToEditId || !isDataReady) {
+    if (!saleToEditId) {
       return allAggregatedInventory;
     }
 
-    const saleToExclude = (sales ?? []).find(s => s.id === saleToEditId);
+    const saleToExclude = sales.find(s => s.id === saleToEditId);
     if (!saleToExclude) {
       return allAggregatedInventory;
     }
@@ -51,12 +48,13 @@ export function useInventory(saleToEditId?: string | null) {
         return invItem;
     }).filter(Boolean) as AggregatedInventoryItem[];
 
-  }, [allAggregatedInventory, sales, saleToEditId, isDataReady]);
+  }, [allAggregatedInventory, sales, saleToEditId]);
 
   return {
     allAggregatedInventory: adjustedInventory,
     availableStock: (adjustedInventory || []).filter(item => item && item.currentBags > 0.01),
-    isLoading: !isDataReady,
+    isLoading: false, // Data is always an array, never "loading"
+    isReady: true,
   };
 }
 

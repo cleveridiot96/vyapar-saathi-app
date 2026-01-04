@@ -28,7 +28,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import type { StockAdjustment, MasterItem } from '@/lib/types';
 import { format } from 'date-fns';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { DatePicker } from "@/components/ui/date-picker";
 
 const adjustmentSchema = z.object({
@@ -91,7 +90,7 @@ export function AddAdjustmentForm({ isOpen, onClose, onSubmit, warehouses, avail
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-xl max-h-[90vh] flex flex-col">
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-xl max-h-[90vh] flex flex-col overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New Stock Adjustment</DialogTitle>
           <DialogDescription>

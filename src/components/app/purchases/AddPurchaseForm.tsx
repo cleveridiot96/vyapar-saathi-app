@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -299,7 +300,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(openState) => { if (!openState) onClose(); }}>
-        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-y-auto">
           <DialogHeader className="p-6 pb-0">
              <div className="flex items-start justify-between">
                 <div>
@@ -314,7 +315,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
             </div>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 min-h-0 px-6">
+          <div className="flex-1 min-h-0 px-6 overflow-y-auto pr-2">
               <FormProvider {...formMethods}>
                 <form onSubmit={formHandleSubmit(processSubmit)} className="space-y-4 pt-4">
                   
@@ -713,7 +714,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                   </div>
                 </form>
               </FormProvider>
-          </ScrollArea>
+          </div>
            <DialogFooter className="p-6 pt-4 border-t">
               <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
               <Button type="button" onClick={formHandleSubmit(processSubmit)} disabled={isSubmitting}>
