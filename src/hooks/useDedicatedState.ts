@@ -1,4 +1,4 @@
-// This file has been deprecated and is no longer in use.
-// The "Component-Level Direct Query" architecture is now implemented.
-// Data is fetched directly in components using useLiveQuery from dexie-react-hooks.
-// Mutation logic is handled by the simplified useTransactions hook.
+// This file is no longer in use as the architecture has been refactored
+// to use a "Component-Level Direct Query" pattern. Data is fetched directly
+// in components using useLiveQuery from dexie-react-hooks.
+// This file can be safely deleted.
