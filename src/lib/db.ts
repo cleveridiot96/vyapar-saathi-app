@@ -28,7 +28,7 @@ class MyDatabase extends Dexie {
 
   constructor() {
     super('vyapar-saathi-db');
-    this.version(5).stores({
+    this.version(6).stores({
       masters: 'id, type, name',
       purchases: 'id, date, supplierId, agentId',
       sales: 'id, date, customerId, brokerId',
