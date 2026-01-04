@@ -3,234 +3,147 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, ListChecks, RotateCcw } from "lucide-react";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDedicatedState } from "@/hooks/useDedicatedState";
 import { cn } from "@/lib/utils";
-import { useTransactions, useMasters } from "@/hooks/useTransactions";
-import type { Sale, SaleReturn, MasterItem } from "@/lib/types";
-import { useToast } from "@/hooks/use-toast";
-import { useInventory } from "@/hooks/useInventory";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import type { Sale, SaleReturn } from "@/lib/types";
 import dynamic from 'next/dynamic';
-import { renderToStaticMarkup } from 'react-dom/server';
 
 const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { ssr: false });
 const AddSaleForm = dynamic(() => import('./AddSaleForm').then(mod => mod.AddSaleForm), { ssr: false });
 const SaleReturnTable = dynamic(() => import('./SaleReturnTable').then(mod => mod.SaleReturnTable), { ssr: false });
-const AddSaleReturnForm = dynamic(() => import('./AddSaleReturnForm').then(mod => mod.AddSaleReturnForm), { ssr: false });
-const SaleChittiPrint = dynamic(() => import('@/components/app/sales/SaleChittiPrint').then(mod => mod.SaleChittiPrint), { ssr: false });
-
-function openPrintWindow(htmlContent: string, title = "Document") {
-  const printWindow = window.open("", "_blank", "noopener,noreferrer");
-  if (!printWindow) {
-    alert("Please allow pop-ups to print this document.");
-    return;
-  }
-  printWindow.document.write(`
-    <html>
-      <head>
-        <title>${title}</title>
-        <style>
-          @media print {
-            @page { size: A5 portrait; margin: 10mm; }
-            body { background: white !important; color: black !important; font-size: 10pt !important; }
-             .print-chitti-styles { font-family: sans-serif; line-height: 1.4; }
-            .print-chitti-styles h1, .print-chitti-styles h2 { margin-top: 0.5em; margin-bottom: 0.25em; }
-            .print-chitti-styles table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 10px; }
-            .print-chitti-styles th, .print-chitti-styles td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; }
-            .print-chitti-styles th { background-color: #f0f0f0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;}
-            .print-chitti-styles .text-right { text-align: right; }
-            .print-chitti-styles .font-bold { font-weight: bold; }
-          }
-        </style>
-      </head>
-      <body>
-        ${htmlContent}
-        <script>
-          setTimeout(function() {
-            window.print();
-            window.close();
-          }, 250);
-        </script>
-      </body>
-    </html>
-  `);
-  printWindow.document.close();
-}
-
 
 export function SalesClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
   
+  // USE THE NEW, DEDICATED HOOK
   const { 
-      sales,
-      saleReturns,
-      isTransactionsLoaded,
-      addSale,
-      updateSale,
-      deleteSale,
-      addSaleReturn,
-  } = useTransactions();
-  const { addOrUpdateMaster } = useMasters();
-  
+    sales, 
+    addSale,
+    updateSale,
+    deleteSale,
+    isTransactionsLoaded
+  } = useDedicatedState();
 
-  const [isAddSaleFormOpen, setIsAddSaleFormOpen] = React.useState(false);
+  const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
-
-  const [isAddSaleReturnFormOpen, setIsAddSaleReturnFormOpen] = React.useState(false);
-  const [saleReturnToEdit, setSaleReturnToEdit] = React.useState<SaleReturn | null>(null);
-
-  const [itemToDelete, setItemToDelete] = React.useState<{ id: string, type: 'sale' | 'return' } | null>(null);
-  
+  const [itemToDelete, setItemToDelete] = React.useState<{id: string, type: 'sale' | 'return'} | null>(null);
   const [activeTab, setActiveTab] = React.useState('sales');
-  
+
   const filteredSales = React.useMemo(() => {
-    if (!isTransactionsLoaded) return [];
-    return (sales || []).filter(s => s && s.date && isDateInFinancialYear(s.date, financialYear));
+    if (!isTransactionsLoaded || !sales) return [];
+    return sales.filter(s => s && s.date && isDateInFinancialYear(s.date, financialYear));
   }, [sales, financialYear, isTransactionsLoaded]);
 
-  const filteredSaleReturns = React.useMemo(() => {
-    if (!isTransactionsLoaded) return [];
-    return (saleReturns || []).filter(sr => sr && sr.date && isDateInFinancialYear(sr.date, financialYear));
-  }, [saleReturns, financialYear, isTransactionsLoaded]);
-
-  const handleAddOrUpdateSale = React.useCallback(
-    (sale: Sale) => {
-      const isEditing = !!saleToEdit;
-      
-      if (isEditing) {
+  const handleAddOrUpdateSale = (sale: Sale) => {
+    const isEditing = saleToEdit !== null;
+    if (isEditing) {
         updateSale(sale);
-      } else {
+        toast({ title: "Success", description: "Sale updated successfully." });
+    } else {
         addSale(sale);
-      }
-      
-      setSaleToEdit(null);
-      setIsAddSaleFormOpen(false);
-      
-      toast({
-        title: "Success!",
-        description: isEditing ? "Sale updated." : "Sale added.",
-      });
-      
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent("reindex-search"));
-      }, 100);
-    },
-    [saleToEdit, addSale, updateSale, toast]
-  );
+        toast({ title: "Success", description: "Sale added successfully." });
+    }
+    setIsAddFormOpen(false);
+    setSaleToEdit(null);
+  };
 
-  const handleEditSale = React.useCallback((sale: Sale) => {
+  const handleEditSale = (sale: Sale) => {
     setSaleToEdit(sale);
-    setIsAddSaleFormOpen(true);
-  }, []);
+    setIsAddFormOpen(true);
+  };
 
-  const handleDeleteAttempt = React.useCallback((id: string, type: 'sale' | 'return') => {
-    setItemToDelete({ id, type });
-  }, []);
-
-  const confirmDelete = React.useCallback(() => {
-    if (!itemToDelete) return;
-    
-    if (itemToDelete.type === 'sale') {
+  const handleDeleteSale = (id: string) => {
+    setItemToDelete({ id, type: 'sale' });
+  };
+  
+  const confirmDelete = () => {
+    if (itemToDelete && itemToDelete.type === 'sale') {
       deleteSale(itemToDelete.id);
       toast({ title: "Deleted!", description: "Sale record removed.", variant: "destructive" });
-    } else {
-      // Logic for deleting sale return needs to be implemented in useTransactions
-      toast({ title: "Delete not implemented for returns", variant: "destructive" });
     }
-
     setItemToDelete(null);
-    window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [itemToDelete, deleteSale, toast]);
-  
-  const handleAddOrUpdateSaleReturn = React.useCallback((srData: SaleReturn) => {
-     addSaleReturn(srData);
-    setSaleReturnToEdit(null);
-    setIsAddSaleReturnFormOpen(false);
-    toast({ title: "Success!", description: "Sale return saved." });
-    window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [addSaleReturn, toast]);
+  }
 
-  const handleEditSaleReturn = React.useCallback((sr: SaleReturn) => {
-    setSaleReturnToEdit(sr);
-    setIsAddSaleReturnFormOpen(true);
-  }, []);
-
-  const triggerDownloadSalePdf = React.useCallback((sale: Sale) => {
-    const chittiHtml = renderToStaticMarkup(<SaleChittiPrint sale={sale} />);
-    openPrintWindow(chittiHtml, `SaleChitti_${sale.id.slice(-4)}`);
-  }, []);
-  
-  const addButtonDynamicClass = React.useMemo(() => {
-    return activeTab === 'sales' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-orange-600 hover:bg-orange-700 text-white';
-  }, [activeTab]);
+  const addButtonClass = activeTab === 'sales' 
+    ? 'bg-green-600 hover:bg-green-700 text-white' 
+    : 'bg-orange-600 hover:bg-orange-700 text-white';
 
   return (
-    <div className="space-y-2 print-area">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 no-print">
-        <h1 className="text-2xl font-bold text-foreground uppercase">Sales & Returns (FY ${financialYear})</h1>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Sales & Returns (FY {financialYear})</h1>
+        <Button variant="outline" size="icon" onClick={() => window.location.reload()}>
+          <RotateCcw className="h-4 w-4" />
+        </Button>
       </div>
 
-      <Tabs defaultValue="sales" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 h-10 mb-2 no-print">
-          <TabsTrigger value="sales" className="py-2.5 text-base rounded-md"><ListChecks className="mr-2 h-5 w-5" />Sales</TabsTrigger>
-          <TabsTrigger value="saleReturns" className="py-2.5 text-base rounded-md"><RotateCcw className="mr-2 h-5 w-5" />Sale Returns</TabsTrigger>
+      <Tabs defaultValue="sales" onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="sales">
+            <ListChecks className="mr-2 h-4 w-4" /> Sales
+          </TabsTrigger>
+          <TabsTrigger value="returns">
+            <RotateCcw className="mr-2 h-4 w-4" /> Returns
+          </TabsTrigger>
         </TabsList>
-        <TabsContent value="sales">
-          <div className="flex justify-end gap-2 mb-2 no-print">
-            <Button onClick={() => { setSaleToEdit(null); setIsAddSaleFormOpen(true); }} size="default" className={cn("text-base py-2 px-5 shadow-md", addButtonDynamicClass)}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Sale
-            </Button>
-            <Button variant="outline" size="icon" onClick={() => window.print()}><Printer className="h-5 w-5" /><span className="sr-only">Print</span></Button>
-          </div>
-          <SaleTable data={filteredSales} onEdit={handleEditSale} onDelete={(id) => handleDeleteAttempt(id, 'sale')} onDownloadPdf={triggerDownloadSalePdf} />
+        
+        <TabsContent value="sales" className="space-y-4">
+           <div className="flex justify-end gap-2">
+             <Button onClick={() => { setSaleToEdit(null); setIsAddFormOpen(true); }} className={cn(addButtonClass)}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Sale
+             </Button>
+           </div>
+          
+           <div className="text-sm text-muted-foreground mb-2">
+              Showing {filteredSales.length} sale(s)
+           </div>
+          
+          <SaleTable 
+            data={filteredSales}
+            onEdit={handleEditSale}
+            onDelete={handleDeleteSale}
+          />
         </TabsContent>
-        <TabsContent value="saleReturns">
-           <div className="flex justify-end gap-2 mb-2 no-print">
-            <Button onClick={() => { setSaleReturnToEdit(null); setIsAddSaleReturnFormOpen(true); }} size="default" className={cn("text-base py-2 px-5 shadow-md", addButtonDynamicClass)}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Sale Return
-            </Button>
-            <Button variant="outline" size="icon" onClick={() => window.print()}><Printer className="h-5 w-5" /><span className="sr-only">Print</span></Button>
-          </div>
-          <SaleReturnTable data={filteredSaleReturns} onEdit={handleEditSaleReturn} onDelete={(id) => handleDeleteAttempt(id, 'return')} />
+        
+        <TabsContent value="returns">
+           <div className="text-center py-8 text-gray-500">
+             {/* <SaleReturnTable data={[]} onEdit={()=>{}} onDelete={()=>{}} /> */}
+             Returns functionality coming soon...
+            </div>
         </TabsContent>
       </Tabs>
-
-      {isAddSaleFormOpen && (
+      
+      {isAddFormOpen && (
         <AddSaleForm
-          key={saleToEdit ? saleToEdit.id : 'new-sale'}
-          isOpen={isAddSaleFormOpen}
-          onClose={() => setIsAddSaleFormOpen(false)}
+          isOpen={isAddFormOpen}
+          onClose={() => {setIsAddFormOpen(false); setSaleToEdit(null);}}
           onSubmit={handleAddOrUpdateSale}
           existingSales={sales || []}
           saleToEdit={saleToEdit}
-          onMasterDataUpdate={addOrUpdateMaster}
-        />
-      )}
-      
-      {isAddSaleReturnFormOpen && (
-        <AddSaleReturnForm
-            key={saleReturnToEdit ? saleReturnToEdit.id : 'new-sale-return'}
-            isOpen={isAddSaleReturnFormOpen}
-            onClose={() => setIsAddSaleReturnFormOpen(false)}
-            onSubmit={handleAddOrUpdateSaleReturn}
-            sales={sales || []}
-            existingSaleReturns={saleReturns || []}
-            saleReturnToEdit={saleReturnToEdit}
         />
       )}
 
-      <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete This Record?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this record. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setItemToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {itemToDelete && (
+        <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+              <AlertDialogDescription>Are you sure you want to delete this {itemToDelete.type}?</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
     </div>
   );
 }

@@ -16,34 +16,22 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Info, Percent, PlusCircle, Trash2 } from 'lucide-react';
-import { cn } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
+import { PlusCircle, Trash2 } from 'lucide-react';
+import { format } from "date-fns";
 import { saleSchema, type SaleFormValues } from '@/lib/schemas/saleSchema';
-import type { MasterItem, MasterItemType, Sale, ExpenseItem, CostBreakdown } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { useInventory, type AggregatedInventoryItem } from "@/hooks/useInventory";
-import dynamic from 'next/dynamic';
+import type { MasterItem, Sale, ExpenseItem, AggregatedInventoryItem } from '@/lib/types';
+import { useToast } from "@/hooks/use-toast";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useMasters } from "@/hooks/useTransactions";
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useDedicatedState } from "@/hooks/useDedicatedState";
+import { useInventory } from "@/hooks/useInventory";
+import dynamic from 'next/dynamic';
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
@@ -56,7 +44,6 @@ interface AddSaleFormProps {
   onSubmit: (sale: Sale) => void;
   existingSales: Sale[];
   saleToEdit?: Sale | null;
-  onMasterDataUpdate: (newItem: MasterItem) => void;
 }
 
 const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
@@ -65,244 +52,61 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   onSubmit,
   existingSales,
   saleToEdit,
-  onMasterDataUpdate,
 }) => {
   const { toast } = useToast();
-  const { customers, transporters, brokers, expenses, warehouses, getAllMasters } = useMasters();
+  const { addMaster, getAllMasters } = useDedicatedState();
   const { availableStock } = useInventory(saleToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   const [isMasterFormOpen, setIsMasterFormOpen] = React.useState(false);
   const [masterFormItemType, setMasterFormItemType] = React.useState<MasterItemType | null>(null);
   const [masterItemToEdit, setMasterItemToEdit] = React.useState<MasterItem | null>(null);
-  const [manualNetWeight, setManualNetWeight] = React.useState<Record<number, boolean>>({});
-  const [lastRates, setLastRates] = React.useState<Record<number, number | null>>({});
-
-  const getDefaultValues = React.useCallback((): SaleFormValues => {
-    if (saleToEdit) {
-      return {
-        date: new Date(saleToEdit.date),
-        billNumber: saleToEdit.billNumber || "",
-        customerId: saleToEdit.customerId,
-        brokerId: saleToEdit.brokerId || undefined,
-        transporterId: saleToEdit.transporterId || undefined,
-        items: saleToEdit.items.map(item => ({
-            lotNumber: item.lotNumber,
-            quantity: item.quantity,
-            netWeight: item.netWeight,
-            rate: item.rate
-        })),
-        expenses: saleToEdit.expenses || [],
-        notes: saleToEdit.notes || "",
-        cbAmount: saleToEdit.cbAmount || undefined,
-        balanceAmount: saleToEdit.balanceAmount || undefined,
-      };
-    }
-    return {
-      date: new Date(),
-      billNumber: "",
-      customerId: "",
-      brokerId: "",
-      transporterId: "",
-      items: [{ lotNumber: "", quantity: 0, netWeight: 0, rate: 0 }],
-      expenses: [],
-      notes: "",
-      cbAmount: 0,
-      balanceAmount: 0,
-    };
-  }, [saleToEdit]);
-
+  
   const memoizedSaleSchema = React.useMemo(() =>
     saleSchema(existingSales, availableStock, saleToEdit?.id)
   , [availableStock, existingSales, saleToEdit]);
 
   const methods = useForm<SaleFormValues>({
     resolver: zodResolver(memoizedSaleSchema),
-    defaultValues: getDefaultValues(),
+    defaultValues: {
+      date: new Date(),
+      items: [{ lotNumber: "", quantity: 0, netWeight: 0, rate: 0 }],
+      expenses: [],
+      notes: "",
+    },
     mode: 'onChange',
   });
-  const { control, watch, reset, setValue, handleSubmit } = methods;
+  const { control, handleSubmit, reset, watch } = methods;
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const { fields: expenseFields, append: appendExpense, remove: removeExpense } = useFieldArray({ control, name: "expenses" });
   
-  const watchedFormValues = watch();
-  const watchedCustomerId = watch("customerId");
-  const watchedItems = watch("items");
-
-    React.useEffect(() => {
-    const defaultValues = getDefaultValues()
-    reset(defaultValues);
-  }, [saleToEdit, reset, getDefaultValues]);
-
-
-  React.useEffect(() => {
-    if (!watchedCustomerId || !watchedItems) return;
-  
-    const newLastRates: Record<number, number | null> = {};
-  
-    watchedItems.forEach((item, index) => {
-      if (item.lotNumber && watchedCustomerId) {
-        const pastSales = existingSales
-          .filter(sale => sale.customerId === watchedCustomerId)
-          .filter(sale => sale.items.some(saleItem => saleItem.lotNumber === item.lotNumber))
-          .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  
-        if (pastSales.length > 0) {
-          const lastSaleOfItem = pastSales[0].items.find(i => i.lotNumber === item.lotNumber);
-          newLastRates[index] = lastSaleOfItem ? lastSaleOfItem.rate : null;
-        } else {
-          newLastRates[index] = null;
-        }
-      } else {
-        newLastRates[index] = null;
-      }
-    });
-  
-    setLastRates(newLastRates);
-  }, [watchedCustomerId, watchedItems, existingSales]);
-
-
-  const summary = React.useMemo(() => {
-    const { items, expenses: formExpenses, cbAmount } = watchedFormValues;
-      
-    let totalGoodsValue = 0;
-    let totalNetWeight = 0;
-    let totalQuantity = 0;
-    let totalLandedCost = 0;
-    let totalBasePurchaseCost = 0;
-
-    (items || []).forEach(item => {
-        const stockInfo = availableStock.find(s => s.lotNumber === item.lotNumber);
-        const landedCostPerKg = stockInfo?.effectiveRate || 0;
-        const basePurchaseRate = stockInfo?.purchaseRate || 0;
-        
-        const netWeight = Number(item.netWeight) || 0;
-        const saleRate = Number(item.rate) || 0;
-        const quantity = Number(item.quantity) || 0;
-
-        const lineSaleValue = netWeight * saleRate;
-        
-        totalGoodsValue += lineSaleValue;
-        totalLandedCost += netWeight * landedCostPerKg;
-        totalBasePurchaseCost += netWeight * basePurchaseRate;
-        totalNetWeight += netWeight;
-        totalQuantity += quantity;
-    });
-
-    const totalSaleSideExpenses = (formExpenses || []).reduce((sum, exp) => sum + (exp.amount || 0), 0);
-    
-    const billedAmount = totalGoodsValue - (cbAmount || 0); // Billed amount is after CB
-    const grossProfit = totalGoodsValue - totalBasePurchaseCost;
-    const netProfit = totalGoodsValue - totalLandedCost - totalSaleSideExpenses;
-
-    return { 
-      totalGoodsValue,
-      totalNetWeight,
-      totalQuantity,
-      billedAmount,
-      totalBasePurchaseCost,
-      totalLandedCost,
-      totalGrossProfit: grossProfit,
-      totalSaleSideExpenses,
-      netProfit, 
-    };
-
-  }, [watchedFormValues, availableStock]);
-
-  const brokerId = watch('brokerId');
+  const allMasters = getAllMasters();
   
   React.useEffect(() => {
-    if(!brokers) return;
-    const currentExpenses = watch('expenses') || [];
-
-    const broker = brokers.find(b => b.id === brokerId);
-    const commissionIndex = currentExpenses.findIndex(exp => exp.account === 'Broker Commission');
-    
-    if (broker && broker.details?.commission && summary.totalGoodsValue > 0) {
-        let commissionAmount = 0;
-        if (broker.details.commissionType === 'Percentage') {
-            commissionAmount = summary.totalGoodsValue * (broker.details.commission / 100);
-        } else {
-            commissionAmount = broker.details.commission;
-        }
-
-        const newCommissionExpense: ExpenseItem = {
-            id: currentExpenses[commissionIndex]?.id || `exp-comm-${Date.now()}`,
-            account: 'Broker Commission',
-            amount: parseFloat(commissionAmount.toFixed(2)),
-            paymentMode: 'Pending',
-            partyId: broker.id,
-            partyName: broker.name,
-        };
-        
-        const existingCommission = commissionIndex > -1 ? currentExpenses[commissionIndex] : undefined;
-        const hasChanged = !existingCommission ||
-                           existingCommission.amount !== newCommissionExpense.amount ||
-                           existingCommission.partyId !== newCommissionExpense.partyId;
-        
-        if (hasChanged) {
-            if (commissionIndex > -1) {
-                setValue(`expenses.${commissionIndex}`, newCommissionExpense, { shouldValidate: true });
-            } else {
-                appendExpense(newCommissionExpense);
-            }
-        }
+    if (saleToEdit) {
+      reset({
+        ...saleToEdit,
+        date: new Date(saleToEdit.date)
+      });
     } else {
-        if (commissionIndex > -1) {
-            removeExpense(commissionIndex);
-        }
+      reset({
+        date: new Date(),
+        items: [{ lotNumber: "", quantity: 0, netWeight: 0, rate: 0 }],
+        expenses: [],
+      });
     }
-  }, [brokerId, brokers, summary.totalGoodsValue, appendExpense, removeExpense, setValue, watch]);
-
-
-  const handleOpenMasterForm = (type: MasterItemType) => {
-    setMasterItemToEdit(null);
-    setMasterFormItemType(type);
-    setIsMasterFormOpen(true);
-  };
-  
-  const handleEditMasterItem = (type: MasterItemType, id: string) => {
-    let itemToEdit: MasterItem | null = null;
-    if (type === 'Customer' && customers) itemToEdit = customers.find(i => i.id === id) || null;
-    else if (type === 'Broker' && brokers) itemToEdit = brokers.find(i => i.id === id) || null;
-    else if (type === 'Transporter' && transporters) itemToEdit = transporters.find(t => t.id === id) || null;
-
-    if (itemToEdit) {
-        setMasterItemToEdit(itemToEdit);
-        setMasterFormItemType(type);
-        setIsMasterFormOpen(true);
-    }
-  };
-
-  const handleMasterFormSubmit = (newItem: MasterItem) => {
-    onMasterDataUpdate(newItem);
-    if (newItem.type === 'Customer') methods.setValue('customerId', newItem.id, { shouldValidate: true });
-    if (newItem.type === 'Broker') methods.setValue('brokerId', newItem.id, { shouldValidate: true });
-    if (newItem.type === 'Transporter') methods.setValue('transporterId', newItem.id, { shouldValidate: true });
-    setIsMasterFormOpen(false); setMasterItemToEdit(null);
-    toast({ title: `${newItem.type} added/updated successfully.` });
-  };
-  
-  const stockOptionsForSale = React.useMemo(() => {
-    return (availableStock || [])
-      .map(s => ({
-        value: s.lotNumber,
-        label: `${s.lotNumber} (Avl: ${Math.round(s.currentBags)} bags) @ ₹${Math.round(s.purchaseRate)}`,
-      }));
-  }, [availableStock]);
-
+  }, [saleToEdit, reset]);
 
   const processSubmit = (values: SaleFormValues) => {
     setIsSubmitting(true);
-    const selectedCustomer = (customers || []).find(c => c.id === values.customerId);
-    const selectedBroker = (brokers || []).find(b => b.id === values.brokerId);
-    const selectedTransporter = (transporters || []).find(t => t.id === values.transporterId);
+    const selectedCustomer = allMasters.find(c => c.id === values.customerId);
+    const selectedBroker = allMasters.find(b => b.id === values.brokerId);
 
     const totalSaleSideExpenses = (values.expenses || []).reduce((sum, exp) => sum + (exp.amount || 0), 0);
-    const saleSideExpensesPerKg = summary.totalNetWeight > 0 ? totalSaleSideExpenses / summary.totalNetWeight : 0;
-
+    const totalNetWeight = values.items.reduce((sum, item) => sum + (item.netWeight || 0), 0);
+    const saleSideExpensesPerKg = totalNetWeight > 0 ? totalSaleSideExpenses / totalNetWeight : 0;
+    
     const saleData: Sale = {
       id: saleToEdit?.id || `sale-${Date.now()}`,
       date: format(values.date, "yyyy-MM-dd"),
@@ -311,8 +115,6 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
       customerName: selectedCustomer?.name,
       brokerId: values.brokerId,
       brokerName: selectedBroker?.name,
-      transporterId: values.transporterId,
-      transporterName: selectedTransporter?.name,
       items: values.items.map(item => {
           const stock = availableStock.find(s => s.lotNumber === item.lotNumber);
           const landedCostPerKg = stock?.effectiveRate || 0;
@@ -336,315 +138,119 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
               costOfGoodsSold: costOfGoodsSold,
               itemGrossProfit: Math.round(itemGrossProfit),
               itemNetProfit: Math.round(goodsValue - costOfGoodsSold - itemShareOfSaleExpenses),
-              costBreakdown: stock?.costBreakdown || { baseRate: 0, purchaseExpenses: 0, transferExpenses: 0 },
           };
       }),
-      expenses: values.expenses?.map(exp => ({ ...exp, id: exp.id || `exp-${Date.now()}-${Math.random()}`, partyName: exp.partyName || 'Self' })),
-      totalGoodsValue: Math.round(summary.totalGoodsValue),
-      billedAmount: Math.round(summary.billedAmount),
-      cbAmount: values.cbAmount,
-      balanceAmount: values.balanceAmount,
-      totalQuantity: Math.round(summary.totalQuantity),
-      totalNetWeight: summary.totalNetWeight,
-      totalCostOfGoodsSold: Math.round(summary.totalLandedCost),
-      totalGrossProfit: Math.round(summary.totalGrossProfit),
-      totalCalculatedProfit: Math.round(summary.netProfit),
+      expenses: values.expenses as ExpenseItem[] | undefined,
+      totalGoodsValue: values.items.reduce((acc, item) => acc + (item.netWeight || 0) * (item.rate || 0), 0),
+      billedAmount: values.items.reduce((acc, item) => acc + (item.netWeight || 0) * (item.rate || 0), 0),
+      totalQuantity: values.items.reduce((acc, item) => acc + (item.quantity || 0), 0),
+      totalNetWeight: totalNetWeight,
+      totalCostOfGoodsSold: values.items.reduce((acc, item) => {
+          const stock = availableStock.find(s => s.lotNumber === item.lotNumber);
+          return acc + (item.netWeight || 0) * (stock?.effectiveRate || 0);
+      }, 0),
+      totalGrossProfit: 0, 
+      totalCalculatedProfit: 0,
       notes: values.notes,
       isStockPaymentSale: false,
     };
     onSubmit(saleData);
     setIsSubmitting(false);
-    onClose();
   };
-
+  
   if (!isOpen) return null;
 
   return (
     <>
-      <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(openState) => { if (!openState) { onClose(); } }}>
-        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0">
+      <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={(openState) => { if (!openState) onClose(); }}>
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-6 pb-0">
             <DialogTitle>{saleToEdit ? 'Edit Sale' : 'Add New Sale'}</DialogTitle>
             <DialogDescription>Create a sale with one or more items.</DialogDescription>
           </DialogHeader>
           <ScrollArea className="flex-1 min-h-0">
             <div className="px-6 pb-6">
-              <TooltipProvider>
-                  <FormProvider {...methods}>
-                  <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 pt-4">
-                      <div className="p-4 border rounded-md shadow-sm">
-                        <h3 className="text-lg font-medium mb-3 text-primary">Sale Details</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <FormField
-                              control={control}
-                              name="date"
-                              render={({ field }) => (
-                                <FormItem className="flex flex-col"><FormLabel>Sale Date</FormLabel>
-                                  <DatePicker
-                                    date={field.value}
-                                    onDateChange={field.onChange}
-                                  />
-                                  <FormMessage />
-                                </FormItem>)} />
-                          <FormField control={control} name="billNumber" render={({ field }) => (
-                            <FormItem><FormLabel>Bill Number (Optional)</FormLabel><FormControl><Input placeholder="e.g., INV-001" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={control} name="customerId" render={({ field }) => (
-                            <FormItem><FormLabel>Customer</FormLabel>
-                              <MasterDataCombobox 
-                                value={field.value} 
-                                onChange={field.onChange} 
-                                options={(customers || []).map(c => ({ value: c.id, label: c.name }))} 
-                                placeholder="Select Customer" 
-                                onAddNew={() => handleOpenMasterForm("Customer")}
-                                onEdit={(id) => handleEditMasterItem("Customer", id)}
-                              /> <FormMessage />
-                            </FormItem>)} />
-                          <FormField control={control} name="brokerId" render={({ field }) => (
-                            <FormItem><FormLabel>Broker (Optional)</FormLabel>
-                              <MasterDataCombobox 
-                                value={field.value} 
-                                onChange={field.onChange} 
-                                options={(brokers || []).map(b => ({ value: b.id, label: b.name }))} 
-                                placeholder="Select Broker" 
-                                onAddNew={() => handleOpenMasterForm("Broker")}
-                                onEdit={(id) => handleEditMasterItem("Broker", id)}
-                              />
-                              <FormMessage />
-                            </FormItem>)} />
-                        </div>
-                      </div>
-
-                      <div className="p-4 border rounded-md shadow-sm">
-                        <h3 className="text-lg font-medium text-primary">Quantity &amp; Rate</h3>
-                        {fields.map((field, index) => (
-                          <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start p-3 border-b last:border-b-0">
-                            <FormField control={control} name={`items.${index}.lotNumber`} render={({ field: itemField }) => (
-                              <FormItem className="md:col-span-3"><FormLabel>Vakkal/Lot</FormLabel>
-                                <MasterDataCombobox
-                                  value={itemField.value}
-                                  onChange={(lotValue) => {
-                                    itemField.onChange(lotValue);
-                                    setManualNetWeight(prev => ({ ...prev, [index]: false }));
-                                    setValue(`items.${index}.quantity`, undefined, { shouldValidate: true });
-                                    setValue(`items.${index}.netWeight`, undefined, { shouldValidate: true });
-                                  }}
-                                  options={stockOptionsForSale}
-                                  placeholder="Select Vakkal/Lot"
-                                  notFoundMessage="No stock available."
+                <FormProvider {...methods}>
+                <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 pt-4">
+                    <div className="p-4 border rounded-md shadow-sm">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <FormField
+                            control={control}
+                            name="date"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-col"><FormLabel>Sale Date</FormLabel>
+                                <DatePicker
+                                  date={field.value}
+                                  onDateChange={field.onChange}
                                 />
                                 <FormMessage />
                               </FormItem>)} />
-                            <FormField control={control} name={`items.${index}.quantity`} render={({ field: itemField }) => (
-                              <FormItem className="md:col-span-2"><FormLabel>Bags</FormLabel>
-                                <FormControl><Input type="number" placeholder="Bags" {...itemField} value={itemField.value ?? ''} 
-                                  onChange={e => {
-                                      const bagsVal = parseFloat(e.target.value) || undefined;
-                                      itemField.onChange(bagsVal);
-                                      if (!manualNetWeight[index]) {
-                                          const lotValue = watch(`items.${index}.lotNumber`);
-                                          const stockInfo = availableStock.find(s => s.lotNumber === lotValue);
-                                          if (stockInfo && bagsVal) {
-                                              const avgWeightPerBag = stockInfo.averageWeightPerBag || 50;
-                                              const newNetWeight = parseFloat((bagsVal * avgWeightPerBag).toFixed(2));
-                                              setValue(`items.${index}.netWeight`, newNetWeight, { shouldValidate: true });
-                                          } else {
-                                              setValue(`items.${index}.netWeight`, undefined, { shouldValidate: true });
-                                          }
-                                      }
-                                  }}
-                                /></FormControl>
-                                <FormMessage />
-                              </FormItem>)} />
-                            <FormField control={control} name={`items.${index}.netWeight`} render={({ field: itemField }) => (
-                              <FormItem className="md:col-span-2"><FormLabel>Net Wt.</FormLabel><FormControl><Input type="number" step="0.01" placeholder="Kg" {...itemField} value={itemField.value ?? ''} 
-                                  onChange={e => {
-                                    setManualNetWeight(prev => ({ ...prev, [index]: true }));
-                                    if (e.target.value) itemField.onChange(parseFloat(e.target.value)); else itemField.onChange(undefined);
-                                  }}
-                              /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`items.${index}.rate`} render={({ field: itemField }) => (
-                              <FormItem className="md:col-span-2">
-                                <FormLabel>Sale Rate</FormLabel>
-                                <div className="relative">
-                                  <FormControl><Input type="number" step="0.01" placeholder="₹/kg" {...itemField} value={itemField.value ?? ''} onChange={e => itemField.onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
-                                  {lastRates[index] !== null && (
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground cursor-help underline decoration-dashed">
-                                          LAST: {lastRates[index]}
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Last rate for this item & customer was ₹{lastRates[index]}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  )}
-                                </div>
-                                <FormMessage />
-                              </FormItem>
-                            )} />
-                            <div className="md:col-span-2">
-                                <FormLabel>Goods Value (₹)</FormLabel>
-                                <div className="font-medium text-sm h-10 flex items-center px-3 border border-dashed rounded-md bg-muted/50 text-foreground/80">
-                                    {Math.round((watchedItems[index]?.netWeight || 0) * (watchedItems[index]?.rate || 0)).toLocaleString('en-IN')}
-                                </div>
-                            </div>
-                            <div className="md:col-span-1 flex items-end justify-end">
-                              <Tooltip><TooltipTrigger asChild><Button type="button" variant="destructive" size="icon" onClick={() => fields.length > 1 ? remove(index) : null} disabled={fields.length <= 1}><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent><p>Remove Item</p></TooltipContent></Tooltip>
-                            </div>
-                          </div>
-                        ))}
-                        <div className="flex justify-between items-start mt-2">
-                          <Button type="button" variant="outline" onClick={() => append({ lotNumber: "", quantity: 0, netWeight: 0, rate: 0 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Item</Button>
+                        <FormField control={control} name="billNumber" render={({ field }) => (
+                          <FormItem><FormLabel>Bill Number (Optional)</FormLabel><FormControl><Input placeholder="e.g., INV-001" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name="customerId" render={({ field }) => (
+                          <FormItem><FormLabel>Customer</FormLabel>
+                            <MasterDataCombobox 
+                              value={field.value} 
+                              onChange={field.onChange} 
+                              options={allMasters.filter(m=>m.type==='Customer').map(c => ({ value: c.id, label: c.name }))} 
+                              placeholder="Select Customer" 
+                            /> <FormMessage />
+                          </FormItem>)} />
+                        <FormField control={control} name="brokerId" render={({ field }) => (
+                          <FormItem><FormLabel>Broker (Optional)</FormLabel>
+                            <MasterDataCombobox 
+                              value={field.value} 
+                              onChange={field.onChange} 
+                              options={allMasters.filter(m=>m.type==='Broker').map(b => ({ value: b.id, label: b.name }))} 
+                              placeholder="Select Broker" 
+                            />
+                            <FormMessage />
+                          </FormItem>)} />
+                      </div>
+                    </div>
+
+                    <div className="p-4 border rounded-md shadow-sm">
+                      <h3 className="text-lg font-medium text-primary">Items</h3>
+                      {fields.map((field, index) => (
+                        <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start p-3 border-b last:border-b-0">
+                          <FormField control={control} name={`items.${index}.lotNumber`} render={({ field: itemField }) => (
+                            <FormItem className="md:col-span-3"><FormLabel>Vakkal/Lot</FormLabel>
+                              <MasterDataCombobox
+                                value={itemField.value}
+                                onChange={itemField.onChange}
+                                options={availableStock.map(s => ({ value: s.lotNumber, label: `${s.lotNumber} (${Math.round(s.currentBags)} bags)`}))}
+                                placeholder="Select Vakkal/Lot"
+                              />
+                              <FormMessage />
+                            </FormItem>)} />
+                          <FormField control={control} name={`items.${index}.quantity`} render={({ field: itemField }) => (
+                            <FormItem className="md:col-span-2"><FormLabel>Bags</FormLabel>
+                              <FormControl><Input type="number" placeholder="Bags" {...itemField} value={itemField.value ?? ''} onChange={e => itemField.onChange(parseFloat(e.target.value) || 0)}/></FormControl>
+                              <FormMessage />
+                            </FormItem>)} />
+                          <FormField control={control} name={`items.${index}.netWeight`} render={({ field: itemField }) => (
+                            <FormItem className="md:col-span-2"><FormLabel>Net Wt.</FormLabel><FormControl><Input type="number" step="0.01" placeholder="Kg" {...itemField} value={itemField.value ?? ''} onChange={e => itemField.onChange(parseFloat(e.target.value) || 0)}/></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={control} name={`items.${index}.rate`} render={({ field: itemField }) => (
+                            <FormItem className="md:col-span-2"><FormLabel>Sale Rate</FormLabel>
+                              <FormControl><Input type="number" step="0.01" placeholder="₹/kg" {...itemField} value={itemField.value ?? ''} onChange={e => itemField.onChange(parseFloat(e.target.value) || 0)}/></FormControl>
+                              <FormMessage />
+                            </FormItem>)} />
+                          <div className="md:col-span-2"><FormLabel>Goods Value (₹)</FormLabel><div className="font-medium text-sm h-10 flex items-center px-3 border border-dashed rounded-md bg-muted/50 text-foreground/80">{Math.round((watch(`items.${index}.netWeight`) || 0) * (watch(`items.${index}.rate`) || 0)).toLocaleString('en-IN')}</div></div>
+                          <div className="md:col-span-1 flex items-end justify-end"><Button type="button" variant="destructive" size="icon" onClick={() => fields.length > 1 ? remove(index) : null} disabled={fields.length <= 1}><Trash2 className="h-4 w-4" /></Button></div>
                         </div>
-                      </div>
-
-                      <div className="p-4 border rounded-md shadow-sm">
-                          <h3 className="text-lg font-medium mb-3 text-primary">Expenses &amp; Commission</h3>
-                          {expenseFields.map((field, index) => {
-                              const isCommission = field.account === 'Broker Commission';
-                              return (
-                                <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end p-3 border-b last:border-b-0">
-                                  <FormField control={control} name={`expenses.${index}.account`} render={({ field: itemField }) => (
-                                    <FormItem className="md:col-span-3"><FormLabel>Account</FormLabel>
-                                      <Select onValueChange={itemField.onChange} value={itemField.value} disabled={isCommission}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select Account" /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                          <SelectItem value="Broker Commission">Broker Commission</SelectItem>
-                                          <SelectItem value="Extra Brokerage">Extra Brokerage</SelectItem>
-                                          {(expenses || []).map(opt => <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>)}
-                                        </SelectContent>
-                                      </Select><FormMessage />
-                                    </FormItem>)} />
-                                  <FormField control={control} name={`expenses.${index}.amount`} render={({ field: { onChange, value, ...itemField } }) => (
-                                    <FormItem className="md:col-span-2"><FormLabel>Amount (₹)</FormLabel>
-                                      <FormControl><Input type="number" step="0.01" placeholder="Amount" {...itemField} readOnly={isCommission} value={value ?? ''} onChange={e => onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
-                                      <FormMessage />
-                                    </FormItem>)} />
-                                  <FormField control={control} name={`expenses.${index}.partyId`} render={({ field: itemField }) => (
-                                    <FormItem className="md:col-span-3"><FormLabel>Party (Opt.)</FormLabel>
-                                      <MasterDataCombobox value={itemField.value} onChange={itemField.onChange}
-                                        options={((brokers || []).concat(customers || [])).map(p => ({ value: p.id, label: `${p.name} (${p.type})` }))}
-                                        placeholder="Select Party" addNewLabel="Add New Broker"
-                                        onAddNew={() => handleOpenMasterForm("Broker")}
-                                        onEdit={(id) => handleEditMasterItem("Broker", id)}
-                                        disabled={isCommission}
-                                      /> <FormMessage />
-                                    </FormItem>)} />
-                                  <FormField control={control} name={`expenses.${index}.paymentMode`} render={({ field: itemField }) => (
-                                    <FormItem className="md:col-span-3"><FormLabel>Pay Mode</FormLabel>
-                                      <Select onValueChange={itemField.onChange} value={itemField.value || "Auto-adjusted"}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Mode" /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="Auto-adjusted">Auto-adjusted</SelectItem>
-                                            <SelectItem value="Cash">Cash</SelectItem>
-                                            <SelectItem value="Bank">Bank</SelectItem>
-                                            <SelectItem value="Pending">Pending</SelectItem>
-                                        </SelectContent>
-                                      </Select><FormMessage />
-                                    </FormItem>)} />
-                                  <div className="md:col-span-1 flex items-center justify-end">
-                                    <Button type="button" variant="destructive" size="icon" onClick={() => removeExpense(index)} disabled={isCommission}><Trash2 className="h-4 w-4" /></Button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          <Button type="button" variant="outline" size="sm" onClick={() => appendExpense({ id: `exp-${Date.now()}`, account: '', amount: undefined, paymentMode: "Auto-adjusted" })} className="mt-2">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add Expense Row
-                          </Button>
-                      </div>
-                      
-                      <div className="p-4 border rounded-md shadow-sm grid grid-cols-2 gap-4">
-                        <FormField control={control} name="cbAmount" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>CB Amount (Optional)</FormLabel>
-                                <FormControl><Input type="number" placeholder="Cut Bill Amount" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
-                                <FormDescription>Amount that bypasses official billing. Does not affect profit.</FormDescription>
-                                <FormMessage />
-                            </FormItem>)} 
-                        />
-                          <FormField control={control} name="balanceAmount" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Balance Amount (Optional)</FormLabel>
-                                <FormControl><Input type="number" placeholder="Manual Balance" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
-                                 <FormDescription>Any other manually adjusted balance amount.</FormDescription>
-                                <FormMessage />
-                            </FormItem>)}
-                        />
-                      </div>
-
-                      <FormField control={control} name="notes" render={({ field }) => (
-                          <FormItem><FormLabel>Notes (Optional)</FormLabel><FormControl><Textarea placeholder="Add any notes..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-                      
-                      <Accordion type="single" collapsible className="w-full" defaultValue="summary">
-                        <AccordionItem value="summary">
-                          <AccordionTrigger>
-                            <h3 className="text-lg font-semibold text-primary">Transaction Summary</h3>
-                          </AccordionTrigger>
-                          <AccordionContent>
-                            <div className="p-4 border border-dashed rounded-md bg-muted/50 space-y-2">
-                              <div className="text-sm text-muted-foreground space-y-1">
-                                <div className="flex justify-between">
-                                  <Tooltip><TooltipTrigger asChild><span className="cursor-help underline decoration-dashed">Total Goods Value:</span></TooltipTrigger><TooltipContent>Sum of (Net Weight * Sale Rate) for all items.</TooltipContent></Tooltip>
-                                  <span>₹{Math.round(summary.totalGoodsValue).toLocaleString('en-IN')}</span>
-                                </div>
-                                
-                                <div className={`flex justify-between font-bold ${summary.totalGrossProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild><span className="cursor-help underline decoration-dashed">Gross Profit:</span></TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>(Goods Value: ₹{summary.totalGoodsValue.toLocaleString('en-IN', {maximumFractionDigits:0})}) - (Base Purchase Cost: ₹{summary.totalBasePurchaseCost.toLocaleString('en-IN', {maximumFractionDigits:0})})</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                  <span>₹{Math.round(summary.totalGrossProfit).toLocaleString('en-IN')}</span>
-                                </div>
-
-                                <div className="flex justify-between text-red-600">
-                                   <Tooltip>
-                                     <TooltipTrigger asChild><span className="cursor-help underline decoration-dashed">Less: All Expenses:</span></TooltipTrigger>
-                                     <TooltipContent>
-                                       <p>(₹{summary.totalLandedCost.toLocaleString('en-IN', {maximumFractionDigits:0})} Landed Cost - ₹{summary.totalBasePurchaseCost.toLocaleString('en-IN', {maximumFractionDigits:0})} Base Cost) + ₹{summary.totalSaleSideExpenses.toLocaleString('en-IN', {maximumFractionDigits:0})} Sale Expenses</p>
-                                     </TooltipContent>
-                                   </Tooltip>
-                                  <span>(-) ₹{Math.round(summary.totalLandedCost - summary.totalBasePurchaseCost + summary.totalSaleSideExpenses).toLocaleString('en-IN')}</span>
-                                </div>
-                                <hr className="my-1 border-muted-foreground/50" />
-                                <div className={`flex justify-between font-bold text-base ${summary.netProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                                   <Tooltip><TooltipTrigger asChild><span className="cursor-help underline decoration-dashed">Net Profit:</span></TooltipTrigger><TooltipContent><p>(Goods Value) - (Total Landed Cost) - (Sale Expenses)</p></TooltipContent></Tooltip>
-                                  <span>₹{Math.round(summary.netProfit).toLocaleString('en-IN')}</span>
-                                </div>
-                              </div>
-
-                              <div className="border-t pt-2 mt-2">
-                                <div className="flex justify-between text-primary font-bold text-lg"><p>Final Billed Amount:</p> <p>₹{Math.round(summary.billedAmount).toLocaleString('en-IN')}</p></div>
-                              </div>
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-
-                    </form>
-                  </FormProvider>
-              </TooltipProvider>
+                      ))}
+                      <Button type="button" variant="outline" onClick={() => append({ lotNumber: "", quantity: 0, netWeight: 0, rate: 0 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Item</Button>
+                    </div>
+                </form>
+                </FormProvider>
             </div>
           </ScrollArea>
           <DialogFooter className="p-6 pt-4 border-t">
             <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
-            <Button type="button" onClick={handleSubmit(processSubmit)} disabled={isSubmitting}>{isSubmitting ? (saleToEdit ? "Saving..." : "Creating Sale...") : (saleToEdit ? "Save Changes" : "Create Sale")}</Button>
+            <Button type="button" onClick={handleSubmit(processSubmit)} disabled={isSubmitting}>{isSubmitting ? "Saving..." : (saleToEdit ? "Save Changes" : "Create Sale")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {isMasterFormOpen && (
-        <MasterForm 
-            isOpen={isMasterFormOpen} 
-            onClose={() => { setIsMasterFormOpen(false); setMasterItemToEdit(null); }} 
-            onSubmit={handleMasterFormSubmit}
-            initialData={masterItemToEdit}
-            itemTypeFromButton={masterFormItemType!}
-            fixedIds={[]}
-            allMasterItems={getAllMasters()}
-        />
-      )}
     </>
   );
 };
