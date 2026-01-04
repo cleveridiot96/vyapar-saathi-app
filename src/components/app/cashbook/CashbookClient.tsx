@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -89,8 +90,8 @@ export function CashbookClient() {
     
     let calculatedOpeningBalance = baseOpeningBalance;
 
-    const cashReceipts = receipts.filter(r => r.paymentMethod === 'Cash');
-    const cashPayments = payments.filter(p => p.paymentMethod === 'Cash');
+    const cashReceipts = (receipts ?? []).filter(r => r.paymentMethod === 'Cash');
+    const cashPayments = (payments ?? []).filter(p => p.paymentMethod === 'Cash');
 
     cashReceipts.forEach(tx => {
       if (parseISO(tx.date) < startOfDay(dateRange.from!)) {
@@ -287,3 +288,5 @@ export function CashbookClient() {
     </div>
   );
 }
+
+    
