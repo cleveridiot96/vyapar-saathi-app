@@ -79,7 +79,7 @@ export function ProfitAnalysisClient() {
 
   const allProfitTransactionsInFY = React.useMemo(() => {
     if (isAppHydrating) return [];
-    const fySales = sales.filter(sale => sale && isDateInFinancialYear(sale.date, currentFinancialYearString));
+    const fySales = (sales ?? []).filter(sale => sale && isDateInFinancialYear(sale.date, currentFinancialYearString));
     
     const flattenedTransactions: TransactionalProfitInfo[] = [];
     fySales.forEach(sale => {
@@ -124,7 +124,7 @@ export function ProfitAnalysisClient() {
 
   const monthlySummaryForFY = React.useMemo(() => {
     const monthlyAgg: Record<string, { transactionCount: number; netProfit: number; }> = {};
-    allProfitTransactionsInFY.forEach(tx => {
+    (allProfitTransactionsInFY ?? []).forEach(tx => {
         const monthKey = format(startOfMonth(parseISO(tx.date)), "yyyy-MM");
         if (!monthlyAgg[monthKey]) {
             monthlyAgg[monthKey] = { transactionCount: 0, netProfit: 0 };
@@ -140,19 +140,19 @@ export function ProfitAnalysisClient() {
   const filteredTransactionsForPeriod = React.useMemo(() => {
     if (!dateRange?.from) return [];
     const toDate = dateRange.to || dateRange.from;
-    return allProfitTransactionsInFY.filter(tx => isWithinInterval(parseISO(tx.date), { start: startOfDay(dateRange.from!), end: endOfDay(toDate) }));
+    return (allProfitTransactionsInFY ?? []).filter(tx => isWithinInterval(parseISO(tx.date), { start: startOfDay(dateRange.from!), end: endOfDay(toDate) }));
   }, [allProfitTransactionsInFY, dateRange]);
 
   const kpiData = React.useMemo<ProfitKPIs>(() => {
-    const totalNetProfitForPeriod = filteredTransactionsForPeriod.reduce((sum, tx) => sum + (tx.netProfit || 0), 0);
-    const totalNetProfitForFY = allProfitTransactionsInFY.reduce((sum, tx) => sum + (tx.netProfit || 0), 0);
+    const totalNetProfitForPeriod = (filteredTransactionsForPeriod ?? []).reduce((sum, tx) => sum + (tx.netProfit || 0), 0);
+    const totalNetProfitForFY = (allProfitTransactionsInFY ?? []).reduce((sum, tx) => sum + (tx.netProfit || 0), 0);
 
-    const uniqueSalesInPeriod = [...new Set(filteredTransactionsForPeriod.map(tx => tx.saleId))];
+    const uniqueSalesInPeriod = [...new Set((filteredTransactionsForPeriod ?? []).map(tx => tx.saleId))];
     let highestProfitSale: ProfitKPIs['highestProfitSale'] = { id: 'N/A', profit: 0, billNumber: 'N/A', customerName: 'N/A', brokerName: undefined };
     
-    if (filteredTransactionsForPeriod.length > 0) {
+    if ((filteredTransactionsForPeriod ?? []).length > 0) {
       const profitBySale: Record<string, { profit: number; billNumber?: string; customerName?: string; brokerName?: string; }> = {};
-      filteredTransactionsForPeriod.forEach(tx => {
+      (filteredTransactionsForPeriod ?? []).forEach(tx => {
           if (!profitBySale[tx.saleId]) {
               profitBySale[tx.saleId] = { profit: 0, billNumber: tx.billNumber, customerName: tx.customerName, brokerName: tx.brokerName };
           }
@@ -164,7 +164,7 @@ export function ProfitAnalysisClient() {
       }
     }
 
-    const relevantSales = sales.filter(s => {
+    const relevantSales = (sales ?? []).filter(s => {
       if (!s || !s.date || !dateRange?.from) return false;
       const toDate = dateRange.to || dateRange.from;
       return isWithinInterval(parseISO(s.date), { start: startOfDay(dateRange.from), end: endOfDay(toDate)});
@@ -215,7 +215,7 @@ export function ProfitAnalysisClient() {
   
   const saleOptionsForCalc = React.useMemo(() => {
     const uniqueSalesMap = new Map<string, { label: string; value: string }>();
-    allProfitTransactionsInFY.forEach(tx => {
+    (allProfitTransactionsInFY ?? []).forEach(tx => {
         if (!uniqueSalesMap.has(tx.saleId)) {
             uniqueSalesMap.set(tx.saleId, {
                 value: tx.saleId,
@@ -228,12 +228,12 @@ export function ProfitAnalysisClient() {
 
   const itemsForSelectedSaleCalc = React.useMemo(() => {
     if (!saleIdForCalc) return [];
-    return allProfitTransactionsInFY.filter(tx => tx.saleId === saleIdForCalc);
+    return (allProfitTransactionsInFY ?? []).filter(tx => tx.saleId === saleIdForCalc);
   }, [saleIdForCalc, allProfitTransactionsInFY]);
 
   const detailedMonthlyTransactions = React.useMemo(() => {
     if (!selectedMonthKey) return [];
-    return allProfitTransactionsInFY.filter(tx => format(startOfMonth(parseISO(tx.date)), "yyyy-MM") === selectedMonthKey);
+    return (allProfitTransactionsInFY ?? []).filter(tx => format(startOfMonth(parseISO(tx.date)), "yyyy-MM") === selectedMonthKey);
   }, [selectedMonthKey, allProfitTransactionsInFY]);
 
 
@@ -516,7 +516,3 @@ export function ProfitAnalysisClient() {
     </TooltipProvider>
   );
 }
-
-    
-
-    
