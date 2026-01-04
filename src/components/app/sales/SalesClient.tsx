@@ -124,7 +124,7 @@ export function SalesClient() {
   return (
     <div className="space-y-2">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
-        <h1 className="text-2xl font-bold uppercase">Sales & Returns (FY {financialYear})</h1>
+        <h1 className="text-2xl font-bold uppercase">Sales & Returns (FY ${financialYear})</h1>
       </div>
 
       <Tabs defaultValue="sales" onValueChange={setActiveTab} className="w-full">
@@ -185,3 +185,5 @@ export function SalesClient() {
     </div>
   );
 }
+
+    

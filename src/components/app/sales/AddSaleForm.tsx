@@ -31,7 +31,8 @@ import { useToast } from "@/hooks/use-toast";
 import { DatePicker } from "@/components/ui/date-picker";
 import dynamic from 'next/dynamic';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useMasters } from "@/hooks/useTransactions";
+import { useMasters, useTransactions } from "@/hooks/useTransactions";
+import { useInventory } from "@/hooks/useInventory";
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
@@ -255,3 +256,5 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
 };
 
 export const AddSaleForm = React.memo(AddSaleFormComponent);
+
+    
