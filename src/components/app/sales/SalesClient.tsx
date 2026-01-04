@@ -13,7 +13,7 @@ import type { Sale, SaleReturn } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import dynamic from 'next/dynamic';
 import { Skeleton } from "@/components/ui/skeleton";
-import { DatabaseDiagnostic } from "@/components/DatabaseDiagnostic";
+import { DebugDataDisplay } from '@/components/shared/DebugDataDisplay';
 import { TestDataSeeder } from "@/components/TestDataSeeder";
 
 const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { ssr: false });
@@ -102,7 +102,7 @@ export function SalesClient() {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <DatabaseDiagnostic />
+        <DebugDataDisplay />
         <TestDataSeeder />
       </div>
 

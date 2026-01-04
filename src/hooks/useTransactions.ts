@@ -15,8 +15,6 @@ import type {
  * Reading data is done via useLiveQuery directly in components.
  */
 export const useTransactions = () => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  
   const purchases = useLiveQuery(() => db.purchases.toArray(), []);
   const sales = useLiveQuery(() => db.sales.toArray(), []);
   const payments = useLiveQuery(() => db.payments.toArray(), []);
@@ -27,11 +25,11 @@ export const useTransactions = () => {
   const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
   const ledger = useLiveQuery(() => db.ledger.toArray(), []);
 
-  useEffect(() => {
-    if (purchases && sales && payments && receipts && locationTransfers && adjustments && purchaseReturns && saleReturns && ledger) {
-      setIsLoaded(true);
-    }
-  }, [purchases, sales, payments, receipts, locationTransfers, adjustments, purchaseReturns, saleReturns, ledger]);
+  // FIX: Consider loaded when primary collections are defined (not undefined)
+  // Don't wait for ALL collections - just the core ones
+  const isTransactionsLoaded = useMemo(() => {
+    return purchases !== undefined && sales !== undefined;
+  }, [purchases, sales]);
 
 
   const addPurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
@@ -61,6 +59,7 @@ export const useTransactions = () => {
     if (entries.length === 0) return;
     await db.ledger.bulkPut(entries);
   }, []);
+  
   const removeLedgerEntries = useCallback(async (voucherId: string) => {
     const entriesToDelete = await db.ledger.where('relatedVoucher').equals(voucherId).toArray();
     if(entriesToDelete.length > 0) {
@@ -72,7 +71,7 @@ export const useTransactions = () => {
   }, []);
 
   return {
-    isTransactionsLoaded: isLoaded,
+    isTransactionsLoaded,
     purchases: purchases || [],
     sales: sales || [],
     payments: payments || [],
