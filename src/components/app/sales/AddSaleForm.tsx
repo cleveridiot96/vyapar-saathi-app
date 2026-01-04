@@ -26,13 +26,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { format } from "date-fns";
 import { saleSchema, type SaleFormValues } from '@/lib/schemas/saleSchema';
-import type { MasterItem, Sale, ExpenseItem, AggregatedInventoryItem } from '@/lib/types';
+import type { MasterItem, Sale, ExpenseItem, AggregatedInventoryItem, MasterItemType } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useDedicatedState } from "@/hooks/useDedicatedState";
-import { useInventory } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useMasters } from "@/hooks/useTransactions";
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
@@ -54,7 +53,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
   saleToEdit,
 }) => {
   const { toast } = useToast();
-  const { addMaster, getAllMasters } = useDedicatedState();
+  const { customers, brokers, getAllMasters, addOrUpdateMaster } = useMasters();
   const { availableStock } = useInventory(saleToEdit?.id);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -192,7 +191,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                             <MasterDataCombobox 
                               value={field.value} 
                               onChange={field.onChange} 
-                              options={allMasters.filter(m=>m.type==='Customer').map(c => ({ value: c.id, label: c.name }))} 
+                              options={(customers || []).map(c => ({ value: c.id, label: c.name }))} 
                               placeholder="Select Customer" 
                             /> <FormMessage />
                           </FormItem>)} />
@@ -201,7 +200,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                             <MasterDataCombobox 
                               value={field.value} 
                               onChange={field.onChange} 
-                              options={allMasters.filter(m=>m.type==='Broker').map(b => ({ value: b.id, label: b.name }))} 
+                              options={(brokers || []).map(b => ({ value: b.id, label: b.name }))} 
                               placeholder="Select Broker" 
                             />
                             <FormMessage />
