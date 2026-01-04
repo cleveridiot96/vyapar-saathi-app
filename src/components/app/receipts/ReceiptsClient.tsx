@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -23,6 +22,8 @@ import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
 import { useTransactions, useMasters } from "@/hooks/useTransactions";
 import dynamic from 'next/dynamic';
 import { Skeleton } from "@/components/ui/skeleton";
+import { db } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 
 const ReceiptTable = dynamic(() => import('./ReceiptTable').then(mod => mod.ReceiptTable), { ssr: false });
 const AddReceiptForm = dynamic(() => import('./AddReceiptForm').then(mod => mod.AddReceiptForm), { ssr: false });
@@ -31,8 +32,12 @@ const AddReceiptForm = dynamic(() => import('./AddReceiptForm').then(mod => mod.
 export function ReceiptsClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
-  const { receipts, sales, updateReceipt, addReceipt, deleteReceipt } = useTransactions();
-  const { addOrUpdateMaster, masters } = useMasters();
+  
+  const receipts = useLiveQuery(() => db.receipts.toArray());
+  const sales = useLiveQuery(() => db.sales.toArray());
+
+  const { updateReceipt, addReceipt, deleteReceipt } = useTransactions();
+  const { addOrUpdateMaster } = useMasters();
   
   const { receivableParties } = useOutstandingBalances();
 
@@ -47,6 +52,7 @@ export function ReceiptsClient() {
   }, [receipts, financialYear]);
 
   const handleAddOrUpdateReceipt = React.useCallback(async (receipt: Receipt) => {
+    if (!receipts) return;
     const isEditing = receipts.some(r => r.id === receipt.id);
     if(isEditing) {
         await updateReceipt(receipt);
@@ -96,7 +102,7 @@ export function ReceiptsClient() {
     setReceiptToEdit(null);
   }, []);
 
-  if (receipts === undefined || masters === undefined) {
+  if (receipts === undefined || sales === undefined) {
         return (
             <div className="space-y-4 p-4">
                 <div className="flex justify-between items-center">

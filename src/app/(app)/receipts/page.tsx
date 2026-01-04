@@ -1,16 +1,14 @@
-
 "use client";
 
 import { ReceiptsClient } from "@/components/app/receipts/ReceiptsClient";
-import { useTransactions } from "@/hooks/useTransactions";
-import { useHydrated } from "@/hooks/useHydrated";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
 
 export default function ReceiptsPage() {
-    const { isTransactionsLoaded } = useTransactions();
-    const hydrated = useHydrated();
+    const receipts = useLiveQuery(() => db.receipts.toArray());
 
-    if (!isTransactionsLoaded || !hydrated) {
+    if (receipts === undefined) {
         return (
             <div className="space-y-4 p-4">
                 <div className="flex justify-between items-center">

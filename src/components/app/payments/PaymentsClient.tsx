@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -23,16 +22,26 @@ import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
 import { useTransactions, useMasters } from "@/hooks/useTransactions";
 import dynamic from 'next/dynamic';
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
 
-const PaymentTable = dynamic(() => import('./PaymentTable').then(mod => mod.PaymentTable), { ssr: false });
+const PaymentTable = dynamic(() => import('./PaymentTable').then(mod => mod.PaymentTable), { 
+  ssr: false,
+  loading: () => <div className="h-[calc(100vh-15rem)] w-full flex items-center justify-center"><p>Loading Table...</p></div>
+});
 const AddPaymentForm = dynamic(() => import('./AddPaymentForm').then(mod => mod.AddPaymentForm), { ssr: false });
 
 
 export function PaymentsClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
-  const { payments, purchases, sales, updatePayment, addPayment, deletePayment, addSale, updateSale, deleteSale } = useTransactions();
-  const { addOrUpdateMaster, masters } = useMasters();
+  
+  const payments = useLiveQuery(() => db.payments.toArray());
+  const purchases = useLiveQuery(() => db.purchases.toArray());
+  const sales = useLiveQuery(() => db.sales.toArray());
+
+  const { updatePayment, addPayment, deletePayment, addSale, updateSale, deleteSale } = useTransactions();
+  const { addOrUpdateMaster } = useMasters();
   
   const { payableParties } = useOutstandingBalances();
 
@@ -43,10 +52,11 @@ export function PaymentsClient() {
   const [paymentToDeleteId, setPaymentToDeleteId] = React.useState<string | null>(null);
 
   const filteredPayments = React.useMemo(() => {
-    return payments.filter(payment => payment && payment.date && isDateInFinancialYear(payment.date, financialYear));
+    return (payments || []).filter(payment => payment && payment.date && isDateInFinancialYear(payment.date, financialYear));
   }, [payments, financialYear]);
 
   const handleAddOrUpdatePayment = React.useCallback(async (payment: Payment) => {
+    if (!payments) return;
     const isEditing = payments.some(p => p.id === payment.id);
     
     if (payment.paymentType === 'Stock' && payment.stockItems && payment.stockItems.length > 0) {
@@ -70,7 +80,7 @@ export function PaymentsClient() {
         isStockPaymentSale: true,
       };
       
-      const existingSaleIndex = sales.findIndex(s => s.id === internalSale.id);
+      const existingSaleIndex = (sales || []).findIndex(s => s.id === internalSale.id);
       if(existingSaleIndex > -1) {
         await updateSale(internalSale);
       } else {
@@ -101,7 +111,7 @@ export function PaymentsClient() {
   }, []);
 
   const confirmDeletePayment = React.useCallback(async () => {
-    if (paymentToDeleteId) {
+    if (paymentToDeleteId && payments) {
       const paymentToDelete = payments.find(p => p.id === paymentToDeleteId);
       if (paymentToDelete?.paymentType === 'Stock') {
         const internalSaleId = `sale-for-payment-${paymentToDelete.id}`;
@@ -131,7 +141,7 @@ export function PaymentsClient() {
     setPaymentToEdit(null);
   }, []);
   
-  if (payments === undefined || masters === undefined) {
+  if (payments === undefined || purchases === undefined) {
       return (
             <div className="space-y-4 p-4">
                 <div className="flex justify-between items-center">
@@ -170,8 +180,8 @@ export function PaymentsClient() {
           parties={payableParties}
           onMasterDataUpdate={handleMasterDataUpdate}
           paymentToEdit={paymentToEdit}
-          allPurchases={purchases}
-          allPayments={payments}
+          allPurchases={purchases || []}
+          allPayments={payments || []}
         />
       )}
 

@@ -9,46 +9,67 @@ import { isDateInFinancialYear } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useTransactions, useMasters } from "@/hooks/useTransactions";
-import type { Sale, SaleReturn, MasterItem } from "@/lib/types";
+import type { Sale, SaleReturn } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { useInventory } from "@/hooks/useInventory";
 import dynamic from 'next/dynamic';
+import { Loader2 } from "lucide-react";
+import { isStudio } from "@/lib/isStudio";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { DatabaseDiagnostic } from "@/components/DatabaseDiagnostic";
 import { TestDataSeeder } from "@/components/TestDataSeeder";
 
-const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { ssr: false });
+const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { 
+  ssr: false,
+  loading: () => <div className="p-6 text-muted-foreground">Loading table…</div>
+});
 const AddSaleForm = dynamic(() => import('./AddSaleForm').then(mod => mod.AddSaleForm), { ssr: false });
-const SaleReturnTable = dynamic(() => import('./SaleReturnTable').then(mod => mod.SaleReturnTable), { ssr: false });
+const SaleReturnTable = dynamic(() => import('./SaleReturnTable').then(mod => mod.SaleReturnTable), { 
+  ssr: false,
+  loading: () => <div className="p-6 text-muted-foreground">Loading table…</div>
+});
 
 export function SalesClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
   
-  // DIRECT DB QUERIES using useLiveQuery
-  const sales = useLiveQuery(() => db.sales.toArray(), []);
-  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
+  const sales = useLiveQuery(() => db.sales.toArray());
+  const saleReturns = useLiveQuery(() => db.saleReturns.toArray());
+  const receipts = useLiveQuery(() => db.receipts.toArray());
+  const { isMastersLoaded } = useMasters();
   
-  // MUTATION hooks
   const { addSale, updateSale, deleteSale } = useTransactions();
   
-  // State for UI
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
   const [itemToDelete, setItemToDelete] = React.useState<{id: string, type: 'sale' | 'return'} | null>(null);
   const [activeTab, setActiveTab] = React.useState('sales');
-  
-  // Memoized filtering
+
+  const salesWithBalances = React.useMemo(() => {
+    if (!sales || !receipts) return [];
+    
+    const billPaidAmounts = new Map<string, number>();
+    receipts.forEach(tx => {
+        (tx.againstBills || []).forEach(ab => {
+            billPaidAmounts.set(ab.billId, (billPaidAmounts.get(ab.billId) || 0) + ab.amount);
+        });
+    });
+
+    return sales.map(sale => {
+      const paid = billPaidAmounts.get(sale.id) || 0;
+      const balanceAmount = sale.billedAmount - paid;
+      return { ...sale, balanceAmount };
+    });
+  }, [sales, receipts]);
+
   const filteredSales = React.useMemo(() => {
-    if (!sales) return []; // Return empty array if sales is undefined
-    return sales.filter(s => s && s.date && isDateInFinancialYear(s.date, financialYear));
-  }, [sales, financialYear]);
+    return (salesWithBalances || []).filter(s => s && s.date && isDateInFinancialYear(s.date, financialYear));
+  }, [salesWithBalances, financialYear]);
 
   const filteredSaleReturns = React.useMemo(() => {
-    if (!saleReturns) return [];
-    return saleReturns.filter(sr => sr && sr.date && isDateInFinancialYear(sr.date, financialYear));
+    return (saleReturns || []).filter(sr => sr && sr.date && isDateInFinancialYear(sr.date, financialYear));
   }, [saleReturns, financialYear]);
+
 
   const handleAddOrUpdateSale = React.useCallback(async (sale: Sale) => {
     const isEditing = (sales || []).some(s => s.id === sale.id);
@@ -82,21 +103,24 @@ export function SalesClient() {
     ? 'bg-green-600 hover:bg-green-700 text-white' 
     : 'bg-orange-600 hover:bg-orange-700 text-white';
 
-  if (sales === undefined) {
-      return <div>Loading Sales...</div>
+  const ready = isStudio || (sales !== undefined && isMastersLoaded);
+
+  if (!ready) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-20rem)] p-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+        <p className="text-lg font-semibold text-muted-foreground">Loading Sales Data...</p>
+        <p className="text-sm text-muted-foreground">This may take a moment.</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 min-h-screen w-full">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
         <h1 className="text-2xl font-bold uppercase">Sales & Returns (FY {financialYear})</h1>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <DatabaseDiagnostic />
-        <TestDataSeeder />
-      </div>
-
       <Tabs defaultValue="sales" onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 h-10 mb-2 no-print">
           <TabsTrigger value="sales" className="py-2.5 text-base rounded-md"><ListChecks className="mr-2 h-5 w-5" />Sales</TabsTrigger>
@@ -115,7 +139,7 @@ export function SalesClient() {
            </div>
           
           <SaleTable 
-            data={filteredSales} 
+            data={filteredSales ?? []} 
             onEdit={(s) => { setSaleToEdit(s); setIsAddFormOpen(true); }}
             onDelete={(id) => setItemToDelete({ id, type: 'sale' })} 
           />
@@ -123,7 +147,7 @@ export function SalesClient() {
         
         <TabsContent value="returns">
           <SaleReturnTable 
-            data={filteredSaleReturns} 
+            data={filteredSaleReturns ?? []} 
             onEdit={() => {}}
             onDelete={() => {}} 
           />
@@ -135,7 +159,7 @@ export function SalesClient() {
           isOpen={isAddFormOpen}
           onClose={() => {setIsAddFormOpen(false); setSaleToEdit(null);}}
           onSubmit={handleAddOrUpdateSale}
-          existingSales={sales}
+          existingSales={sales || []}
           saleToEdit={saleToEdit}
         />
       )}
@@ -150,6 +174,13 @@ export function SalesClient() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      )}
+
+      {isStudio && (
+          <div className="fixed bottom-4 right-4 grid grid-cols-1 gap-4">
+              <DatabaseDiagnostic />
+              <TestDataSeeder />
+          </div>
       )}
     </div>
   );

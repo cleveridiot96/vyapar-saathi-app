@@ -24,17 +24,24 @@ import { useToast } from "@/hooks/use-toast";
 import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
 import { useInventory } from "@/hooks/useInventory";
+import { Loader2 } from "lucide-react";
+import { isStudio } from "@/lib/isStudio";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { DatabaseDiagnostic } from "@/components/DatabaseDiagnostic";
 import { TestDataSeeder } from "@/components/TestDataSeeder";
 
-
-const PurchaseTable = dynamic(() => import('./PurchaseTable').then(mod => mod.PurchaseTable), { ssr: false });
+const PurchaseTable = dynamic(() => import('./PurchaseTable').then(mod => mod.PurchaseTable), { 
+  ssr: false,
+  loading: () => <div className="p-6 text-muted-foreground">Loading table…</div> 
+});
 const AddPurchaseForm = dynamic(() => import('./AddPurchaseForm').then(mod => mod.AddPurchaseForm), { ssr: false });
 const PurchaseChittiPrint = dynamic(() => import('./PurchaseChittiPrint').then(mod => mod.PurchaseChittiPrint), { ssr: false });
 const AddPurchaseReturnForm = dynamic(() => import('./AddPurchaseReturnForm').then(mod => mod.AddPurchaseReturnForm), { ssr: false });
-const PurchaseReturnTable = dynamic(() => import('./PurchaseReturnTable').then(mod => mod.PurchaseReturnTable), { ssr: false });
+const PurchaseReturnTable = dynamic(() => import('./PurchaseReturnTable').then(mod => mod.PurchaseReturnTable), { 
+  ssr: false,
+  loading: () => <div className="p-6 text-muted-foreground">Loading table…</div> 
+});
 
 
 function openPrintWindow(htmlContent: string, title = "Document") {
@@ -185,21 +192,22 @@ export function PurchasesClient() {
   }, [activeTab]);
   
   if (purchases === undefined) {
-    return <div>Loading purchases...</div>
+    return (
+        <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-20rem)] p-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+            <p className="text-lg font-semibold text-muted-foreground">Loading Purchases Data...</p>
+            <p className="text-sm text-muted-foreground">This may take a moment.</p>
+        </div>
+    );
   }
 
   return (
-    <div className="space-y-2 print-area">
+    <div className="space-y-2 print-area min-h-screen w-full">
       <PrintHeaderSymbol className="hidden print:block text-center text-lg font-semibold mb-2" />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 no-print">
         <h1 className="text-2xl font-bold text-foreground uppercase">Purchases & Returns (FY ${financialYear})</h1>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <DatabaseDiagnostic />
-        <TestDataSeeder />
-      </div>
-
       <Tabs defaultValue="purchases" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2 h-10 mb-2 no-print">
           <TabsTrigger value="purchases" className="py-2.5 text-base rounded-md"><ListChecks className="mr-2 h-5 w-5" />Purchases</TabsTrigger>
@@ -213,7 +221,7 @@ export function PurchasesClient() {
             </Button>
             <Button variant="outline" size="icon" onClick={() => window.print()}><Printer className="h-5 w-5" /><span className="sr-only">Print</span></Button>
           </div>
-          <PurchaseTable data={filteredPurchases} onEdit={handleEditPurchase} onDelete={(id) => handleDeleteAttempt(id, 'purchase')} onDownloadPdf={triggerDownloadPdf} />
+          <PurchaseTable data={filteredPurchases ?? []} onEdit={handleEditPurchase} onDelete={(id) => handleDeleteAttempt(id, 'purchase')} onDownloadPdf={triggerDownloadPdf} />
         </TabsContent>
 
         <TabsContent value="purchaseReturns">
@@ -223,7 +231,7 @@ export function PurchasesClient() {
             </Button>
             <Button variant="outline" size="icon" onClick={() => window.print()}><Printer className="h-5 w-5" /><span className="sr-only">Print</span></Button>
           </div>
-          <PurchaseReturnTable data={filteredPurchaseReturns} onEdit={handleEditReturn} onDelete={(id) => handleDeleteAttempt(id, 'return')} />
+          <PurchaseReturnTable data={filteredPurchaseReturns ?? []} onEdit={handleEditReturn} onDelete={(id) => handleDeleteAttempt(id, 'return')} />
         </TabsContent>
       </Tabs>
       
@@ -262,6 +270,13 @@ export function PurchasesClient() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {isStudio && (
+          <div className="fixed bottom-4 right-4 grid grid-cols-1 gap-4">
+              <DatabaseDiagnostic />
+              <TestDataSeeder />
+          </div>
+      )}
 
     </div>
   );

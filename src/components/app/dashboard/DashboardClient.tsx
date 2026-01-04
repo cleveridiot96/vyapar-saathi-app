@@ -6,7 +6,6 @@ import { navItems } from '@/lib/features';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Button } from '@/components/ui/button';
 import { Edit } from 'lucide-react';
-import { useHydrated } from '@/hooks/useHydrated';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardTile } from '@/components/DashboardTile';
 import { WarehouseSummary } from '@/components/app/dashboard/WarehouseSummary';
@@ -17,14 +16,11 @@ import { useInventory } from '@/hooks/useInventory';
 
 export function DashboardClient() {
     const { financialYear } = useSettings();
-    const isHydrated = useHydrated();
     
-    // --- DATA FETCHING AT THE TOP ---
     const { receivableParties, payableParties, isBalancesLoading } = useOutstandingBalances();
     const { allAggregatedInventory, isLoading: isInventoryLoading } = useInventory();
     
-    // Combine loading states
-    const isLoading = !isHydrated || isBalancesLoading || isInventoryLoading;
+    const isLoading = isBalancesLoading || isInventoryLoading;
 
     return (
         <div className="flex flex-col gap-6 relative h-full">

@@ -1,16 +1,14 @@
-
 "use client";
 
 import { PaymentsClient } from "@/components/app/payments/PaymentsClient";
-import { useTransactions } from "@/hooks/useTransactions";
-import { useHydrated } from "@/hooks/useHydrated";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
 
 export default function PaymentsPage() {
-  const { isTransactionsLoaded } = useTransactions();
-  const hydrated = useHydrated();
+  const payments = useLiveQuery(() => db.payments.toArray());
 
-    if (!isTransactionsLoaded || !hydrated) {
+  if (payments === undefined) {
         return (
             <div className="space-y-4 p-4">
                 <div className="flex justify-between items-center">

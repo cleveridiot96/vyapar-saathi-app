@@ -1,9 +1,6 @@
-
 "use client";
 
 import React, { createContext, useState, useCallback, useEffect, useMemo, useContext } from 'react';
-import { useHydrated } from '@/hooks/useHydrated';
-import { db } from '@/lib/db';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -16,46 +13,35 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const SALT_KEY = 'encryption_salt';
-
 export const PasswordProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Always authenticated
-  const [isUnlocked, setIsUnlocked] = useState(false);
-  const isHydrated = useHydrated();
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
 
   const hasPassword = useCallback(async (): Promise<boolean> => {
-    // Bypassed
     return Promise.resolve(false);
   }, []);
 
   const unlock = useCallback(async (password: string): Promise<boolean> => {
-    // Bypassed
     setIsAuthenticated(true);
     return true;
   }, []);
 
   const setPassword = useCallback(async (password: string): Promise<void> => {
-    // Bypassed
     setIsAuthenticated(true);
+    return Promise.resolve();
   }, []);
 
   const lock = useCallback(() => {
-    // Bypassed
-    setIsAuthenticated(true);
+    setIsAuthenticated(true); 
   }, []);
   
   const value = useMemo(() => ({
-    isAuthenticated: true, // Always true
-    isUnlocked,
+    isAuthenticated: true, 
+    isUnlocked: true,
     hasPassword,
     unlock,
     setPassword,
     lock,
-  }), [isAuthenticated, isUnlocked, hasPassword, unlock, setPassword, lock]);
-
-  if (!isHydrated) {
-    return null; // Or a loading spinner
-  }
+  }), [hasPassword, unlock, setPassword, lock]);
 
   return (
     <AuthContext.Provider value={value}>

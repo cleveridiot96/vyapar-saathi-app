@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -16,18 +15,20 @@ import { useTransactions, useMasters } from '@/hooks/useTransactions';
 import { useToast } from "@/hooks/use-toast";
 import type { StockAdjustment } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
 
 export function StockAdjustmentsClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
   
-  const {
-      adjustments,
-      purchases,
-      locationTransfers,
-      addAdjustment,
-  } = useTransactions();
-  const { masterData, masters } = useMasters();
+  const adjustments = useLiveQuery(() => db.adjustments.toArray());
+  const purchases = useLiveQuery(() => db.purchases.toArray());
+  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray());
+  const masters = useLiveQuery(() => db.masters.toArray());
+
+  const { addAdjustment } = useTransactions();
+  const { masterData } = useMasters();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [itemToReverse, setItemToReverse] = useState<StockAdjustment | null>(null);

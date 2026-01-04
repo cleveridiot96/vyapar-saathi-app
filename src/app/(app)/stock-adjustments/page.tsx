@@ -1,16 +1,15 @@
-
 "use client";
 
 import { StockAdjustmentsClient } from "@/components/app/stock-adjustments/StockAdjustmentsClient";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTransactions } from "@/hooks/useTransactions";
-import { useHydrated } from "@/hooks/useHydrated";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
 
 export default function StockAdjustmentsPage() {
-    const { isTransactionsLoaded } = useTransactions();
-    const hydrated = useHydrated();
+    const adjustments = useLiveQuery(() => db.adjustments.toArray());
+    const masters = useLiveQuery(() => db.masters.toArray());
 
-    if (!isTransactionsLoaded || !hydrated) {
+    if (adjustments === undefined || masters === undefined) {
         return (
             <div className="space-y-4 p-4">
                 <div className="flex justify-between items-center">

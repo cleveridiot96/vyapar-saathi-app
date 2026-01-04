@@ -1,31 +1,19 @@
-
 "use client";
 
-import { useMemo, useCallback } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useCallback } from 'react';
 import { db } from '@/lib/db';
 import type { 
     Purchase, Sale, Payment, Receipt, LocationTransfer, PurchaseReturn, SaleReturn, 
     MasterItem, LedgerEntry, StockAdjustment, MasterItemType
 } from '@/lib/types';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 
 /**
  * Primary Hook for all transactional data mutations.
- * Reading data is done via useLiveQuery directly in components.
+ * Reading data should be done via useLiveQuery directly in components for improved reactivity.
  */
 export const useTransactions = () => {
-  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
-  const sales = useLiveQuery(() => db.sales.toArray(), []);
-  const payments = useLiveQuery(() => db.payments.toArray(), []);
-  const receipts = useLiveQuery(() => db.receipts.toArray(), []);
-  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
-  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []);
-  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
-  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
-  const ledger = useLiveQuery(() => db.ledger.toArray(), []);
-
-  const isTransactionsLoaded = purchases !== undefined && sales !== undefined && payments !== undefined && receipts !== undefined;
 
   const addPurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const updatePurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
@@ -64,18 +52,13 @@ export const useTransactions = () => {
       }
     }
   }, []);
+  
+  // For components that need a quick check, though they should ideally use useLiveQuery.
+  const isTransactionsLoaded = useLiveQuery(() => db.tables.some(table => table.count() > 0));
+
 
   return {
-    isTransactionsLoaded,
-    purchases: purchases || [],
-    sales: sales || [],
-    payments: payments || [],
-    receipts: receipts || [],
-    locationTransfers: locationTransfers || [],
-    adjustments: adjustments || [],
-    purchaseReturns: purchaseReturns || [],
-    saleReturns: saleReturns || [],
-    ledger: ledger || [],
+    isTransactionsLoaded: isTransactionsLoaded !== undefined,
     addPurchase, updatePurchase, deletePurchase,
     addSale, updateSale, deleteSale,
     addPayment, updatePayment, deletePayment,
@@ -86,46 +69,19 @@ export const useTransactions = () => {
 };
 
 /**
- * Hook for reading all Master data. It reads directly from the database
- * and provides both the full list and grouped lists by type.
- * It is defensive and returns empty arrays during initialization to prevent crashes.
+ * Hook for reading and mutating Master data.
  */
 export const useMasters = () => {
-    const masters = useLiveQuery(() => db.masters.toArray(), []);
-
-    const masterData = useMemo(() => {
-        const grouped: { [key in MasterItemType]?: MasterItem[] } = {
-          Customer: [], Supplier: [], Agent: [], Transporter: [], Warehouse: [], Broker: [], Expense: [], Product: []
-        };
-        
-        (masters || []).forEach(m => {
-            if (!m || !m.type || !m.name || m.name.startsWith('_DELETED_')) return; 
-            if (!grouped[m.type]) {
-                grouped[m.type] = [];
-            }
-            grouped[m.type]!.push(m);
-        });
-        return grouped;
-    }, [masters]);
-
     const addOrUpdateMaster = useCallback(async (item: MasterItem) => {
         await db.masters.put(item);
     }, []);
 
-    const getAllMasters = useCallback(() => masters || [], [masters]);
+    const getAllMasters = useCallback(async () => {
+        return await db.masters.toArray();
+    }, []);
 
     return {
-        masters: masters || [],
-        masterData,
-        customers: masterData.Customer || [],
-        suppliers: masterData.Supplier || [],
-        agents: masterData.Agent || [],
-        transporters: masterData.Transporter || [],
-        warehouses: masterData.Warehouse || [],
-        brokers: masterData.Broker || [],
-        expenses: masterData.Expense || [],
         addOrUpdateMaster,
         getAllMasters,
-        isMastersLoaded: masters !== undefined, 
     };
 };
