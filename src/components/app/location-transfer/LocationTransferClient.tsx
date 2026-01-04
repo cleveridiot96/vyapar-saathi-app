@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -40,9 +41,14 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import dynamic from 'next/dynamic';
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
+import { isStudio } from "@/lib/isStudio";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
-const AddLocationTransferForm = dynamic(() => import('./AddLocationTransferForm').then(mod => mod.AddLocationTransferForm), { ssr: false });
+const AddLocationTransferForm = dynamic(() => import('./AddLocationTransferForm').then(mod => mod.AddLocationTransferForm), { 
+    ssr: false,
+    loading: () => <p>Loading Form...</p>
+});
 const LocationTransferSlipPrint = dynamic(() => import('./LocationTransferSlipPrint').then(mod => mod.LocationTransferSlipPrint), { ssr: false });
 
 const KEY_SEPARATOR = '_$_';
@@ -104,9 +110,9 @@ export function LocationTransferClient() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
   
-  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []) || [];
+  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
   const { addLocationTransfer, addLedgerEntry, removeLedgerEntries } = useTransactions();
-  const { masterData, addOrUpdateMaster, getAllMasters } = useMasters();
+  const { masterData, addOrUpdateMaster, getAllMasters, isMastersLoaded } = useMasters();
   
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [transferToEdit, setTransferToEdit] = React.useState<LocationTransfer | null>(null);
@@ -116,6 +122,8 @@ export function LocationTransferClient() {
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
   
   const { availableStock, isLoading: isInventoryLoading } = useInventory(transferToEdit?.id);
+
+  const ready = isStudio || (locationTransfers !== undefined && isMastersLoaded && !isInventoryLoading);
 
 
   React.useEffect(() => {
@@ -128,7 +136,6 @@ export function LocationTransferClient() {
   const handleAddOrUpdateTransfer = React.useCallback(async (transfer: LocationTransfer) => {
     await addLocationTransfer(transfer);
     
-    // Ledger entries for expenses
     await removeLedgerEntries(transfer.id);
     const newLedgerEntries: LedgerEntry[] = [];
     (transfer.expenses || []).forEach(exp => {
@@ -213,12 +220,19 @@ export function LocationTransferClient() {
     return 'bg-primary hover:bg-primary/90';
   }, [activeTab]);
 
-  if (isAppHydrating || isInventoryLoading) {
-    return <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]"><p className="text-lg text-muted-foreground">Loading data...</p></div>;
+  if (!ready) {
+    return <div className="min-h-screen w-full p-4 space-y-4">
+        <div className="flex justify-between items-center">
+            <Skeleton className="h-10 w-1/3" />
+            <Skeleton className="h-10 w-48" />
+        </div>
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-[calc(100vh-20rem)] w-full" />
+    </div>;
   }
 
   return (
-    <div className="space-y-8 print-area">
+    <div className="space-y-8 print-area min-h-screen w-full">
       <PrintHeaderSymbol className="hidden print: block text-center text-lg font-semibold mb-4" />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print">
         <h1 className="text-3xl font-bold text-foreground flex items-center">
@@ -258,7 +272,7 @@ export function LocationTransferClient() {
                     </TableRow></TableHeader>
                         <TableBody>
                             {(availableStock || []).length === 0 && <TableRow><TableCell colSpan={5} className="text-center h-24">No stock for FY {financialYear}.</TableCell></TableRow>}
-                            {(availableStock || []). map(item => (
+                            {(availableStock ?? []). map(item => (
                                 <TableRow key={`${item.locationId}${KEY_SEPARATOR}${item.lotNumber}`} className="uppercase">
                                     <TableCell><Tooltip><TooltipTrigger asChild><span className="truncate max-w-[150px] inline-block">{item.locationName || item.locationId}</span></TooltipTrigger><TooltipContent><p>{item.locationName || item.locationId}</p></TooltipContent></Tooltip></TableCell>
                                     <TableCell><Tooltip><TooltipTrigger asChild><span className="truncate max-w-[150px] inline-block">{item. lotNumber}</span></TooltipTrigger><TooltipContent><p>{item.lotNumber}</p></TooltipContent></Tooltip></TableCell>
@@ -401,5 +415,3 @@ export function LocationTransferClient() {
     </div>
   );
 }
-
-    

@@ -41,13 +41,14 @@ interface AddPurchaseFormProps {
   onSubmit: (purchase: Purchase) => void;
   purchaseToEdit?: Purchase | null;
   masterData: {
-      Customer: MasterItem[];
-      Supplier: MasterItem[];
-      Agent: MasterItem[];
-      Transporter: MasterItem[];
-      Warehouse: MasterItem[];
-      Broker: MasterItem[];
-      Expense: MasterItem[];
+      Customer?: MasterItem[];
+      Supplier?: MasterItem[];
+      Agent?: MasterItem[];
+      Transporter?: MasterItem[];
+      Warehouse?: MasterItem[];
+      Broker?: MasterItem[];
+      Expense?: MasterItem[];
+      Product?: MasterItem[];
   };
   addOrUpdateMaster: (item: MasterItem) => void;
   getAllMasters: () => MasterItem[];
@@ -314,8 +315,7 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
             </div>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 min-h-0">
-              <div className="px-6 pb-6">
+          <ScrollArea className="flex-1 min-h-0 px-6">
               <FormProvider {...formMethods}>
                 <form onSubmit={formHandleSubmit(processSubmit)} className="space-y-4 pt-4">
                   
@@ -712,10 +712,8 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
                       </div>
                     )}
                   </div>
-
                 </form>
               </FormProvider>
-              </div>
           </ScrollArea>
            <DialogFooter className="p-6 pt-4 border-t">
               <DialogClose asChild><Button type="button" variant="outline" onClick={onClose}>Cancel</Button></DialogClose>
@@ -746,5 +744,3 @@ export const AddPurchaseForm: React.FC<AddPurchaseFormProps> = ({
     </>
   );
 };
-
-    

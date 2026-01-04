@@ -1,20 +1,20 @@
 "use client";
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { db } from '@/lib/db';
 import type { 
     Purchase, Sale, Payment, Receipt, LocationTransfer, PurchaseReturn, SaleReturn, 
     MasterItem, LedgerEntry, StockAdjustment, MasterItemType
 } from '@/lib/types';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { groupMasters } from '@/lib/utils';
 
 
 /**
  * Primary Hook for all transactional data mutations.
- * Reading data should be done via useLiveQuery directly in components for improved reactivity.
+ * Reading data is done via useLiveQuery directly in components.
  */
 export const useTransactions = () => {
-
   const addPurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const updatePurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const deletePurchase = useCallback(async (id: string) => db.purchases.delete(id), []);
@@ -52,13 +52,8 @@ export const useTransactions = () => {
       }
     }
   }, []);
-  
-  // For components that need a quick check, though they should ideally use useLiveQuery.
-  const isTransactionsLoaded = useLiveQuery(() => db.tables.some(table => table.count() > 0));
-
 
   return {
-    isTransactionsLoaded: isTransactionsLoaded !== undefined,
     addPurchase, updatePurchase, deletePurchase,
     addSale, updateSale, deleteSale,
     addPayment, updatePayment, deletePayment,
@@ -72,16 +67,43 @@ export const useTransactions = () => {
  * Hook for reading and mutating Master data.
  */
 export const useMasters = () => {
+    const masters = useLiveQuery(() => db.masters.toArray(), []);
+
     const addOrUpdateMaster = useCallback(async (item: MasterItem) => {
         await db.masters.put(item);
     }, []);
 
-    const getAllMasters = useCallback(async () => {
-        return await db.masters.toArray();
-    }, []);
+    const getAllMasters = useCallback(() => {
+        return masters || [];
+    }, [masters]);
+    
+    const masterData = useMemo(() => {
+        const grouped = groupMasters(masters || []);
+        return {
+            Customer: grouped.Customer || [],
+            Supplier: grouped.Supplier || [],
+            Agent: grouped.Agent || [],
+            Transporter: grouped.Transporter || [],
+            Warehouse: grouped.Warehouse || [],
+            Broker: grouped.Broker || [],
+            Expense: grouped.Expense || [],
+            Product: grouped.Product || [],
+        }
+    }, [masters]);
+
 
     return {
+        masters,
+        masterData,
+        isMastersLoaded: masters !== undefined,
         addOrUpdateMaster,
         getAllMasters,
+        customers: masterData.Customer,
+        suppliers: masterData.Supplier,
+        agents: masterData.Agent,
+        transporters: masterData.Transporter,
+        warehouses: masterData.Warehouse,
+        brokers: masterData.Broker,
+        expenses: masterData.Expense,
     };
 };

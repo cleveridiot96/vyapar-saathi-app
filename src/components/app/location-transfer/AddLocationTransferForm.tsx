@@ -187,14 +187,14 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
   return (
     <>
       <Dialog open={isOpen && !isMasterFormOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0">
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-6 pb-4 flex-shrink-0">
             <DialogTitle>{transferToEdit ? 'Edit Location Transfer' : 'New Location Transfer'}</DialogTitle>
             <DialogDescription>Move stock between warehouses and account for costs.</DialogDescription>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 min-h-0">
-              <div className="px-6 pb-6">
+          <ScrollArea className="flex-1 min-h-0 px-6">
+              <div className="pb-6">
                 <FormProvider {...methods}>
                   <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 pt-4">
                     
@@ -382,7 +382,7 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
           onClose={() => setIsMasterFormOpen(false)}
           onSubmit={handleMasterFormSubmit}
           initialData={masterItemToEdit}
-          itemTypeFromButton={masterFormItemType!}
+          itemTypeFromButton={masterItemToEdit?.type!}
           fixedIds={[]}
           allMasterItems={allMasters}
         />
@@ -392,5 +392,3 @@ const AddLocationTransferFormComponent: React.FC<AddLocationTransferFormProps> =
 };
 
 export const AddLocationTransferForm = React.memo(AddLocationTransferFormComponent);
-
-    

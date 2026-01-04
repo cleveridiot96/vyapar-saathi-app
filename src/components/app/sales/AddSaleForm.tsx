@@ -169,8 +169,8 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
             <DialogTitle>{saleToEdit ? 'Edit Sale' : 'Add New Sale'}</DialogTitle>
             <DialogDescription>Create a sale with one or more items.</DialogDescription>
           </DialogHeader>
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="px-6 pb-6">
+          <ScrollArea className="flex-1 min-h-0 px-6">
+            <div className="pb-6">
                 <FormProvider {...methods}>
                 <form onSubmit={handleSubmit(processSubmit)} className="space-y-4 pt-4">
                     <div className="p-4 border rounded-md shadow-sm">
