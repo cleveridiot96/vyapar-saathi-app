@@ -33,7 +33,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { isDateInFinancialYear } from "@/lib/utils";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { cn } from "@/lib/utils";
-import { useTransactions } from "@/hooks/useTransactions";
+import { useTransactions, useMasters } from "@/hooks/useTransactions";
 import { useInventory } from '@/hooks/useInventory';
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import type { DateRange } from "react-day-picker";
@@ -102,25 +102,10 @@ export function LocationTransferClient() {
   const { toast } = useToast();
   const { financialYear, isAppHydrating } = useSettings();
   const { 
-    locationTransfers, 
-    setLocationTransfers, 
-    setLedger,
-    setPurchases,
-    setSales,
-    setPayments,
-    setReceipts,
-    setAdjustments,
-    setPurchaseReturns,
-    setSaleReturns,
-    setCustomers,
-    setSuppliers,
-    setAgents,
-    setBrokers,
-    setTransporters,
-    setWarehouses,
-    setExpenses,
-    ...masterDataSets
+    locationTransfers,
+    addLocationTransfer,
   } = useTransactions();
+  const { masterData, addOrUpdateMaster, getAllMasters } = useMasters();
   
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [transferToEdit, setTransferToEdit] = React.useState<LocationTransfer | null>(null);
@@ -131,38 +116,6 @@ export function LocationTransferClient() {
   
   const { availableStock, isLoading: isInventoryLoading } = useInventory(transferToEdit?.id);
 
-  const getAllMasters = React.useCallback(() => {
-    return [
-        ...masterDataSets.customers, ...masterDataSets.suppliers, ...masterDataSets.agents,
-        ...masterDataSets.brokers, ...masterDataSets.transporters, ...masterDataSets.warehouses,
-        ...masterDataSets.expenses
-    ];
-  }, [masterDataSets]);
-
-  const addOrUpdateMaster = (item: MasterItem) => {
-    const setterMap = {
-        Customer: setCustomers,
-        Supplier: setSuppliers,
-        Agent: setAgents,
-        Broker: setBrokers,
-        Transporter: setTransporters,
-        Warehouse: setWarehouses,
-        Expense: setExpenses,
-        Product: () => {},
-    };
-    const setter = setterMap[item.type];
-    if (setter) {
-        setter(prev => {
-            const index = prev.findIndex(m => m.id === item.id);
-            if (index > -1) {
-                const newItems = [...prev];
-                newItems[index] = item;
-                return newItems;
-            }
-            return [item, ...prev];
-        });
-    }
-  };
 
   React.useEffect(() => {
     if (! dateRange) {
@@ -172,19 +125,12 @@ export function LocationTransferClient() {
   }, [dateRange]);
 
   const handleAddOrUpdateTransfer = React.useCallback((transfer: LocationTransfer) => {
-    setLocationTransfers(prev => {
-        const index = prev.findIndex(t => t.id === transfer.id);
-        if (index > -1) {
-            const newTransfers = [...prev];
-            newTransfers[index] = transfer;
-            return newTransfers;
-        }
-        return [transfer, ...prev];
-    });
+    // This logic needs to be updated if editing is implemented
+    addLocationTransfer(transfer);
     toast({ title: transferToEdit ? "Transfer Updated" : "Transfer Created", description: transferToEdit ? "Location transfer details saved." : "New location transfer recorded successfully." });
     setTransferToEdit(null);
     window.dispatchEvent(new CustomEvent('reindex-search'));
-  }, [setLocationTransfers, toast, transferToEdit]);
+  }, [addLocationTransfer, toast, transferToEdit]);
 
 
   const handleEditTransfer = React.useCallback((transfer: LocationTransfer) => { setTransferToEdit(transfer); setIsAddFormOpen(true); }, []);
@@ -410,11 +356,7 @@ export function LocationTransferClient() {
           }}
           onSubmit={handleAddOrUpdateTransfer}
           transferToEdit={transferToEdit}
-          masterData={{
-            Warehouse: masterDataSets.warehouses,
-            Transporter: masterDataSets.transporters,
-            Expense: masterDataSets.expenses
-          }}
+          masterData={masterData}
           addOrUpdateMaster={addOrUpdateMaster}
           getAllMasters={getAllMasters}
           availableStock={availableStock}

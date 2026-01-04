@@ -21,11 +21,18 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { db } from '@/lib/db';
+import { useTransactions, useMasters } from '@/hooks/useTransactions';
 
 export function FormatButton() {
   const { printSettings, setPrintSettings } = useSettings();
   const { toast } = useToast();
   const [isFormatting, setIsFormatting] = useState(false);
+  const {
+      purchases, sales, payments, receipts, locationTransfers,
+      adjustments, purchaseReturns, saleReturns, ledger
+  } = useTransactions();
+  const { masters } = useMasters();
+
 
   const handleToggle = (key: keyof typeof printSettings) => {
     setPrintSettings(prev => ({
@@ -39,33 +46,17 @@ export function FormatButton() {
     
     try {
       // 1. Create a complete backup from all Dexie tables
-      const [
-          allMasters, allPurchases, allSales, allAdjustments, allTransfers,
-          allPurchaseReturns, allSaleReturns, allPayments, allReceipts, allLedger
-        ] = await Promise.all([
-          db.masters.toArray(),
-          db.purchases.toArray(),
-          db.sales.toArray(),
-          db.adjustments.toArray(),
-          db.locationTransfers.toArray(),
-          db.purchaseReturns.toArray(),
-          db.saleReturns.toArray(),
-          db.payments.toArray(),
-          db.receipts.toArray(),
-          db.ledger.toArray(),
-        ]);
-      
       const dataToBackup = {
-        masters: allMasters,
-        purchases: allPurchases,
-        sales: allSales,
-        adjustments: allAdjustments,
-        locationTransfers: allTransfers,
-        purchaseReturns: allPurchaseReturns,
-        saleReturns: allSaleReturns,
-        payments: allPayments,
-        receipts: allReceipts,
-        ledger: allLedger,
+        masters,
+        purchases,
+        sales,
+        adjustments,
+        locationTransfers,
+        purchaseReturns,
+        saleReturns,
+        payments,
+        receipts,
+        ledger,
       };
 
       const blob = new Blob([JSON.stringify(dataToBackup, null, 2)], { type: "application/json" });
