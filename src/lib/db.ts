@@ -10,7 +10,8 @@ import type {
   Payment,
   Receipt,
   LedgerEntry,
-  MasterItem
+  MasterItem,
+  AuthDataItem
 } from '@/lib/types';
 import { FIXED_WAREHOUSES, FIXED_EXPENSES } from './constants';
 
@@ -25,10 +26,11 @@ class MyDatabase extends Dexie {
   public payments!: Table<Payment, string>;
   public receipts!: Table<Receipt, string>;
   public ledger!: Table<LedgerEntry, string>;
+  public auth!: Table<AuthDataItem, string>;
 
   constructor() {
-    super('vyapar-saathi-db');
-    this.version(6).stores({
+    super('vyapar-saathi-db-v2');
+    this.version(1).stores({
       masters: 'id, type, name',
       purchases: 'id, date, supplierId, agentId',
       sales: 'id, date, customerId, brokerId',
@@ -39,6 +41,7 @@ class MyDatabase extends Dexie {
       payments: 'id, date, partyId',
       receipts: 'id, date, partyId',
       ledger: 'id, date, partyId, relatedVoucher',
+      auth: 'key',
     });
 
     this.on('populate', this.populate);
@@ -46,13 +49,10 @@ class MyDatabase extends Dexie {
   
   populate = async () => {
     try {
-        console.log("Database is being created. Populating with initial master data...");
         const fixedMasters = [...FIXED_WAREHOUSES, ...FIXED_EXPENSES];
-        // Use bulkPut to avoid errors if data already exists
         await this.masters.bulkPut(fixedMasters as MasterItem[]);
-        console.log("Initial master data populated successfully.");
-    } catch(err) {
-        console.error("Failed to populate initial master data", err);
+    } catch {
+        // Handle error silently
     }
   }
 }

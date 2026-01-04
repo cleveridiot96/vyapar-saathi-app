@@ -21,9 +21,9 @@ export default function RootLayout({
       <body className={cn("bg-background font-sans antialiased")}>
         <PasswordProvider>
           <SettingsProvider>
-              {children}
-              <Toaster />
-              <AppExitHandler />
+            {children}
+            <Toaster />
+            <AppExitHandler />
           </SettingsProvider>
         </PasswordProvider>
       </body>

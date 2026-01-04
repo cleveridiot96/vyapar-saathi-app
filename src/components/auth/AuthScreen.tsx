@@ -9,58 +9,75 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Loader2, ShieldCheck, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useHydrated } from '@/hooks/useHydrated';
 
 export function AuthScreen() {
-    const { isAuthenticated, isUnlocked, unlock, hasPassword, setPassword } = useAuth();
+    const { isUnlocked, unlock, hasPassword, setPassword, isLoading: isAuthLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
-    const isHydrated = useHydrated();
 
     const [password, setPasswordInput] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [isLoading, setIsLoading] = useState(true);
-    const [passwordExists, setPasswordExists] = useState(true); // Default to true to avoid flash of wrong content
+    const [isCheckingPassword, setIsCheckingPassword] = useState(true);
+    const [passwordExists, setPasswordExists] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        if (isHydrated) {
+        if (!isAuthLoading) {
             hasPassword().then(exists => {
                 setPasswordExists(exists);
-                setIsLoading(false);
-                if (isAuthenticated) {
-                    router.replace('/dashboard');
-                }
+                setIsCheckingPassword(false);
             });
         }
-    }, [isHydrated, isAuthenticated, router, hasPassword]);
+    }, [isAuthLoading, hasPassword]);
+
+    useEffect(() => {
+        if (isUnlocked) {
+            router.replace('/dashboard');
+        }
+    }, [isUnlocked, router]);
     
     const handleSetup = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
         if (password !== confirmPassword) {
             toast({ title: "Passwords do not match", variant: 'destructive' });
+            setIsSubmitting(false);
             return;
         }
         if (password.length < 8) {
             toast({ title: "Password too short", description: "Password must be at least 8 characters.", variant: 'destructive' });
+            setIsSubmitting(false);
             return;
         }
-        await setPassword(password);
-        toast({ title: "Password set!", description: "You can now log in." });
-        // After setting password, the user is authenticated, so redirect.
-        router.replace('/dashboard');
+
+        try {
+            await setPassword(password);
+            toast({ title: "Password set!", description: "You can now log in." });
+            // The useEffect for isUnlocked will handle the redirect
+        } catch {
+            toast({ title: "Error", description: "Could not set password.", variant: 'destructive' });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        const success = await unlock(password);
-        if (success) {
-             router.replace('/dashboard');
-        } else {
-            toast({ title: "Invalid password", variant: 'destructive' });
+        setIsSubmitting(true);
+        try {
+            const success = await unlock(password);
+            if (!success) {
+                toast({ title: "Invalid password", variant: 'destructive' });
+            }
+            // The useEffect for isUnlocked will handle the redirect
+        } catch {
+            toast({ title: "Login Failed", description: "An unexpected error occurred.", variant: 'destructive' });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    if (isLoading || (isHydrated && isAuthenticated)) {
+    if (isAuthLoading || isCheckingPassword) {
         return (
             <div className="flex items-center justify-center h-screen bg-background">
                 <Loader2 className="animate-spin h-8 w-8 text-primary" />
@@ -92,8 +109,8 @@ export function AuthScreen() {
                                 <Input id="confirm-password" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
                             </div>
                         )}
-                        <Button type="submit" className="w-full" disabled={isUnlocked}>
-                            {isUnlocked ? <><Loader2 className="animate-spin mr-2" /> Unlocking...</> : (passwordExists ? 'Unlock' : 'Set Password & Encrypt')}
+                        <Button type="submit" className="w-full" disabled={isSubmitting}>
+                            {isSubmitting ? <><Loader2 className="animate-spin mr-2" /> Unlocking...</> : (passwordExists ? 'Unlock' : 'Set Password & Encrypt')}
                         </Button>
                     </form>
                 </CardContent>
