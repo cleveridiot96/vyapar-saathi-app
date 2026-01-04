@@ -1,22 +1,23 @@
+
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { initSearchEngine, searchData, type SearchableItem } from '@/lib/searchEngine';
+import Fuse from 'fuse.js';
+import type { FuseResult } from 'fuse.js';
 import { db } from '@/lib/db';
-import { buildSearchData } from '@/lib/buildSearchData';
+import { buildSearchData, type SearchableItem } from '@/lib/buildSearchData';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from '@/components/ui/command';
 import { Search as SearchIcon } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import type { FuseResult } from 'fuse.js';
 
 const HighlightedText: React.FC<{ text: string; indices: readonly [number, number][] | undefined }> = ({ text, indices }) => {
   if (!indices || indices.length === 0) {
     return <>{text}</>;
   }
 
-  const parts = [];
+  const parts: React.ReactNode[] = [];
   let lastIndex = 0;
 
   indices.forEach(([start, end], i) => {
@@ -41,6 +42,7 @@ const SearchBar = () => {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const commandRef = useRef<HTMLDivElement>(null);
+  const fuseRef = useRef<Fuse<SearchableItem> | null>(null);
   
   const initializeIndex = useCallback(async () => {
     try {
@@ -70,7 +72,19 @@ const SearchBar = () => {
           purchaseReturns,
           saleReturns,
         });
-        initSearchEngine(searchDataPayload);
+
+        fuseRef.current = new Fuse(searchDataPayload, {
+            keys: [
+              { name: 'title', weight: 0.6 },
+              { name: 'description', weight: 0.4 },
+            ],
+            includeScore: true,
+            includeMatches: true,
+            threshold: 0.4,
+            minMatchCharLength: 1,
+            ignoreLocation: true,
+        });
+
       } catch(error) {
         console.error("Search initialization failed:", error);
       }
@@ -103,8 +117,8 @@ const SearchBar = () => {
   }, []);
 
   useEffect(() => {
-    if (query.trim().length > 0) {
-      const res = searchData(query);
+    if (query.trim().length > 0 && fuseRef.current) {
+      const res = fuseRef.current.search(query);
       setResults(res.slice(0, 10)); 
     } else {
       setResults([]);
