@@ -103,14 +103,14 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
     return {
       date: new Date(),
       billNumber: "",
-      customerId: undefined,
-      brokerId: undefined,
-      transporterId: undefined,
-      items: [{ lotNumber: "", quantity: undefined, netWeight: undefined, rate: undefined }],
+      customerId: "",
+      brokerId: "",
+      transporterId: "",
+      items: [{ lotNumber: "", quantity: 0, netWeight: 0, rate: 0 }],
       expenses: [],
       notes: "",
-      cbAmount: undefined,
-      balanceAmount: undefined,
+      cbAmount: 0,
+      balanceAmount: 0,
     };
   }, [saleToEdit]);
 
@@ -494,7 +494,7 @@ const AddSaleFormComponent: React.FC<AddSaleFormProps> = ({
                       </div>
                     ))}
                     <div className="flex justify-between items-start mt-2">
-                      <Button type="button" variant="outline" onClick={() => append({ lotNumber: "", quantity: undefined, netWeight: undefined, rate: undefined })}><PlusCircle className="mr-2 h-4 w-4" /> Add Item</Button>
+                      <Button type="button" variant="outline" onClick={() => append({ lotNumber: "", quantity: 0, netWeight: 0, rate: 0 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Item</Button>
                     </div>
                   </div>
 

@@ -13,7 +13,7 @@ import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { MasterForm } from "@/components/app/masters/MasterForm";
-import { useTransactions } from "@/hooks/useTransactions";
+import { useAppState, useAppDispatch } from "@/hooks/useAppState";
 import { Input } from "@/components/ui/input";
 import { useHydrated } from '@/hooks/useHydrated';
 import { isDateInFinancialYear } from "@/lib/utils";
@@ -57,9 +57,9 @@ export function LedgerClient() {
     sales, 
     purchaseReturns, 
     saleReturns,
-    getAllMasters,
-    addOrUpdateMaster
-  } = useTransactions();
+    getAllMasters
+  } = useAppState();
+  const { addOrUpdateMaster } = useAppDispatch();
 
   const [selectedPartyId, setSelectedPartyId] = React.useState<string>("");
   const { financialYear: currentFinancialYearString } = useSettings();

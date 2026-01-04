@@ -25,7 +25,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useOutstandingBalances } from '@/hooks/useOutstandingBalances';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useAppState } from '@/hooks/useAppState';
 import dynamic from 'next/dynamic';
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
@@ -166,7 +166,7 @@ const AgingReport = ({ data }: { data: OutstandingParty[] }) => {
 export function OutstandingClient() {
   const [selectedPartyId, setSelectedPartyId] = useState<string | undefined>();
   const router = useRouter();
-  const { sales, receipts } = useTransactions();
+  const { sales, receipts } = useAppState();
   
   const { receivableParties, payableParties, isBalancesLoading } = useOutstandingBalances();
 
