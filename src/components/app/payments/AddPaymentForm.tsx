@@ -40,8 +40,8 @@ import dynamic from 'next/dynamic';
 import { DatePicker } from "@/components/ui/date-picker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const MasterDataCombobox = dynamic(() => import('../shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
-const MasterForm = dynamic(() => import('../masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
+const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
+const MasterForm = dynamic(() => import('@/components/app/masters/MasterForm').then(mod => mod.MasterForm), { ssr: false });
 
 
 interface AddPaymentFormProps {
@@ -514,3 +514,5 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({
     </>
   );
 };
+
+    

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import * as React from "react";
 import type { Sale, TransactionalProfitInfo, CostBreakdown } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -63,14 +63,14 @@ export function ProfitAnalysisClient() {
   const { sales = [] } = useTransactions() ?? {};
   
   const [saleIdForCalc, setSaleIdForCalc] = React.useState<string | undefined>();
-  const calculatorRef = useRef<HTMLDivElement>(null);
+  const calculatorRef = React.useRef<HTMLDivElement>(null);
   
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>(() => {
     const today = new Date();
     return { from: startOfMonth(today), to: endOfDay(today) };
   });
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (saleIdForCalc && calculatorRef.current) {
         calculatorRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -513,3 +513,5 @@ export function ProfitAnalysisClient() {
     </TooltipProvider>
   );
 }
+
+    
