@@ -339,3 +339,8 @@ export type TransactionEvent =
   | { type: 'RETURN_CREATED'; payload: PurchaseReturn | SaleReturn }
   | { type: 'LEDGER_ENTRY_CREATED'; payload: LedgerEntry[] }
   | { type: 'LEDGER_ENTRY_DELETED'; payload: { voucherId: string } };
+
+export interface AuthDataItem {
+  key: string;
+  value: unknown;
+}
