@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import type { 
@@ -14,26 +15,23 @@ import type {
  * Reading data is done via useLiveQuery directly in components.
  */
 export const useTransactions = () => {
-  const addPurchase = useCallback(async (data: Purchase) => db.purchases.add(data), []);
+  const addPurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const updatePurchase = useCallback(async (data: Purchase) => db.purchases.put(data), []);
   const deletePurchase = useCallback(async (id: string) => db.purchases.delete(id), []);
 
-  const addSale = useCallback(async (data: Sale) => db.sales.add(data), []);
+  const addSale = useCallback(async (data: Sale) => db.sales.put(data), []);
   const updateSale = useCallback(async (data: Sale) => db.sales.put(data), []);
   const deleteSale = useCallback(async (id: string) => db.sales.delete(id), []);
 
-  const addPayment = useCallback(async (data: Payment) => db.payments.add(data), []);
+  const addPayment = useCallback(async (data: Payment) => db.payments.put(data), []);
   const updatePayment = useCallback(async (data: Payment) => db.payments.put(data), []);
   const deletePayment = useCallback(async (id: string) => db.payments.delete(id), []);
   
-  const addReceipt = useCallback(async (data: Receipt) => db.receipts.add(data), []);
+  const addReceipt = useCallback(async (data: Receipt) => db.receipts.put(data), []);
   const updateReceipt = useCallback(async (data: Receipt) => db.receipts.put(data), []);
   const deleteReceipt = useCallback(async (id: string) => db.receipts.delete(id), []);
 
-  const addLocationTransfer = useCallback(async (data: LocationTransfer) => {
-    const id = data.id || `lt-${Date.now()}`;
-    await db.locationTransfers.put({ ...data, id });
-  }, []);
+  const addLocationTransfer = useCallback(async (data: LocationTransfer) => db.locationTransfers.put(data), []);
   const addAdjustment = useCallback(async (data: StockAdjustment) => db.adjustments.put(data), []);
   
   const addPurchaseReturn = useCallback(async (data: PurchaseReturn) => db.purchaseReturns.put(data), []);
@@ -56,28 +54,42 @@ export const useTransactions = () => {
   };
 };
 
-
+/**
+ * Hook for reading all Master data. It reads directly from the database
+ * and provides both the full list and grouped lists by type.
+ * It is defensive and returns empty arrays during initialization to prevent crashes.
+ */
 export const useMasters = () => {
-    const masters = useLiveQuery(() => db.masters.toArray(), []) || [];
+    // 1. Direct DB Query: Fetch all masters, defaulting to an empty array.
+    const masters = useLiveQuery(() => db.masters.toArray(), []);
 
+    // 2. Memoization: Group masters by type only when the masters array changes.
     const masterData = useMemo(() => {
-      const grouped: { [key in MasterItemType]?: MasterItem[] } = {};
-      (masters || []).forEach(m => {
-          if (!grouped[m.type]) {
-              grouped[m.type] = [];
-          }
-          grouped[m.type]!.push(m);
-      });
-      return grouped;
+        const grouped: { [key in MasterItemType]?: MasterItem[] } = {};
+        // Use `(masters || [])` as a safety net in case useLiveQuery is briefly not ready.
+        (masters || []).forEach(m => {
+            if (!m || !m.type) return; // Defensive check for malformed data
+            if (!grouped[m.type]) {
+                grouped[m.type] = [];
+            }
+            grouped[m.type]!.push(m);
+        });
+        return grouped;
     }, [masters]);
 
-    const isMastersLoaded = !!masters;
+    // 3. Stable Callbacks: Ensure functions don't change on every render.
+    const addOrUpdateMaster = useCallback(async (item: MasterItem) => {
+        // Add validation or transformation logic here if needed
+        await db.masters.put(item);
+    }, []);
 
-    const addOrUpdateMaster = useCallback(async (item: MasterItem) => db.masters.put(item), []);
     const getAllMasters = useCallback(() => masters || [], [masters]);
 
     return {
+        // Raw list
         masters: masters || [],
+        
+        // Grouped data, with fallbacks to empty arrays to prevent crashes
         masterData,
         customers: masterData.Customer || [],
         suppliers: masterData.Supplier || [],
@@ -86,8 +98,10 @@ export const useMasters = () => {
         warehouses: masterData.Warehouse || [],
         brokers: masterData.Broker || [],
         expenses: masterData.Expense || [],
+        
+        // Actions and metadata
         addOrUpdateMaster,
         getAllMasters,
-        isMastersLoaded,
+        isMastersLoaded: Array.isArray(masters), // True once the query has run (even if it's empty)
     };
 };
