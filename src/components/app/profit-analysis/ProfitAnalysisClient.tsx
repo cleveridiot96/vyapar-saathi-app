@@ -58,9 +58,11 @@ const CostRow: React.FC<{ label: string; value: number; isDeduction?: boolean; i
 
 
 export function ProfitAnalysisClient() {
-  const { isAppHydrating } = useSettings();
-  const { sales, isTransactionsLoaded } = useTransactions();
-  const { financialYear: currentFinancialYearString } = useSettings();
+  const { isAppHydrating, financialYear: currentFinancialYearString } = useSettings();
+  const transactions = useTransactions();
+  const sales = transactions?.sales ?? [];
+  const { isTransactionsLoaded } = useTransactions();
+  
   const [saleIdForCalc, setSaleIdForCalc] = React.useState<string | undefined>();
   const calculatorRef = useRef<HTMLDivElement>(null);
   
@@ -76,6 +78,8 @@ export function ProfitAnalysisClient() {
   }, [saleIdForCalc]);
 
   const [selectedMonthKey, setSelectedMonthKey] = React.useState<string | undefined>();
+    
+  if (!Array.isArray(sales)) return null;
 
   const allProfitTransactionsInFY = React.useMemo(() => {
     if (isAppHydrating || !isTransactionsLoaded) return [];
@@ -516,3 +520,5 @@ export function ProfitAnalysisClient() {
     </TooltipProvider>
   );
 }
+
+    
