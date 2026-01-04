@@ -4,6 +4,16 @@ This is a NextJS starter in Firebase Studio.
 
 To get started, take a look at src/app/page.tsx.
 
+---
+
+## Git Actions: How to Save Your Code
+
+To save your work and push it to a GitHub repository, follow the step-by-step instructions in the new guide:
+
+**[➡️ Click here for the How to Commit Guide](./HOW_TO_COMMIT.md)**
+
+---
+
 ## Application Architecture: The "Backend-less" Backend
 
 A key design feature of this application is its ability to run entirely offline. This is achieved by treating your web browser as its own self-contained backend.
