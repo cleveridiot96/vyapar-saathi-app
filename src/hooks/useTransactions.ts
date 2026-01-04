@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import type { 
@@ -30,13 +30,20 @@ export const useTransactions = () => {
   const updateReceipt = useCallback(async (data: Receipt) => db.receipts.put(data), []);
   const deleteReceipt = useCallback(async (id: string) => db.receipts.delete(id), []);
 
-  const addLocationTransfer = useCallback(async (data: LocationTransfer) => db.locationTransfers.add(data), []);
-  const addAdjustment = useCallback(async (data: StockAdjustment) => db.adjustments.add(data), []);
+  const addLocationTransfer = useCallback(async (data: LocationTransfer) => {
+    const id = data.id || `lt-${Date.now()}`;
+    await db.locationTransfers.put({ ...data, id });
+  }, []);
+  const addAdjustment = useCallback(async (data: StockAdjustment) => db.adjustments.put(data), []);
   
-  const addPurchaseReturn = useCallback(async (data: PurchaseReturn) => db.purchaseReturns.add(data), []);
-  const addSaleReturn = useCallback(async (data: SaleReturn) => db.saleReturns.add(data), []);
+  const addPurchaseReturn = useCallback(async (data: PurchaseReturn) => db.purchaseReturns.put(data), []);
+  const addSaleReturn = useCallback(async (data: SaleReturn) => db.saleReturns.put(data), []);
 
-  const addLedgerEntry = useCallback(async (data: LedgerEntry[] | LedgerEntry) => db.ledger.bulkAdd(Array.isArray(data) ? data : [data]), []);
+  const addLedgerEntry = useCallback(async (data: LedgerEntry[] | LedgerEntry) => {
+    const entries = Array.isArray(data) ? data : [data];
+    if (entries.length === 0) return;
+    await db.ledger.bulkPut(entries);
+  }, []);
   const removeLedgerEntries = useCallback(async (voucherId: string) => db.ledger.where('relatedVoucher').equals(voucherId).delete(), []);
 
   return {
@@ -51,7 +58,7 @@ export const useTransactions = () => {
 
 
 export const useMasters = () => {
-    const masters = useLiveQuery(() => db.masters.toArray()) as MasterItem[] | undefined;
+    const masters = useLiveQuery(() => db.masters.toArray(), []) || [];
 
     const masterData = useMemo(() => {
       const grouped: { [key in MasterItemType]?: MasterItem[] } = {};
@@ -64,7 +71,7 @@ export const useMasters = () => {
       return grouped;
     }, [masters]);
 
-    const isMastersLoaded = masters !== undefined;
+    const isMastersLoaded = !!masters;
 
     const addOrUpdateMaster = useCallback(async (item: MasterItem) => db.masters.put(item), []);
     const getAllMasters = useCallback(() => masters || [], [masters]);
@@ -84,5 +91,3 @@ export const useMasters = () => {
         isMastersLoaded,
     };
 };
-
-    

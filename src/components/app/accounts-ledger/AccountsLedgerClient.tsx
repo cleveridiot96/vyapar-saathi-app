@@ -11,10 +11,12 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { useSearchParams, useRouter } from "next/navigation";
 import { PrintHeaderSymbol } from '@/components/shared/PrintHeaderSymbol';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useTransactions } from "@/hooks/useTransactions";
 import { useHydrated } from '@/hooks/useHydrated';
 import dynamic from 'next/dynamic';
 import { isDateInFinancialYear } from '@/lib/utils';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
+import { useMasters } from '@/hooks/useTransactions';
 
 const MasterDataCombobox = dynamic(() => import('@/components/shared/MasterDataCombobox').then(mod => mod.MasterDataCombobox), { ssr: false });
 
@@ -41,13 +43,13 @@ const initialLedgerData = {
 export function AccountsLedgerClient() {
   const isHydrated = useHydrated();
   const { financialYear, isAppHydrating } = useSettings();
-  const { 
-    purchases, 
-    sales, 
-    payments, 
-    receipts, 
-    getAllMasters
-  } = useTransactions();
+  
+  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
+  const sales = useLiveQuery(() => db.sales.toArray(), []);
+  const payments = useLiveQuery(() => db.payments.toArray(), []);
+  const receipts = useLiveQuery(() => db.receipts.toArray(), []);
+  
+  const { getAllMasters } = useMasters();
   
   const [selectedPartyId, setSelectedPartyId] = React.useState<string>("");
   
@@ -68,7 +70,7 @@ export function AccountsLedgerClient() {
   }, [allMasters]);
 
   const ledgerData = useMemo(() => {
-    if (!selectedPartyId || !isHydrated) return initialLedgerData;
+    if (!selectedPartyId || !isHydrated || !purchases || !sales || !payments || !receipts) return initialLedgerData;
 
     let openingBalance = 0;
     const periodTransactions: FinancialLedgerTransaction[] = [];
