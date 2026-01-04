@@ -11,6 +11,7 @@ import { Search as SearchIcon } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 const HighlightedText: React.FC<{ text: string; indices: readonly [number, number][] | undefined }> = ({ text, indices }) => {
   if (!indices || indices.length === 0) {
@@ -44,62 +45,47 @@ const SearchBar = () => {
   const commandRef = useRef<HTMLDivElement>(null);
   const fuseRef = useRef<Fuse<SearchableItem> | null>(null);
   
-  const initializeIndex = useCallback(async () => {
-    try {
-        const [
-          purchases, sales, payments, receipts, masters,
-          locationTransfers, adjustments, purchaseReturns, saleReturns
-        ] = await Promise.all([
-          db.purchases.toArray(),
-          db.sales.toArray(),
-          db.payments.toArray(),
-          db.receipts.toArray(),
-          db.masters.toArray(),
-          db.locationTransfers.toArray(),
-          db.adjustments.toArray(),
-          db.purchaseReturns.toArray(),
-          db.saleReturns.toArray(),
-        ]);
-        
-        const searchDataPayload = buildSearchData({
-          sales,
-          purchases,
-          payments,
-          receipts,
-          masters,
-          locationTransfers,
-          adjustments,
-          purchaseReturns,
-          saleReturns,
-        });
+  // DIRECT DATABASE QUERIES using useLiveQuery
+  const purchases = useLiveQuery(() => db.purchases.toArray(), []);
+  const sales = useLiveQuery(() => db.sales.toArray(), []);
+  const payments = useLiveQuery(() => db.payments.toArray(), []);
+  const receipts = useLiveQuery(() => db.receipts.toArray(), []);
+  const masters = useLiveQuery(() => db.masters.toArray(), []);
+  const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray(), []);
+  const adjustments = useLiveQuery(() => db.adjustments.toArray(), []);
+  const purchaseReturns = useLiveQuery(() => db.purchaseReturns.toArray(), []);
+  const saleReturns = useLiveQuery(() => db.saleReturns.toArray(), []);
+  
+  const initializeIndex = useCallback(() => {
+    // This function will run whenever any of the data dependencies change.
+    const searchDataPayload = buildSearchData({
+      sales,
+      purchases,
+      payments,
+      receipts,
+      masters,
+      locationTransfers,
+      adjustments,
+      purchaseReturns,
+      saleReturns,
+    });
 
-        fuseRef.current = new Fuse(searchDataPayload, {
-            keys: [
-              { name: 'title', weight: 0.6 },
-              { name: 'description', weight: 0.4 },
-            ],
-            includeScore: true,
-            includeMatches: true,
-            threshold: 0.4,
-            minMatchCharLength: 1,
-            ignoreLocation: true,
-        });
-
-      } catch(error) {
-        console.error("Search initialization failed:", error);
-      }
-  }, []);
+    fuseRef.current = new Fuse(searchDataPayload, {
+        keys: [
+          { name: 'title', weight: 0.6 },
+          { name: 'description', weight: 0.4 },
+        ],
+        includeScore: true,
+        includeMatches: true,
+        threshold: 0.4,
+        minMatchCharLength: 1,
+        ignoreLocation: true,
+    });
+  }, [sales, purchases, payments, receipts, masters, locationTransfers, adjustments, purchaseReturns, saleReturns]);
 
   useEffect(() => {
+    // Initialize the Fuse index whenever the underlying data changes.
     initializeIndex();
-    
-    const handleReindex = () => initializeIndex();
-    window.addEventListener('reindex-search', handleReindex);
-    
-    return () => {
-        window.removeEventListener('reindex-search', handleReindex);
-    };
-
   }, [initializeIndex]);
 
   useEffect(() => {
