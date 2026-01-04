@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Sidebar, SidebarHeader, SidebarContent, SidebarProvider } from "@/components/ui/sidebar";
 import { navItems } from "@/lib/features";

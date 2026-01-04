@@ -1,4 +1,3 @@
-
 "use client";
 
 import { PurchasesClient } from "@/components/app/purchases/PurchasesClient";

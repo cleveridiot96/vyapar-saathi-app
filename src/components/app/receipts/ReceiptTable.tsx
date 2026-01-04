@@ -85,7 +85,7 @@ export const ReceiptTable: React.FC<ReceiptTableProps> = ({ data, onEdit, onDele
       ),
     },
   ], [onEdit, onDelete]);
-
+  
   if (data.length === 0) {
     return <p className="text-center text-muted-foreground py-8">No receipts recorded yet.</p>;
   }

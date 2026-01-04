@@ -25,10 +25,10 @@ export function StockAdjustmentsClient() {
   const adjustments = useLiveQuery(() => db.adjustments.toArray());
   const purchases = useLiveQuery(() => db.purchases.toArray());
   const locationTransfers = useLiveQuery(() => db.locationTransfers.toArray());
-  const masters = useLiveQuery(() => db.masters.toArray());
+  const { isMastersLoaded, ...masterDataHook } = useMasters();
 
   const { addAdjustment } = useTransactions();
-  const { masterData } = useMasters();
+  const { masterData } = masterDataHook;
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [itemToReverse, setItemToReverse] = useState<StockAdjustment | null>(null);
@@ -93,7 +93,7 @@ export function StockAdjustmentsClient() {
     }
   };
   
-  if (adjustments === undefined || masters === undefined) {
+  if (adjustments === undefined || !isMastersLoaded) {
       return (
           <div className="space-y-4 p-4">
               <div className="flex justify-between items-center">

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { SalesClient } from "@/components/app/sales/SalesClient";

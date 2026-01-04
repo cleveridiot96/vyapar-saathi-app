@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -60,7 +59,6 @@ const CostRow: React.FC<{ label: string; value: number; isDeduction?: boolean; i
 export function ProfitAnalysisClient() {
   const { isAppHydrating, financialYear: currentFinancialYearString } = useSettings();
   const transactions = useTransactions();
-  const sales = transactions?.sales ?? [];
   const { isTransactionsLoaded } = useTransactions();
   
   const [saleIdForCalc, setSaleIdForCalc] = React.useState<string | undefined>();
@@ -71,6 +69,10 @@ export function ProfitAnalysisClient() {
     return { from: startOfMonth(today), to: endOfDay(today) };
   });
 
+  const sales = transactions?.sales ?? [];
+
+  if (!Array.isArray(sales)) return null;
+
   useEffect(() => {
     if (saleIdForCalc && calculatorRef.current) {
         calculatorRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -79,8 +81,6 @@ export function ProfitAnalysisClient() {
 
   const [selectedMonthKey, setSelectedMonthKey] = React.useState<string | undefined>();
     
-  if (!Array.isArray(sales)) return null;
-
   const allProfitTransactionsInFY = React.useMemo(() => {
     if (isAppHydrating || !isTransactionsLoaded) return [];
     const fySales = (sales ?? []).filter(sale => sale && isDateInFinancialYear(sale.date, currentFinancialYearString));
@@ -520,5 +520,4 @@ export function ProfitAnalysisClient() {
     </TooltipProvider>
   );
 }
-
     

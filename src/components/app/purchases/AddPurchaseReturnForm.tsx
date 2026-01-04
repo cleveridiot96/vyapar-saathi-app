@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -227,7 +226,7 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
                   )}
                   {selectedOriginalPurchase && (
                     <div className="p-3 border rounded-md bg-muted/50 text-sm uppercase">
-                      <p><strong>Selected Lot:</strong> {watchedOriginalLotNumber || selectedOriginalPurchase.items[0]?.lotNumber || 'N/A'}</p>
+                      <p><strong>Bill:</strong> {watchedOriginalLotNumber || selectedOriginalPurchase.items[0]?.lotNumber || 'N/A'}</p>
                       <p><strong>Supplier:</strong> {selectedOriginalPurchase.supplierName || selectedOriginalPurchase.supplierId}</p>
                       <p><strong>Original Rate:</strong> ₹{selectedOriginalPurchase.items.find(i => i.lotNumber === (watchedOriginalLotNumber || selectedOriginalPurchase.items[0]?.lotNumber))?.rate.toFixed(2)}/kg</p>
                     </div>
@@ -289,5 +288,4 @@ export const AddPurchaseReturnForm: React.FC<AddPurchaseReturnFormProps> = ({
     </Dialog>
   );
 };
-
     

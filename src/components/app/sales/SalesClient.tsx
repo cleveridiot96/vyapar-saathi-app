@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -15,6 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 import dynamic from 'next/dynamic';
 import { Loader2 } from "lucide-react";
 import { isStudio } from "@/lib/isStudio";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
+import { DatabaseDiagnostic } from "@/components/DatabaseDiagnostic";
+import { TestDataSeeder } from "@/components/TestDataSeeder";
 
 const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { 
   ssr: false,
@@ -30,17 +33,13 @@ export function SalesClient() {
   const { toast } = useToast();
   const { financialYear } = useSettings();
   
-  const { 
-      sales, 
-      addSale, 
-      updateSale, 
-      deleteSale, 
-      saleReturns,
-      receipts,
-  } = useTransactions();
+  const sales = useLiveQuery(() => db.sales.toArray());
+  const saleReturns = useLiveQuery(() => db.saleReturns.toArray());
+  const receipts = useLiveQuery(() => db.receipts.toArray());
+  const { isMastersLoaded } = useMasters();
   
-  const { masters } = useMasters();
-
+  const { addSale, updateSale, deleteSale } = useTransactions();
+  
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
   const [itemToDelete, setItemToDelete] = React.useState<{id: string, type: 'sale' | 'return'} | null>(null);
@@ -104,7 +103,9 @@ export function SalesClient() {
     ? 'bg-green-600 hover:bg-green-700 text-white' 
     : 'bg-orange-600 hover:bg-orange-700 text-white';
 
-  if (sales === undefined || masters === undefined) {
+  const ready = isStudio || (sales !== undefined && isMastersLoaded);
+
+  if (!ready) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-20rem)] p-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
@@ -119,7 +120,7 @@ export function SalesClient() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
         <h1 className="text-2xl font-bold uppercase">Sales & Returns (FY {financialYear})</h1>
       </div>
-
+      
       <Tabs defaultValue="sales" onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 h-10 mb-2 no-print">
           <TabsTrigger value="sales" className="py-2.5 text-base rounded-md"><ListChecks className="mr-2 h-5 w-5" />Sales</TabsTrigger>
@@ -175,7 +176,12 @@ export function SalesClient() {
         </AlertDialog>
       )}
 
-      {isStudio && <div className="fixed bottom-2 right-2 text-xs bg-black text-white p-1 rounded">STUDIO MODE</div>}
+      {isStudio && (
+          <div className="fixed bottom-4 right-4 grid grid-cols-1 gap-4">
+              <DatabaseDiagnostic />
+              <TestDataSeeder />
+          </div>
+      )}
     </div>
   );
 }

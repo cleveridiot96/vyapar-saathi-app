@@ -1,4 +1,3 @@
-
 "use client";
 import { AuthScreen } from "@/components/auth/AuthScreen";
 import { PasswordProvider } from "@/contexts/PasswordContext";

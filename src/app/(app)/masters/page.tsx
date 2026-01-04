@@ -1,4 +1,3 @@
-
 "use client";
 import { MastersClient } from "@/components/app/masters/MastersClient";
 
