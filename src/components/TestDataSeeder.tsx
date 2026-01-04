@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -24,7 +23,7 @@ export function TestDataSeeder() {
       }
       
       const customers = masters.filter(m => m.type === 'Customer');
-      const suppliers = masters.filter(m => m.type === 'Supplier');
+      const suppliers = masters.filter(w => w.type === 'Supplier');
       const warehouses = masters.filter(w => w.type === 'Warehouse');
 
       if (customers.length === 0 || suppliers.length === 0 || warehouses.length === 0) {

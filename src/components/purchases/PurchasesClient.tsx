@@ -26,6 +26,8 @@ import dynamic from 'next/dynamic';
 import { useInventory } from "@/hooks/useInventory";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
+import { DatabaseDiagnostic } from "@/components/DatabaseDiagnostic";
+import { TestDataSeeder } from "@/components/TestDataSeeder";
 
 
 const PurchaseTable = dynamic(() => import('./PurchaseTable').then(mod => mod.PurchaseTable), { ssr: false });
@@ -191,6 +193,11 @@ export function PurchasesClient() {
       <PrintHeaderSymbol className="hidden print:block text-center text-lg font-semibold mb-2" />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 no-print">
         <h1 className="text-2xl font-bold text-foreground uppercase">Purchases & Returns (FY ${financialYear})</h1>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <DatabaseDiagnostic />
+        <TestDataSeeder />
       </div>
 
       <Tabs defaultValue="purchases" className="w-full" onValueChange={setActiveTab}>
