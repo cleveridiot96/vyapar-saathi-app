@@ -13,8 +13,7 @@ import type { Sale, SaleReturn } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import dynamic from 'next/dynamic';
 import { Skeleton } from "@/components/ui/skeleton";
-import { DebugDataDisplay } from '@/components/shared/DebugDataDisplay';
-import { TestDataSeeder } from "@/components/TestDataSeeder";
+import { useInventory } from "@/hooks/useInventory";
 
 const SaleTable = dynamic(() => import('./SaleTable').then(mod => mod.SaleTable), { ssr: false });
 const AddSaleForm = dynamic(() => import('./AddSaleForm').then(mod => mod.AddSaleForm), { ssr: false });
@@ -29,21 +28,40 @@ export function SalesClient() {
       addSale, 
       updateSale, 
       deleteSale, 
-      saleReturns, 
+      saleReturns,
+      receipts,
       isTransactionsLoaded 
   } = useTransactions();
   
   const { isMastersLoaded } = useMasters();
+  const { availableStock } = useInventory();
 
   const [isAddFormOpen, setIsAddFormOpen] = React.useState(false);
   const [saleToEdit, setSaleToEdit] = React.useState<Sale | null>(null);
   const [itemToDelete, setItemToDelete] = React.useState<{id: string, type: 'sale' | 'return'} | null>(null);
   const [activeTab, setActiveTab] = React.useState('sales');
-  
+
+  const salesWithBalances = React.useMemo(() => {
+    if (!sales || !receipts) return [];
+    
+    const billPaidAmounts = new Map<string, number>();
+    receipts.forEach(tx => {
+        (tx.againstBills || []).forEach(ab => {
+            billPaidAmounts.set(ab.billId, (billPaidAmounts.get(ab.billId) || 0) + ab.amount);
+        });
+    });
+
+    return sales.map(sale => {
+      const paid = billPaidAmounts.get(sale.id) || 0;
+      const balanceAmount = sale.billedAmount - paid;
+      return { ...sale, balanceAmount };
+    });
+  }, [sales, receipts]);
+
   const filteredSales = React.useMemo(() => {
     if (!isTransactionsLoaded) return [];
-    return (sales || []).filter(s => s && s.date && isDateInFinancialYear(s.date, financialYear));
-  }, [sales, financialYear, isTransactionsLoaded]);
+    return (salesWithBalances || []).filter(s => s && s.date && isDateInFinancialYear(s.date, financialYear));
+  }, [salesWithBalances, financialYear, isTransactionsLoaded]);
 
   const filteredSaleReturns = React.useMemo(() => {
     if (!isTransactionsLoaded) return [];
@@ -99,11 +117,6 @@ export function SalesClient() {
     <div className="space-y-2">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
         <h1 className="text-2xl font-bold uppercase">Sales & Returns (FY {financialYear})</h1>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <DebugDataDisplay />
-        <TestDataSeeder />
       </div>
 
       <Tabs defaultValue="sales" onValueChange={setActiveTab} className="w-full">
